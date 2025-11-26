@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mUczelnia - Pulpit</title>
+    <style>
+        :root {
+            /* --- Kolory (Tryb Jasny) --- */
+            --bg-color: #f4f4f4;
+            --panel-bg: #ffffff;
+            --hover-bg: #f8f8f8;
+            --text-main: #333;
+            --text-muted: #888;
+            --border-color: #e0e0e0;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            --accent-color: #f04a4a;
+        }
+
+        /* --- Globalne --- */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+            background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='30' height='30'><circle cx='15' cy='15' r='1.5' fill='rgba(0,0,0,0.05)'/></svg>");
+        }
+
+        /* --- Layout Główny --- */
+        .layout-wrapper {
+            display: grid;
+            grid-template-columns: 260px 1fr 320px;
+            grid-template-rows: 100vh;
+            gap: 0;
+        }
+
+        /* --- Sidebar Left --- */
+        .sidebar-left {
+            background-color: var(--panel-bg);
+            border-right: 1px solid var(--border-color);
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .brand-area {
+            margin-bottom: 50px;
+        }
+
+        .logo-text {
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--text-main);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+        }
+
+        .logo-text span {
+            color: var(--accent-color);
+        }
+
+        .nav-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            flex-grow: 1;
+        }
+
+        .nav-item {
+            margin-bottom: 10px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            color: var(--text-muted);
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .nav-link svg {
+            width: 20px;
+            height: 20px;
+            margin-right: 15px;
+            stroke-width: 2;
+        }
+
+        .nav-link:hover {
+            background-color: var(--hover-bg);
+            color: var(--accent-color);
+        }
+
+        .nav-link.active {
+            background-color: rgba(240, 74, 74, 0.1);
+            color: var(--accent-color);
+        }
+
+        .logout-btn {
+            margin-top: 20px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            padding: 10px 0;
+            transition: color 0.2s;
+        }
+
+        .logout-btn:hover {
+            color: var(--text-main);
+        }
+
+        /* --- Main Content --- */
+        .main-content {
+            padding: 40px;
+            overflow-y: auto;
+        }
+
+        .welcome-header {
+            margin-bottom: 30px;
+        }
+
+        .welcome-header h1 {
+            font-size: 28px;
+            margin: 0 0 5px 0;
+        }
+
+        .welcome-header p {
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 25px;
+        }
+
+        .widget-tile {
+            background-color: var(--panel-bg);
+            border-radius: 20px;
+            padding: 30px 20px;
+            text-decoration: none;
+            color: var(--text-main);
+            text-align: center;
+            border: 1px solid transparent;
+            box-shadow: var(--shadow);
+            transition: transform 0.2s ease, border-color 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .widget-tile:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-color);
+        }
+
+        .widget-tile h3 {
+            margin: 10px 0 0 0;
+            font-size: 18px;
+            z-index: 2;
+        }
+
+        .widget-icon {
+            width: 50px;
+            height: 50px;
+            margin-bottom: 10px;
+            color: var(--text-main);
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: contain;
+            z-index: 2;
+        }
+
+        /* New Styles for Dynamic Course Tiles */
+        .course-meta {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+            z-index: 2;
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 4px;
+            background: #eee;
+            border-radius: 2px;
+            margin-top: 15px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--accent-color);
+            border-radius: 2px;
+        }
+
+        /* Icons */
+        .icon-course-active {
+            background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><path d='M4 19.5A2.5 2.5 0 0 1 6.5 17H20'></path><path d='M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z'></path></svg>");
+        }
+
+        /* Sidebar Right */
+        .sidebar-right {
+            background-color: var(--panel-bg);
+            border-left: 1px solid var(--border-color);
+            padding: 30px;
+            height: 100vh;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+
+        .profile-card {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background-color: #ddd;
+            margin: 0 auto 15px;
+            background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23555' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><path d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'></path><circle cx='12' cy='7' r='4'></circle></svg>");
+            background-size: 50%;
+            background-position: center;
+            background-repeat: no-repeat;
+            border: 3px solid var(--bg-color);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .profile-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .profile-id {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-top: 5px;
+        }
+
+        /* Widgets Right */
+        .side-section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        .next-class-card {
+            background-color: var(--bg-color);
+            border-radius: 16px;
+            padding: 20px;
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .class-time {
+            font-size: 14px;
+            color: var(--accent-color);
+            font-weight: bold;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .class-name {
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0 0 5px 0;
+        }
+
+        .class-location {
+            font-size: 13px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+        }
+
+        /* Notifications */
+        .notif-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .notif-item:last-child {
+            border-bottom: none;
+        }
+
+        .notif-icon {
+            width: 32px;
+            height: 32px;
+            background-color: rgba(240, 74, 74, 0.1);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            color: var(--accent-color);
+            flex-shrink: 0;
+        }
+
+        .notif-content h4 {
+            font-size: 14px;
+            margin: 0 0 3px 0;
+        }
+
+        .notif-content p {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        /* Static Icons from original code (Calendar etc) */
+        .icon-calendar {
+            background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='4' width='18' height='18' rx='2' ry='2'></rect><line x1='16' y1='2' x2='16' y2='6'></line><line x1='8' y1='2' x2='8' y2='6'></line><line x1='3' y1='10' x2='21' y2='10'></line></svg>");
+        }
+
+        .icon-grades {
+            background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='8' r='7'></circle><polyline points='8.21 13.89 7 23 12 17 17 23 15.79 13.88'></polyline></svg>");
+        }
+
+        .icon-notes {
+            background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><path d='M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2'></path><rect x='8' y='2' width='8' height='4' rx='1' ry='1'></rect></svg>");
+        }
+
+        /* Dark Mode */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #121212;
+                --panel-bg: #1e1e1e;
+                --hover-bg: #2a2a2a;
+                --text-main: #e0e0e0;
+                --text-muted: #aaa;
+                --border-color: #333;
+                --shadow: none;
+            }
+
+            body {
+                background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='30' height='30'><circle cx='15' cy='15' r='1.5' fill='rgba(255,255,255,0.05)'/></svg>");
+            }
+
+            .widget-tile:hover {
+                background-color: #2a2a2a;
+            }
+
+            .next-class-card {
+                background-color: #2a2a2a;
+            }
+
+            .avatar {
+                border-color: var(--bg-color);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 1100px) {
+            .layout-wrapper {
+                grid-template-columns: 80px 1fr 0px;
+            }
+
+            .sidebar-left {
+                padding: 20px 10px;
+                align-items: center;
+            }
+
+            .logo-text span,
+            .nav-link span,
+            .logout-btn span {
+                display: none;
+            }
+
+            .sidebar-right {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .layout-wrapper {
+                display: block;
+            }
+
+            .sidebar-left {
+                height: auto;
+                position: relative;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+                flex-direction: row;
+                align-items: center;
+                padding: 15px 20px;
+            }
+
+            .nav-menu {
+                display: none;
+            }
+
+            .logo-text span {
+                display: inline;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="layout-wrapper">
+
+        <aside class="sidebar-left">
+            <div class="top-section">
+                <div class="brand-area">
+                    <a href="#" class="logo-text"><span>m</span>Uczelnia</a>
+                </div>
+
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a href="#" class="nav-link active">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                            </svg>
+                            <span>Pulpit</span>
+                        </a>
+                    </li>
+                    <li class="nav-item"><a href="#" class="nav-link"><svg xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg><span>Plan zajęć</span></a></li>
+                    <li class="nav-item"><a href="#" class="nav-link"><svg xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                            </svg><span>Biblioteka</span></a></li>
+                </ul>
+            </div>
+
+            <div class="logout-btn" id="logoutBtn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                <span style="margin-left: 10px;">Wyloguj</span>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="welcome-header">
+                <h1 id="welcome-message">Witaj!</h1>
+                <p>Oto podsumowanie Twoich aktywności na uczelni.</p>
+            </div>
+
+            <div class="dashboard-grid" id="dashboard-grid">
+                <div style="grid-column: 1/-1; text-align:center; color:#888;">Ładowanie danych...</div>
+            </div>
+        </main>
+
+        <aside class="sidebar-right">
+            <div class="profile-card">
+                <div class="avatar"></div>
+                <h2 class="profile-name" id="profile-name-display">...</h2>
+                <p class="profile-id" id="profile-email-display">...</p>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 30px 0;">
+
+            <div class="side-section">
+                <div class="section-title">Następne zajęcia</div>
+                <div class="next-class-card">
+                    <span class="class-time">10:15 - 11:45</span>
+                    <h4 class="class-name">Analiza Matematyczna</h4>
+                    <div class="class-location">Sala 304, Budynek C</div>
+                </div>
+            </div>
+
+            <div class="side-section">
+                <div class="section-title">Ostatnie powiadomienia</div>
+                <div class="notif-item">
+                    <div class="notif-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                        </svg></div>
+                    <div class="notif-content">
+                        <h4>Zmiana sali</h4>
+                        <p>Fizyka przeniesiona do s. 12</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // 1. CONFIGURATION
+        const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
+        const supabaseKey = 'YOUR_SUPABASE_ANON_KEY_HERE'; // ⚠️ PASTE YOUR KEY AGAIN
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        document.addEventListener('DOMContentLoaded', async () => {
+
+            // A. CHECK AUTH
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (!session) {
+                window.location.href = 'login.html'; // Redirect to login
+                return;
+            }
+
+            // B. FETCH USER PROFILE
+            const userId = session.user.id;
+            const profileNameEl = document.getElementById('profile-name-display');
+            const profileEmailEl = document.getElementById('profile-email-display');
+            const welcomeMsgEl = document.getElementById('welcome-message');
+
+            // Set email immediately from session
+            profileEmailEl.textContent = session.user.email;
+
+            const { data: profile } = await _supabase
+                .from('users')
+                .select('username')
+                .eq('id', userId)
+                .single();
+
+            if (profile) {
+                profileNameEl.textContent = profile.username;
+                welcomeMsgEl.textContent = `Witaj, ${profile.username}!`;
+            }
+
+            // C. FETCH & RENDER COURSES
+            const { data: enrollments, error } = await _supabase
+                .from('user_courses')
+                .select(`
+                    progress_percentage,
+                    courses ( title, description )
+                `)
+                .eq('user_id', userId);
+
+            const gridContainer = document.getElementById('dashboard-grid');
+            gridContainer.innerHTML = ''; // Clear loading text
+
+            // 1. Render Actual Courses
+            if (enrollments && enrollments.length > 0) {
+                enrollments.forEach(item => {
+                    const course = item.courses;
+                    const tile = document.createElement('a');
+                    tile.href = '#';
+                    tile.className = 'widget-tile';
+                    tile.innerHTML = `
+                        <div class="widget-icon icon-course-active"></div>
+                        <h3>${course.title}</h3>
+                        <div class="progress-track">
+                            <div class="progress-fill" style="width: ${item.progress_percentage}%"></div>
+                        </div>
+                        <div class="course-meta">${item.progress_percentage}% Ukończono</div>
+                    `;
+                    gridContainer.appendChild(tile);
+                });
+            } else {
+                // If no courses, show a placeholder
+                gridContainer.innerHTML += `<div class="widget-tile" style="grid-column:1/-1;"><h3>Brak aktywnych kursów</h3></div>`;
+            }
+
+            // 2. Append Static Tools (Visuals)
+            // These don't exist in DB yet, but we keep them for UI completeness
+            const staticTools = [
+                { title: 'Kalendarz', icon: 'icon-calendar' },
+                { title: 'Oceny', icon: 'icon-grades' },
+                { title: 'Notatki', icon: 'icon-notes' }
+            ];
+
+            staticTools.forEach(tool => {
+                const tile = document.createElement('a');
+                tile.href = '#';
+                tile.className = 'widget-tile';
+                tile.innerHTML = `
+                    <div class="widget-icon ${tool.icon}"></div>
+                    <h3>${tool.title}</h3>
+                `;
+                gridContainer.appendChild(tile);
+            });
+
+            // D. LOGOUT LOGIC
+            document.getElementById('logoutBtn').addEventListener('click', async () => {
+                await _supabase.auth.signOut();
+                window.location.href = 'login.html';
+            });
+        });
+    </script>
+</body>
+
+</html>

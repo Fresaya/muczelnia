@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mUczelnia - Zaloguj się</title>
+    <style>
+        /* --- STYLES (Unchanged) --- */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            position: relative;
+            background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='30' height='30'><circle cx='15' cy='15' r='1.5' fill='rgba(0,0,0,0.08)'/></svg>");
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 360px;
+            padding: 30px;
+            box-sizing: border-box;
+            background-color: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .logo-img {
+            width: 45px;
+            height: auto;
+            margin-right: 15px;
+        }
+
+        .logo-text {
+            font-size: 28px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .login-form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .login-form h2 {
+            font-size: 22px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 25px;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        .login-form input[type="text"],
+        .login-form input[type="email"],
+        .login-form input[type="password"] {
+            background-color: #f9f9f9;
+            border: 1px solid transparent;
+            color: #333;
+            border-radius: 50px;
+            padding: 16px 22px;
+            margin-bottom: 15px;
+            font-size: 16px;
+            width: 100%;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        .login-form input:focus {
+            background-color: #ffffff;
+            border: 1px solid #ccc;
+        }
+
+        #password-input {
+            padding-right: 50px;
+        }
+
+        #toggle-password {
+            position: absolute;
+            right: 18px;
+            top: 17px;
+            cursor: pointer;
+            width: 20px;
+            height: 20px;
+            opacity: 0.5;
+            background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z'></path><circle cx='12' cy='12' r='3'></circle></svg>");
+            background-repeat: no-repeat;
+            background-size: contain;
+        }
+
+        #toggle-password.visible {
+            background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24'></path><line x1='1' y1='1' x2='23' y2='23'></line></svg>");
+        }
+
+        .form-options {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            margin-bottom: 25px;
+            color: #555;
+        }
+
+        .login-button {
+            background-color: #f04a4a;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 16px 22px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .login-button:hover {
+            background-color: #e03a3a;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-color: #1e1e1e;
+                color: #e0e0e0;
+                background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='30' height='30'><circle cx='15' cy='15' r='1.5' fill='rgba(255,255,255,0.08)'/></svg>");
+            }
+
+            .login-container {
+                background-color: #2a2a2a;
+            }
+
+            .logo-text,
+            .login-form h2 {
+                color: #e0e0e0;
+            }
+
+            .login-form input {
+                background-color: #333;
+                color: #e0e0e0;
+                border: 1px solid #444;
+            }
+
+            .login-form input:focus {
+                border-color: #666;
+            }
+
+            #toggle-password {
+                filter: invert(1);
+            }
+
+            .form-options {
+                color: #aaa;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="login-container">
+        <div class="header">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/c/c9/Herb_Polski.svg" alt="Godło Polski"
+                class="logo-img">
+            <span class="logo-text">mUczelnia</span>
+        </div>
+
+        <form class="login-form" id="loginForm">
+            <h2>Zaloguj się</h2>
+
+            <div class="input-wrapper">
+                <input type="email" id="email-input" placeholder="Adres e-mail lub telefon" required>
+            </div>
+
+            <div class="input-wrapper">
+                <input type="password" placeholder="Hasło" id="password-input" required>
+                <div id="toggle-password"></div>
+            </div>
+
+            <div class="form-options">
+                <label class="remember-me">
+                    <input type="checkbox" name="remember">
+                    Zapamiętaj mnie
+                </label>
+                <div class="forgot-password">
+                    <a href="#">Nie pamiętasz hasła?</a>
+                </div>
+            </div>
+
+            <button type="submit" class="login-button">Zaloguj</button>
+        </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+        // 2. CONFIGURATION
+        const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
+
+        // ⚠️ PASTE YOUR PUBLIC ANON KEY HERE
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg';
+
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const passwordInput = document.getElementById('password-input');
+            const togglePassword = document.getElementById('toggle-password');
+            const emailInput = document.getElementById('email-input');
+            const loginForm = document.getElementById('loginForm');
+
+            // --- Toggle Password Logic ---
+            togglePassword.addEventListener('click', () => {
+                const isPassword = passwordInput.type === 'password';
+                passwordInput.type = isPassword ? 'text' : 'password';
+                togglePassword.classList.toggle('visible', isPassword);
+            });
+
+            // --- 3. Secure Login Logic ---
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const email = emailInput.value;
+                const password = passwordInput.value;
+
+                console.log("Attempting secure login...");
+
+                // A. Authenticate with Supabase Auth (Checks Hash)
+                const { data: authData, error: authError } = await _supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password,
+                });
+
+                if (authError) {
+                    alert('Błąd logowania: ' + authError.message);
+                    return;
+                }
+
+                // B. Login Success! Now fetch the Public Profile
+                // We use the ID from the auth result (authData.user.id)
+                console.log("Auth success. Fetching profile for ID:", authData.user.id);
+
+                const { data: profile, error: profileError } = await _supabase
+                    .from('users') // Querying your 'public.users' table
+                    .select('username')
+                    .eq('id', authData.user.id)
+                    .single();
+
+                if (profileError) {
+                    console.error("Profile fetch error:", profileError);
+                    alert("Zalogowano, ale nie udało się pobrać profilu.");
+                } else {
+                    // C. Success!
+                    //alert(`✅ Zalogowano pomyślnie!\nWitaj, ${profile.username}`);
+
+                    // UNCOMMENT BELOW TO REDIRECT
+                    window.location.href = 'dashboard.html';
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
