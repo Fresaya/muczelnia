@@ -30,10 +30,17 @@ body {
    ========================================= */
 /* We use this class on the body tag of index.html to center the box */
 body.login-page {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            position: relative;
+            background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='30' height='30'><circle cx='15' cy='15' r='1.5' fill='rgba(0,0,0,0.08)'/></svg>");
 }
 
 .login-container {
