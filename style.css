@@ -1,0 +1,227 @@
+/* =========================================
+   1. GLOBAL VARIABLES & RESET
+   ========================================= */
+:root {
+    /* Colors (Light Mode) */
+    --bg-color: #f4f4f4;
+    --panel-bg: #ffffff;
+    --hover-bg: #f8f8f8;
+    --text-main: #333;
+    --text-muted: #888;
+    --border-color: #e0e0e0;
+    --shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    --accent-color: #f04a4a; /* Red */
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    margin: 0;
+    min-height: 100vh;
+    overflow-x: hidden;
+    /* Dotted Background Pattern */
+    background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='30' height='30'><circle cx='15' cy='15' r='1.5' fill='rgba(0,0,0,0.05)'/></svg>");
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* =========================================
+   2. LOGIN PAGE SPECIFIC STYLES
+   ========================================= */
+/* We use this class on the body tag of index.html to center the box */
+body.login-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.login-container {
+    width: 100%;
+    max-width: 360px;
+    padding: 30px;
+    box-sizing: border-box;
+    background-color: var(--panel-bg);
+    border-radius: 20px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+    position: relative;
+}
+
+.header { display: flex; align-items: center; margin-bottom: 30px; }
+.logo-img { width: 45px; height: auto; margin-right: 15px; }
+.logo-text { font-size: 28px; font-weight: bold; color: var(--text-main); }
+.logo-text span { color: var(--accent-color); }
+
+.login-form { display: flex; flex-direction: column; }
+.login-form h2 { font-size: 22px; font-weight: 600; margin-bottom: 25px; }
+
+.input-wrapper { position: relative; display: flex; align-items: center; width: 100%; }
+
+.login-form input[type="text"],
+.login-form input[type="email"],
+.login-form input[type="password"] {
+    background-color: var(--bg-color); /* Matches light mode bg */
+    border: 1px solid transparent;
+    color: var(--text-main);
+    border-radius: 50px;
+    padding: 16px 22px;
+    margin-bottom: 15px;
+    font-size: 16px;
+    width: 100%;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+}
+.login-form input:focus { background-color: var(--panel-bg); border: 1px solid #ccc; }
+#password-input { padding-right: 50px; }
+
+#toggle-password {
+    position: absolute; right: 18px; top: 17px; cursor: pointer; width: 20px; height: 20px; opacity: 0.5;
+    background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z'></path><circle cx='12' cy='12' r='3'></circle></svg>");
+    background-repeat: no-repeat; background-size: contain;
+}
+#toggle-password.visible {
+    background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24'></path><line x1='1' y1='1' x2='23' y2='23'></line></svg>");
+}
+
+.form-options { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 25px; color: var(--text-muted); }
+.login-button {
+    background-color: var(--accent-color); color: white; border: none; border-radius: 50px;
+    padding: 16px 22px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.3s;
+}
+.login-button:hover { background-color: #e03a3a; }
+
+/* =========================================
+   3. DASHBOARD SPECIFIC STYLES
+   ========================================= */
+.layout-wrapper {
+    display: grid;
+    grid-template-columns: 260px 1fr 320px;
+    grid-template-rows: 100vh;
+    gap: 0;
+}
+
+/* Sidebar Left */
+.sidebar-left {
+    background-color: var(--panel-bg);
+    border-right: 1px solid var(--border-color);
+    padding: 30px;
+    display: flex; flex-direction: column; justify-content: space-between;
+    position: sticky; top: 0; height: 100vh; box-sizing: border-box;
+}
+.brand-area { margin-bottom: 50px; }
+.nav-menu { list-style: none; padding: 0; margin: 0; flex-grow: 1; }
+.nav-item { margin-bottom: 10px; }
+.nav-link {
+    display: flex; align-items: center; padding: 12px 15px; color: var(--text-muted);
+    text-decoration: none; border-radius: 12px; font-weight: 500; transition: all 0.2s ease;
+}
+.nav-link svg { width: 20px; height: 20px; margin-right: 15px; stroke-width: 2; }
+.nav-link:hover { background-color: var(--hover-bg); color: var(--accent-color); }
+.nav-link.active { background-color: rgba(240, 74, 74, 0.1); color: var(--accent-color); }
+
+.logout-btn {
+    margin-top: 20px; color: var(--text-muted); display: flex; align-items: center;
+    cursor: pointer; padding: 10px 0; transition: color 0.2s;
+}
+.logout-btn:hover { color: var(--text-main); }
+
+/* Main Content */
+.main-content { padding: 40px; overflow-y: auto; position: relative; }
+.welcome-header { margin-bottom: 30px; }
+.welcome-header h1 { font-size: 28px; margin: 0 0 5px 0; }
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 25px;
+}
+
+.widget-tile {
+    background-color: var(--panel-bg);
+    border-radius: 20px;
+    padding: 30px 20px;
+    text-decoration: none;
+    color: var(--text-main);
+    text-align: center;
+    border: 1px solid transparent;
+    box-shadow: var(--shadow);
+    transition: transform 0.2s ease, border-color 0.2s ease;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.widget-tile:hover { transform: translateY(-5px); border-color: var(--accent-color); }
+.widget-tile h3 { margin: 10px 0 0 0; font-size: 18px; }
+.widget-icon { width: 50px; height: 50px; margin-bottom: 10px; color: var(--text-main); background-repeat: no-repeat; background-position: center; background-size: contain; }
+
+/* Course Progress Bars */
+.course-meta { font-size: 12px; color: #888; margin-top: 5px; width: 100%; }
+.progress-track { width: 100%; height: 4px; background: #eee; border-radius: 2px; margin-top: 15px; }
+.progress-fill { height: 100%; background: var(--accent-color); border-radius: 2px; }
+
+/* Sidebar Right */
+.sidebar-right {
+    background-color: var(--panel-bg);
+    border-left: 1px solid var(--border-color);
+    padding: 30px; height: 100vh; box-sizing: border-box; overflow-y: auto;
+}
+.profile-card { text-align: center; margin-bottom: 40px; }
+.avatar {
+    width: 80px; height: 80px; border-radius: 50%; background-color: #ddd; margin: 0 auto 15px;
+    background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23555' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><path d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'></path><circle cx='12' cy='7' r='4'></circle></svg>");
+    background-size: 50%; background-position: center; background-repeat: no-repeat;
+    border: 3px solid var(--bg-color); box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+.profile-name { font-size: 18px; font-weight: bold; margin: 0; }
+.profile-id { font-size: 14px; color: var(--text-muted); margin-top: 5px; }
+
+/* Right Sidebar Widgets */
+.side-section { margin-bottom: 30px; }
+.section-title { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 15px; font-weight: 700; }
+.next-class-card { background-color: var(--bg-color); border-radius: 16px; padding: 20px; border-left: 4px solid var(--accent-color); }
+.class-time { font-size: 14px; color: var(--accent-color); font-weight: bold; margin-bottom: 5px; display: block; }
+.class-name { font-size: 16px; font-weight: 600; margin: 0 0 5px 0; }
+.class-location { font-size: 13px; color: var(--text-muted); display: flex; align-items: center; }
+
+/* Icons Classes */
+.icon-course-active { background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><path d='M4 19.5A2.5 2.5 0 0 1 6.5 17H20'></path><path d='M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z'></path></svg>"); }
+.icon-calendar { background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='4' width='18' height='18' rx='2' ry='2'></rect><line x1='16' y1='2' x2='16' y2='6'></line><line x1='8' y1='2' x2='8' y2='6'></line><line x1='3' y1='10' x2='21' y2='10'></line></svg>"); }
+.icon-grades { background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='8' r='7'></circle><polyline points='8.21 13.89 7 23 12 17 17 23 15.79 13.88'></polyline></svg>"); }
+.icon-notes { background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><path d='M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2'></path><rect x='8' y='2' width='8' height='4' rx='1' ry='1'></rect></svg>"); }
+
+/* =========================================
+   4. DARK MODE & RESPONSIVE
+   ========================================= */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-color: #121212;
+        --panel-bg: #1e1e1e;
+        --hover-bg: #2a2a2a;
+        --text-main: #e0e0e0;
+        --text-muted: #aaa;
+        --border-color: #333;
+        --shadow: none;
+    }
+    body { background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='30' height='30'><circle cx='15' cy='15' r='1.5' fill='rgba(255,255,255,0.05)'/></svg>"); }
+    .login-form input[type="text"], .login-form input[type="email"], .login-form input[type="password"] {
+        background-color: #333; color: var(--text-main); border-color: #444;
+    }
+    .login-form input:focus { border-color: #666; }
+    #toggle-password { filter: invert(1); }
+    .widget-tile:hover { background-color: #2a2a2a; }
+    .next-class-card { background-color: #2a2a2a; }
+    .avatar { border-color: var(--bg-color); }
+}
+
+@media (max-width: 1100px) {
+    .layout-wrapper { grid-template-columns: 80px 1fr 0px; }
+    .sidebar-left { padding: 20px 10px; align-items: center; }
+    .logo-text span, .nav-link span, .logout-btn span { display: none; }
+    .nav-link svg { margin-right: 0; }
+    .sidebar-right { display: none; }
+}
+
+@media (max-width: 768px) {
+    .layout-wrapper { display: block; }
+    .sidebar-left { height: auto; position: relative; border-right: none; border-bottom: 1px solid var(--border-color); flex-direction: row; align-items: center; padding: 15px 20px; }
+    .nav-menu { display: none; }
+    .logo-text span { display: inline; }
+}
