@@ -142,9 +142,11 @@
             }
 
             // C. FETCH & RENDER COURSES
+            // We added 'course_id' to the list so we can use it in the link
             const { data: enrollments, error } = await _supabase
                 .from('user_courses')
                 .select(`
+                    course_id,                 
                     progress_percentage,
                     courses ( title, description )
                 `)
@@ -206,5 +208,6 @@
 
 
 </html>
+
 
 
