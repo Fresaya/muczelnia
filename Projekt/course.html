@@ -51,6 +51,11 @@
         // GLOBAL SET: Keeps track of which IDs are done { 201, 202, ... }
         let completedSet = new Set(); 
 
+        function toggleSidebar() {
+            document.getElementById('course-sidebar').classList.toggle('active');
+            document.getElementById('mobile-overlay').classList.toggle('active');
+        }
+
         document.addEventListener('DOMContentLoaded', async () => {
             // 1. Check Auth
             const { data: { session } } = await _supabase.auth.getSession();
@@ -108,7 +113,11 @@
                     <span>${index + 1}. ${lesson.title}</span>
                     <span class="status-icon">${isCompleted ? '✔' : '○'}</span>
                 `;
-                li.onclick = () => loadLessonContent(lesson.id, li);
+                li.onclick = () => {
+                    loadLessonContent(lesson.id, li);
+                    // Auto-close menu on mobile
+                    if (window.innerWidth <= 768) toggleSidebar(); 
+                };
                 listEl.appendChild(li);
             });
         }
