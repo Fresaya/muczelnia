@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mUczelnia - Moje Kursy</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="layout-wrapper">
+        <aside class="sidebar-left">
+            <div class="top-section">
+                <div class="brand-area"><a href="dashboard.html" class="logo-text"><span>m</span>Uczelnia</a></div>
+                <ul class="nav-menu">
+                    <li class="nav-item"><a href="dashboard.html" class="nav-link"><span>Pulpit</span></a></li>
+                    <!-- Active state for this page -->
+                    <li class="nav-item"><a href="#" class="nav-link active"><span>Moje Kursy</span></a></li>
+                </ul>
+            </div>
+            <div class="logout-btn" id="logoutBtn"><span>Wyloguj</span></div>
+        </aside>
+
+        <main class="main-content">
+            <div class="welcome-header">
+                <div>
+                    <a href="dashboard.html" style="text-decoration:none; color:#888; font-size:14px;">← Wróć do pulpitu</a>
+                    <h1>Moje Kursy</h1>
+                    <p>Lista przedmiotów, na które jesteś zapisany.</p>
+                </div>
+            </div>
+
+            <!-- DYNAMIC COURSE GRID -->
+            <div class="dashboard-grid" id="courses-grid">
+                <div style="grid-column: 1/-1; text-align:center; color:#888;">Ładowanie kursów...</div>
+            </div>
+        </main>
+
+        <aside class="sidebar-right">
+            <div class="profile-card">
+                <div class="avatar"></div>
+                <h2 class="profile-name" id="profile-name-display">...</h2>
+            </div>
+        </aside>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
+        // ✅ KEY INSERTED BELOW
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg';
+        
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (!session) { window.location.href = 'index.html'; return; }
+
+            const userId = session.user.id;
+
+            // Fetch Profile
+            const { data: profile } = await _supabase.from('users').select('username').eq('id', userId).single();
+            if (profile) document.getElementById('profile-name-display').textContent = profile.username;
+
+            // --- FETCH COURSES ---
+            const { data: enrollments, error } = await _supabase
+                .from('user_courses')
+                .select('course_id, progress_percentage, courses ( title, description )')
+                .eq('user_id', userId);
+
+            const gridContainer = document.getElementById('courses-grid');
+            gridContainer.innerHTML = ''; 
+
+            if (enrollments && enrollments.length > 0) {
+                enrollments.forEach(item => {
+                    const course = item.courses;
+                    const tile = document.createElement('a');
+                    
+                    // Link to the lesson player
+                    tile.href = `course.html?id=${item.course_id}`; 
+                    
+                    tile.className = 'widget-tile';
+                    tile.innerHTML = `
+                        <div class="widget-icon icon-course-active"></div>
+                        <h3>${course.title}</h3>
+                        <div class="progress-track">
+                            <div class="progress-fill" style="width: ${item.progress_percentage}%"></div>
+                        </div>
+                        <div class="course-meta">${item.progress_percentage}% Ukończono</div>
+                    `;
+                    gridContainer.appendChild(tile);
+                });
+            } else {
+                 gridContainer.innerHTML += `<div class="widget-tile" style="grid-column:1/-1;"><h3>Brak aktywnych kursów</h3></div>`;
+            }
+
+            // Logout
+            document.getElementById('logoutBtn').addEventListener('click', async () => {
+                await _supabase.auth.signOut();
+                window.location.href = 'index.html';
+            });
+        });
+    </script>
+</body>
+</html>
