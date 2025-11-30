@@ -158,7 +158,8 @@
                 enrollments.forEach(item => {
                     const course = item.courses;
                     const tile = document.createElement('a');
-                    tile.href = '#';
+                    
+                    tile.href = `course.html?id=${item.course_id}`;
                     tile.className = 'widget-tile';
                     tile.innerHTML = `
                         <div class="widget-icon icon-course-active"></div>
@@ -205,4 +206,5 @@
 
 
 </html>
+
 
