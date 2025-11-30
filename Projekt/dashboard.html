@@ -25,36 +25,41 @@
                     <h1 id="welcome-message">Witaj!</h1>
                     <p>Wybierz moduł, aby kontynuować.</p>
                 </div>
-                <div id="teacher-controls" style="display:none;">
-                    <button class="admin-btn" onclick="openUserModal()" style="background:var(--text-main); color:white; border:none; padding:10px 20px; border-radius:8px; cursor:pointer; font-weight:bold;">
-                        + Dodaj Studenta
-                    </button>
-                </div>
             </div>
 
+            <!-- STATIC DASHBOARD GRID -->
             <div class="dashboard-grid">
+                
+                <!-- 1. LINK TO COURSES LIST -->
                 <a href="courses_list.html" class="widget-tile">
                     <div class="widget-icon icon-course-active"></div>
                     <h3>Moje Kursy</h3>
                     <p class="course-meta">Przejdź do listy zajęć</p>
                 </a>
+
+                <!-- 2. QUIZZES (Placeholder) -->
                 <a href="#" class="widget-tile" onclick="alert('Moduł ćwiczeń w budowie!')">
                     <div class="widget-icon icon-notes"></div>
                     <h3>Ćwiczenia</h3>
                     <p class="course-meta">Testy i Quizy</p>
                 </a>
+
+                <!-- 3. OTHER TOOLS -->
                 <a href="#" class="widget-tile">
                     <div class="widget-icon icon-calendar"></div>
                     <h3>Kalendarz</h3>
                 </a>
+
                 <a href="#" class="widget-tile">
                     <div class="widget-icon icon-grades"></div>
                     <h3>Oceny</h3>
                 </a>
+
                 <a href="#" class="widget-tile">
                     <div class="widget-icon icon-notes"></div>
                     <h3>Notatki</h3>
                 </a>
+
             </div>
         </main>
 
@@ -67,156 +72,31 @@
         </aside>
     </div>
 
-    <!-- MODAL -->
-    <div class="modal-overlay" id="userModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:none; justify-content:center; align-items:center; z-index:1000;">
-        <div class="modal" style="background:white; padding:30px; border-radius:20px; width:400px; box-shadow:0 10px 40px rgba(0,0,0,0.2);">
-            <h2 style="margin-top:0; color:#f04a4a;">Dodaj Studenta</h2>
-            <form id="addUserForm">
-                <div style="margin-bottom:15px;">
-                    <label style="display:block; margin-bottom:5px; font-weight:600;">Imię i Nazwisko</label>
-                    <input type="text" id="newUserName" placeholder="Jan Nowak" required style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; box-sizing: border-box;">
-                </div>
-                <div style="margin-bottom:15px;">
-                    <label style="display:block; margin-bottom:5px; font-weight:600;">Email</label>
-                    <input type="email" id="newUserEmail" placeholder="student@uczelnia.pl" required style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; box-sizing: border-box;">
-                </div>
-                <div style="margin-bottom:15px;">
-                    <label style="display:block; margin-bottom:5px; font-weight:600;">Hasło</label>
-                    <input type="password" id="newUserPass" value="password123" required style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; box-sizing: border-box;">
-                </div>
-                
-                <div style="margin-bottom:15px;">
-                    <label style="display:block; margin-bottom:5px; font-weight:600;">Szkoła</label>
-                    <select id="newUserSchool" required style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; background: white; box-sizing: border-box;">
-                        <option value="">Wybierz szkołę...</option>
-                    </select>
-                </div>
-
-                <div style="margin-bottom:15px;">
-                    <label style="display:block; margin-bottom:5px; font-weight:600;">Klasa</label>
-                    <select id="newUserClass" required style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; background: white; box-sizing: border-box;" disabled>
-                        <option value="">Najpierw wybierz szkołę...</option>
-                    </select>
-                </div>
-
-                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
-                    <button type="button" onclick="closeUserModal()" style="background:transparent; border:none; cursor:pointer; color:#888;">Anuluj</button>
-                    <button type="submit" style="background:#f04a4a; color:white; border:none; padding:10px 20px; border-radius:8px; cursor:pointer;">Dodaj</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg'; 
+        
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
-
-        function openUserModal() { 
-            document.getElementById('userModal').style.display = 'flex'; 
-            fetchSchools(); 
-        }
-        function closeUserModal() { document.getElementById('userModal').style.display = 'none'; }
-
-        async function fetchSchools() {
-            const schoolSelect = document.getElementById('newUserSchool');
-            if(schoolSelect.options.length > 1) return;
-            const { data: schools } = await _supabase.from('schools').select('id, name');
-            if (schools) {
-                schools.forEach(school => {
-                    const opt = document.createElement('option');
-                    opt.value = school.id;
-                    opt.textContent = school.name;
-                    schoolSelect.appendChild(opt);
-                });
-            }
-        }
-
-        async function fetchClasses(schoolId) {
-            const classSelect = document.getElementById('newUserClass');
-            classSelect.innerHTML = '<option value="">Wybierz klasę...</option>';
-            classSelect.disabled = true;
-            if (!schoolId) return;
-
-            const { data: classes } = await _supabase.from('classes').select('id, name').eq('school_id', schoolId);
-            if (classes && classes.length > 0) {
-                classSelect.disabled = false;
-                classes.forEach(cls => {
-                    const opt = document.createElement('option');
-                    opt.value = cls.id;
-                    opt.textContent = cls.name;
-                    classSelect.appendChild(opt);
-                });
-            } else {
-                classSelect.innerHTML = '<option value="">Brak klas w tej szkole</option>';
-            }
-        }
-
-        document.getElementById('newUserSchool').addEventListener('change', (e) => {
-            fetchClasses(e.target.value);
-        });
 
         document.addEventListener('DOMContentLoaded', async () => {
             const { data: { session } } = await _supabase.auth.getSession();
             if (!session) { window.location.href = 'login.html'; return; }
 
             const userId = session.user.id;
-            const { data: profile } = await _supabase.from('users').select('username, role, school_id').eq('id', userId).single();
+            
+            // Just fetch profile info
+            const { data: profile } = await _supabase
+                .from('users')
+                .select('username, role')
+                .eq('id', userId)
+                .single();
 
             if (profile) {
                 document.getElementById('profile-name-display').textContent = profile.username;
                 document.getElementById('profile-role-display').textContent = profile.role.toUpperCase();
                 document.getElementById('welcome-message').textContent = `Witaj, ${profile.username}!`;
-                if (['teacher', 'manager', 'admin'].includes(profile.role)) {
-                    document.getElementById('teacher-controls').style.display = 'block';
-                }
             }
-
-            // --- 3. ADD USER LOGIC (SAFE VERSION) ---
-            document.getElementById('addUserForm').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                
-                const name = document.getElementById('newUserName').value.trim();
-                const email = document.getElementById('newUserEmail').value.trim();
-                const password = document.getElementById('newUserPass').value.trim();
-                const schoolInput = document.getElementById('newUserSchool').value;
-                const classInput = document.getElementById('newUserClass').value;
-
-                // 🛑 SAFETY CHECK: Convert empty strings to NULL
-                const schoolId = schoolInput ? parseInt(schoolInput) : null;
-                const classId = classInput ? parseInt(classInput) : null;
-
-                if(!confirm(`Dodać studenta: ${name}?`)) return;
-
-                try {
-                    const tempClient = supabase.createClient(supabaseUrl, supabaseKey, {
-                        auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
-                    });
-
-                    const { data, error } = await tempClient.auth.signUp({
-                        email: email,
-                        password: password,
-                        options: {
-                            data: {
-                                username: name,
-                                role: 'student',
-                                school_id: schoolId, // Sending Safe Integer or Null
-                                class_id: classId    // Sending Safe Integer or Null
-                            }
-                        }
-                    });
-
-                    if (error) throw error;
-
-                    alert(`✅ Sukces! Dodano studenta: ${name}`);
-                    closeUserModal();
-                    
-                } catch (err) {
-                    alert("Błąd: " + err.message);
-                    console.error(err);
-                }
-            });
 
             document.getElementById('logoutBtn').addEventListener('click', async () => {
                 await _supabase.auth.signOut();
