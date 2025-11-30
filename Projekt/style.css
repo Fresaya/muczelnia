@@ -298,3 +298,81 @@ body.login-page {
 .complete-btn.is-completed:hover {
     background-color: #45a049;
 }
+
+/* =========================================
+   MOBILE COURSE PLAYER (Slide-Out Menu)
+   ========================================= */
+
+/* Default: Hide the mobile toggle button on Desktop */
+.mobile-menu-btn { display: none; }
+.mobile-overlay { display: none; }
+
+@media (max-width: 768px) {
+    /* 1. Reset the Grid Layout */
+    .course-layout {
+        display: block; /* No more grid */
+        height: auto;
+        overflow: visible;
+        position: relative;
+    }
+
+    /* 2. The Sidebar becomes a Slide-Out Drawer */
+    .course-sidebar {
+        position: fixed;
+        top: 0;
+        left: -100%; /* Hidden off-screen by default */
+        width: 85%; /* Take up most of the screen */
+        height: 100vh;
+        z-index: 1000;
+        transition: left 0.3s ease-in-out;
+        box-shadow: 4px 0 15px rgba(0,0,0,0.2);
+    }
+    
+    .course-sidebar.active {
+        left: 0; /* Slide in */
+    }
+
+    /* 3. The Main Content */
+    .course-content {
+        padding: 20px;
+        padding-top: 70px; /* Make room for the top bar */
+        height: auto;
+        overflow: visible;
+    }
+
+    /* 4. The Mobile Top Bar (Navigation) */
+    .mobile-menu-btn {
+        display: flex;
+        align-items: center;
+        position: fixed;
+        top: 15px;
+        left: 15px;
+        z-index: 900;
+        background: var(--panel-bg);
+        border: 1px solid var(--border-color);
+        padding: 10px 15px;
+        border-radius: 50px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        cursor: pointer;
+        font-weight: 600;
+        color: var(--text-main);
+    }
+    .mobile-menu-btn svg { width: 20px; height: 20px; margin-right: 8px; }
+
+    /* 5. Dark Overlay Background */
+    .mobile-overlay {
+        display: block;
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 999;
+        opacity: 0; pointer-events: none; /* Hidden */
+        transition: opacity 0.3s;
+    }
+    .mobile-overlay.active {
+        opacity: 1; pointer-events: all; /* Visible */
+    }
+
+    .lesson-card { padding: 25px; }
+    .lesson-title { font-size: 24px; }
+    .lesson-text { font-size: 16px; }
+}
