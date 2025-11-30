@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mUczelnia - Kurs</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="course-layout">
+        <aside class="course-sidebar">
+            <div class="sidebar-header">
+                <a href="dashboard.html" class="back-btn">←</a>
+                <h3 style="margin:0" id="course-title">Ładowanie...</h3>
+            </div>
+            <ul class="lesson-list" id="lesson-list">
+                </ul>
+        </aside>
+
+        <main class="course-content">
+            <div class="lesson-card" id="lesson-container">
+                <h1 class="lesson-title">Wybierz lekcję</h1>
+                <p class="lesson-text">Kliknij lekcję z menu po lewej stronie, aby rozpocząć.</p>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
+        const supabaseKey = 'YOUR_ANON_KEY_HERE'; // ⚠️ PASTE YOUR ANON KEY
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        // Get Course ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const courseId = urlParams.get('id');
+
+        let allLessons = [];
+        let currentLessonId = null;
+        let userId = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 1. Check Auth
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (!session) { window.location.href = 'index.html'; return; }
+            userId = session.user.id;
+
+            if (!courseId) { alert("Błąd: Brak ID kursu."); window.location.href = 'dashboard.html'; return; }
+
+            // 2. Fetch Course Info
+            const { data: course } = await _supabase.from('courses').select('title').eq('id', courseId).single();
+            if (course) document.getElementById('course-title').innerText = course.title;
+
+            // 3. Fetch Lessons & Progress
+            await loadLessons();
+        });
+
+        async function loadLessons() {
+            // A. Get Lessons
+            const { data: lessons, error } = await _supabase
+                .from('lessons')
+                .select('id, title, order_index')
+                .eq('course_id', courseId)
+                .order('order_index', { ascending: true });
+
+            if (error) { console.error(error); return; }
+            allLessons = lessons;
+
+            // B. Get Completed Lessons for this User
+            const { data: progress } = await _supabase
+                .from('user_lesson_progress')
+                .select('lesson_id, is_completed')
+                .eq('user_id', userId)
+                .eq('is_completed', true);
+            
+            // Create a Set of completed IDs for easy lookup
+            const completedIds = new Set(progress.map(p => p.lesson_id));
+
+            // C. Render List
+            const listEl = document.getElementById('lesson-list');
+            listEl.innerHTML = '';
+
+            lessons.forEach((lesson, index) => {
+                const isCompleted = completedIds.has(lesson.id);
+                const li = document.createElement('li');
+                li.className = `lesson-item ${isCompleted ? 'completed' : ''}`;
+                li.innerHTML = `
+                    <span>${index + 1}. ${lesson.title}</span>
+                    <span class="status-icon">${isCompleted ? '✔' : '○'}</span>
+                `;
+                li.onclick = () => loadLessonContent(lesson.id, li);
+                listEl.appendChild(li);
+            });
+        }
+
+        async function loadLessonContent(lessonId, liElement) {
+            currentLessonId = lessonId;
+            
+            // UI Updates
+            document.querySelectorAll('.lesson-item').forEach(el => el.classList.remove('active'));
+            liElement.classList.add('active');
+            
+            const container = document.getElementById('lesson-container');
+            container.innerHTML = '<p>Ładowanie treści...</p>';
+
+            // Fetch Content (Text)
+            // Join lesson_components -> content_text_blocks
+            const { data: components, error } = await _supabase
+                .from('lesson_components')
+                .select(`
+                    component_type,
+                    content_text_blocks ( content )
+                `)
+                .eq('lesson_id', lessonId)
+                .eq('component_type', 'text')
+                .single(); // Assuming 1 text block per lesson for simplicity
+
+            if (error || !components) {
+                container.innerHTML = '<h2>Błąd</h2><p>Nie znaleziono treści.</p>';
+                return;
+            }
+
+            // Render content
+            const text = components.content_text_blocks.content;
+            const currentLesson = allLessons.find(l => l.id === lessonId);
+
+            container.innerHTML = `
+                <h1 class="lesson-title">${currentLesson.title}</h1>
+                <div class="lesson-text">${text}</div>
+                <button class="complete-btn" onclick="markComplete()">Oznacz jako ukończone</button>
+            `;
+        }
+
+        async function markComplete() {
+            if (!currentLessonId) return;
+
+            // 1. Mark Lesson as Done in DB
+            const { error } = await _supabase
+                .from('user_lesson_progress')
+                .upsert({ 
+                    user_id: userId, 
+                    lesson_id: currentLessonId, 
+                    is_completed: true,
+                    completed_at: new Date()
+                });
+
+            if (error) {
+                alert("Błąd zapisu: " + error.message);
+                return;
+            }
+
+            // 2. Recalculate Course Percentage
+            await updateCourseProgress();
+
+            // 3. Refresh UI (show green checkmark)
+            await loadLessons(); 
+        }
+
+        async function updateCourseProgress() {
+            // Count total lessons
+            const total = allLessons.length;
+
+            // Count completed
+            const { count } = await _supabase
+                .from('user_lesson_progress')
+                .select('*', { count: 'exact', head: true })
+                .eq('user_id', userId)
+                .in('lesson_id', allLessons.map(l => l.id)) // Only lessons in THIS course
+                .eq('is_completed', true);
+
+            const percentage = Math.round((count / total) * 100);
+
+            // Update user_courses
+            await _supabase
+                .from('user_courses')
+                .update({ progress_percentage: percentage })
+                .eq('user_id', userId)
+                .eq('course_id', courseId);
+            
+            console.log(`Progress updated: ${percentage}%`);
+        }
+    </script>
+</body>
+</html>
