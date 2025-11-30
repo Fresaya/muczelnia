@@ -32,22 +32,15 @@
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg'; // ⚠️ PASTE YOUR KEY AGAIN
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        // Get Course ID from URL
         const urlParams = new URLSearchParams(window.location.search);
         const courseId = urlParams.get('id');
-
-        // 🛑 SAFETY CHECK:
-        // If ID is missing OR if ID is the string "undefined", kick them out.
-        if (!courseId || courseId === 'undefined') {
-            console.error("Invalid Course ID detected");
-            alert("Błąd: Nieprawidłowy identyfikator kursu.");
-            window.location.href = 'dashboard.html'; // Go back to safety
-            return; 
-        }
 
         let allLessons = [];
         let currentLessonId = null;
         let userId = null;
+        
+        // GLOBAL SET: Keeps track of which IDs are done { 201, 202, ... }
+        let completedSet = new Set(); 
 
         document.addEventListener('DOMContentLoaded', async () => {
             // 1. Check Auth
@@ -55,13 +48,18 @@
             if (!session) { window.location.href = 'index.html'; return; }
             userId = session.user.id;
 
-            if (!courseId) { alert("Błąd: Brak ID kursu."); window.location.href = 'dashboard.html'; return; }
+            // Safety Check
+            if (!courseId || courseId === 'undefined') {
+                alert("Błąd: Nieprawidłowy identyfikator kursu.");
+                window.location.href = 'dashboard.html';
+                return;
+            }
 
-            // 2. Fetch Course Info
+            // 2. Fetch Title
             const { data: course } = await _supabase.from('courses').select('title').eq('id', courseId).single();
             if (course) document.getElementById('course-title').innerText = course.title;
 
-            // 3. Fetch Lessons & Progress
+            // 3. Start Loading
             await loadLessons();
         });
 
@@ -76,23 +74,26 @@
             if (error) { console.error(error); return; }
             allLessons = lessons;
 
-            // B. Get Completed Lessons for this User
+            // B. Get Progress
             const { data: progress } = await _supabase
                 .from('user_lesson_progress')
                 .select('lesson_id, is_completed')
                 .eq('user_id', userId)
                 .eq('is_completed', true);
             
-            // Create a Set of completed IDs for easy lookup
-            const completedIds = new Set(progress.map(p => p.lesson_id));
+            // Update Global Set
+            completedSet = new Set(progress.map(p => p.lesson_id));
 
-            // C. Render List
+            // C. Render Sidebar List
             const listEl = document.getElementById('lesson-list');
             listEl.innerHTML = '';
 
             lessons.forEach((lesson, index) => {
-                const isCompleted = completedIds.has(lesson.id);
+                const isCompleted = completedSet.has(lesson.id);
                 const li = document.createElement('li');
+                
+                // Add ID to finding it easily later
+                li.id = `sidebar-item-${lesson.id}`;
                 li.className = `lesson-item ${isCompleted ? 'completed' : ''}`;
                 li.innerHTML = `
                     <span>${index + 1}. ${lesson.title}</span>
@@ -106,81 +107,111 @@
         async function loadLessonContent(lessonId, liElement) {
             currentLessonId = lessonId;
             
-            // UI Updates
+            // UI Sidebar Active State
             document.querySelectorAll('.lesson-item').forEach(el => el.classList.remove('active'));
             liElement.classList.add('active');
             
             const container = document.getElementById('lesson-container');
             container.innerHTML = '<p>Ładowanie treści...</p>';
 
-            // Fetch Content (Text)
-            // Join lesson_components -> content_text_blocks
-            const { data: components, error } = await _supabase
+            // Fetch Content
+            const { data: component, error } = await _supabase
                 .from('lesson_components')
-                .select(`
-                    component_type,
-                    content_text_blocks ( content )
-                `)
+                .select(`component_type, content_text_blocks ( content )`)
                 .eq('lesson_id', lessonId)
                 .eq('component_type', 'text')
-                .single(); // Assuming 1 text block per lesson for simplicity
+                .single();
 
-            if (error || !components) {
-                container.innerHTML = '<h2>Błąd</h2><p>Nie znaleziono treści.</p>';
+            if (error || !component || !component.content_text_blocks) {
+                container.innerHTML = '<h2>Błąd</h2><p>Nie znaleziono treści dla tej lekcji.</p>';
                 return;
             }
 
-            // Render content
-            const text = components.content_text_blocks.content;
+            const text = component.content_text_blocks.content;
             const currentLesson = allLessons.find(l => l.id === lessonId);
+            
+            // CHECK STATUS: Is it done?
+            const isDone = completedSet.has(lessonId);
 
             container.innerHTML = `
                 <h1 class="lesson-title">${currentLesson.title}</h1>
                 <div class="lesson-text">${text}</div>
-                <button class="complete-btn" onclick="markComplete()">Oznacz jako ukończone</button>
+                
+                <button 
+                    id="action-btn"
+                    class="complete-btn ${isDone ? 'is-completed' : ''}" 
+                    onclick="toggleComplete()">
+                    ${isDone ? '✔ Ukończono (Cofnij)' : 'Oznacz jako ukończone'}
+                </button>
             `;
         }
 
-        async function markComplete() {
+        async function toggleComplete() {
             if (!currentLessonId) return;
 
-            // 1. Mark Lesson as Done in DB
+            // 1. Calculate New Status (Opposite of current)
+            const oldStatus = completedSet.has(currentLessonId);
+            const newStatus = !oldStatus;
+
+            const btn = document.getElementById('action-btn');
+            btn.textContent = "Zapisywanie...";
+            btn.disabled = true;
+
+            // 2. UPSERT to Database (Updates if exists, Inserts if new)
             const { error } = await _supabase
                 .from('user_lesson_progress')
                 .upsert({ 
                     user_id: userId, 
                     lesson_id: currentLessonId, 
-                    is_completed: true,
-                    completed_at: new Date()
-                });
+                    is_completed: newStatus,
+                    completed_at: newStatus ? new Date() : null
+                }, { onConflict: 'user_id, lesson_id' }); // 🔑 Fixes the Duplicate Key Error
 
             if (error) {
                 alert("Błąd zapisu: " + error.message);
+                btn.disabled = false;
                 return;
             }
 
-            // 2. Recalculate Course Percentage
-            await updateCourseProgress();
+            // 3. Update Global Set
+            if (newStatus) {
+                completedSet.add(currentLessonId);
+            } else {
+                completedSet.delete(currentLessonId);
+            }
 
-            // 3. Refresh UI (show green checkmark)
-            await loadLessons(); 
+            // 4. Update Button UI
+            btn.disabled = false;
+            if (newStatus) {
+                btn.classList.add('is-completed');
+                btn.textContent = "✔ Ukończono (Cofnij)";
+            } else {
+                btn.classList.remove('is-completed');
+                btn.textContent = "Oznacz jako ukończone";
+            }
+
+            // 5. Update Sidebar UI (Checkmark)
+            const sidebarItem = document.getElementById(`sidebar-item-${currentLessonId}`);
+            if (sidebarItem) {
+                const icon = sidebarItem.querySelector('.status-icon');
+                if (newStatus) {
+                    sidebarItem.classList.add('completed');
+                    icon.textContent = '✔';
+                } else {
+                    sidebarItem.classList.remove('completed');
+                    icon.textContent = '○';
+                }
+            }
+
+            // 6. Recalculate Course Percentage
+            await updateCourseProgress();
         }
 
         async function updateCourseProgress() {
-            // Count total lessons
             const total = allLessons.length;
+            const completedCount = completedSet.size; // Faster than querying DB again
+            const percentage = Math.round((completedCount / total) * 100);
 
-            // Count completed
-            const { count } = await _supabase
-                .from('user_lesson_progress')
-                .select('*', { count: 'exact', head: true })
-                .eq('user_id', userId)
-                .in('lesson_id', allLessons.map(l => l.id)) // Only lessons in THIS course
-                .eq('is_completed', true);
-
-            const percentage = Math.round((count / total) * 100);
-
-            // Update user_courses
             await _supabase
                 .from('user_courses')
                 .update({ progress_percentage: percentage })
