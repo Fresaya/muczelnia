@@ -232,3 +232,59 @@ body.login-page {
     .nav-menu { display: none; }
     .logo-text span { display: inline; }
 }
+/* --- COURSE PLAYER LAYOUT --- */
+.course-layout {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Sidebar (Lesson List) */
+.course-sidebar {
+    background: var(--panel-bg);
+    border-right: 1px solid var(--border-color);
+    display: flex; flex-direction: column;
+}
+.sidebar-header {
+    padding: 20px; border-bottom: 1px solid var(--border-color);
+    display: flex; align-items: center; gap: 10px;
+}
+.back-btn { text-decoration: none; color: var(--text-muted); font-size: 20px; font-weight: bold; }
+.back-btn:hover { color: var(--accent-color); }
+
+.lesson-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex-grow: 1; }
+.lesson-item {
+    padding: 15px 20px; border-bottom: 1px solid var(--bg-color); cursor: pointer;
+    display: flex; justify-content: space-between; align-items: center; transition: background 0.2s;
+}
+.lesson-item:hover { background: var(--hover-bg); }
+.lesson-item.active { background: rgba(240, 74, 74, 0.1); border-left: 4px solid var(--accent-color); }
+.lesson-item.completed .status-icon { color: green; }
+.status-icon { color: #ccc; font-size: 18px; }
+
+/* Main Content Area */
+.course-content {
+    padding: 40px; overflow-y: auto; background: var(--bg-color);
+}
+.lesson-card {
+    background: var(--panel-bg); padding: 40px; border-radius: 20px; box-shadow: var(--shadow);
+    max-width: 800px; margin: 0 auto;
+}
+.lesson-title { font-size: 28px; margin-top: 0; color: var(--text-main); }
+.lesson-text { font-size: 18px; line-height: 1.6; color: #444; margin: 20px 0; }
+
+.complete-btn {
+    background: var(--accent-color); color: white; border: none; padding: 15px 30px;
+    font-size: 16px; border-radius: 50px; cursor: pointer; margin-top: 30px; float: right;
+    transition: background 0.3s;
+}
+.complete-btn:hover { background: #d03a3a; }
+.complete-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+/* Mobile */
+@media (max-width: 768px) {
+    .course-layout { grid-template-columns: 1fr; }
+    .course-sidebar { height: 200px; order: 2; border-top: 1px solid var(--border-color); }
+    .course-content { order: 1; height: calc(100vh - 200px); }
+}
