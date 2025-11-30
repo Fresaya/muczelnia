@@ -25,41 +25,38 @@
                     <h1 id="welcome-message">Witaj!</h1>
                     <p>Wybierz moduł, aby kontynuować.</p>
                 </div>
+                <!-- ADD USER BUTTON (Hidden by default) -->
+                <div id="teacher-controls" style="display:none;">
+                    <button class="admin-btn" onclick="openUserModal()" style="background:var(--text-main); color:white; border:none; padding:10px 20px; border-radius:8px; cursor:pointer; font-weight:bold;">
+                        + Dodaj Studenta
+                    </button>
+                </div>
             </div>
 
             <!-- STATIC DASHBOARD GRID -->
             <div class="dashboard-grid">
-                
-                <!-- 1. LINK TO COURSES LIST -->
                 <a href="courses_list.html" class="widget-tile">
                     <div class="widget-icon icon-course-active"></div>
                     <h3>Moje Kursy</h3>
                     <p class="course-meta">Przejdź do listy zajęć</p>
                 </a>
-
-                <!-- 2. QUIZZES (Placeholder) -->
                 <a href="#" class="widget-tile" onclick="alert('Moduł ćwiczeń w budowie!')">
                     <div class="widget-icon icon-notes"></div>
                     <h3>Ćwiczenia</h3>
                     <p class="course-meta">Testy i Quizy</p>
                 </a>
-
-                <!-- 3. OTHER TOOLS -->
                 <a href="#" class="widget-tile">
                     <div class="widget-icon icon-calendar"></div>
                     <h3>Kalendarz</h3>
                 </a>
-
                 <a href="#" class="widget-tile">
                     <div class="widget-icon icon-grades"></div>
                     <h3>Oceny</h3>
                 </a>
-
                 <a href="#" class="widget-tile">
                     <div class="widget-icon icon-notes"></div>
                     <h3>Notatki</h3>
                 </a>
-
             </div>
         </main>
 
@@ -72,24 +69,54 @@
         </aside>
     </div>
 
+    <!-- MODAL: ADD STUDENT -->
+    <div class="modal-overlay" id="userModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:none; justify-content:center; align-items:center; z-index:1000;">
+        <div class="modal" style="background:white; padding:30px; border-radius:20px; width:400px; box-shadow:0 10px 40px rgba(0,0,0,0.2);">
+            <h2 style="margin-top:0; color:#f04a4a;">Dodaj Studenta</h2>
+            <form id="addUserForm">
+                <div style="margin-bottom:15px;">
+                    <label style="display:block; margin-bottom:5px; font-weight:600;">Imię i Nazwisko</label>
+                    <input type="text" id="newUserName" placeholder="Jan Nowak" required style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc;">
+                </div>
+                <div style="margin-bottom:15px;">
+                    <label style="display:block; margin-bottom:5px; font-weight:600;">Email</label>
+                    <input type="email" id="newUserEmail" placeholder="student@uczelnia.pl" required style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc;">
+                </div>
+                <div style="margin-bottom:15px;">
+                    <label style="display:block; margin-bottom:5px; font-weight:600;">Hasło</label>
+                    <input type="password" id="newUserPass" value="password123" required style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc;">
+                </div>
+                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+                    <button type="button" onclick="closeUserModal()" style="background:transparent; border:none; cursor:pointer; color:#888;">Anuluj</button>
+                    <button type="submit" style="background:#f04a4a; color:white; border:none; padding:10px 20px; border-radius:8px; cursor:pointer;">Dodaj</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
-        // ✅ KEY INSERTED BELOW
+        // ✅ KEY INSERTED
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg'; 
         
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
+        // --- 1. MODAL LOGIC ---
+        function openUserModal() { document.getElementById('userModal').style.display = 'flex'; }
+        function closeUserModal() { document.getElementById('userModal').style.display = 'none'; }
+
+        // --- 2. MAIN LOGIC ---
         document.addEventListener('DOMContentLoaded', async () => {
             const { data: { session } } = await _supabase.auth.getSession();
             if (!session) { window.location.href = 'index.html'; return; }
 
             const userId = session.user.id;
             
-            // Just fetch profile info, no courses needed here anymore
+            // Fetch Profile
             const { data: profile } = await _supabase
                 .from('users')
-                .select('username, role')
+                .select('username, role, school_id') // We need school_id to assign to new student
                 .eq('id', userId)
                 .single();
 
@@ -97,8 +124,60 @@
                 document.getElementById('profile-name-display').textContent = profile.username;
                 document.getElementById('profile-role-display').textContent = profile.role.toUpperCase();
                 document.getElementById('welcome-message').textContent = `Witaj, ${profile.username}!`;
+
+                // SHOW ADD BUTTON if Teacher, Manager or Admin
+                if (['teacher', 'manager', 'admin'].includes(profile.role)) {
+                    document.getElementById('teacher-controls').style.display = 'block';
+                }
             }
 
+            // --- 3. ADD USER LOGIC ---
+            document.getElementById('addUserForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const name = document.getElementById('newUserName').value;
+                const email = document.getElementById('newUserEmail').value;
+                const password = document.getElementById('newUserPass').value;
+
+                if(!confirm(`Dodać studenta: ${name}?`)) return;
+
+                try {
+                    // 🛑 TRICK: Create a Temporary Client
+                    // This prevents the 'signUp' function from kicking the Teacher out of the dashboard.
+                    const tempClient = supabase.createClient(supabaseUrl, supabaseKey, {
+                        auth: {
+                            persistSession: false, // Don't save session to browser
+                            autoRefreshToken: false,
+                            detectSessionInUrl: false
+                        }
+                    });
+
+                    // ⚡ SIGN UP (This triggers the SQL automation)
+                    const { data, error } = await tempClient.auth.signUp({
+                        email: email,
+                        password: password,
+                        options: {
+                            data: {
+                                username: name,
+                                role: 'student',
+                                school_id: profile.school_id, // Assign to Teacher's school
+                                class_id: 1 // Default class for now
+                            }
+                        }
+                    });
+
+                    if (error) throw error;
+
+                    alert(`✅ Sukces! Dodano studenta: ${name}`);
+                    closeUserModal();
+                    
+                } catch (err) {
+                    alert("Błąd: " + err.message);
+                    console.error(err);
+                }
+            });
+
+            // Logout
             document.getElementById('logoutBtn').addEventListener('click', async () => {
                 await _supabase.auth.signOut();
                 window.location.href = 'index.html';
