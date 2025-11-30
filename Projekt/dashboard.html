@@ -1,71 +1,65 @@
 <!DOCTYPE html>
 <html lang="pl">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>mUczelnia - Pulpit</title>
     <link rel="stylesheet" href="style.css">
-    
 </head>
-
 <body>
 
     <div class="layout-wrapper">
-
         <aside class="sidebar-left">
             <div class="top-section">
-                <div class="brand-area">
-                    <a href="#" class="logo-text"><span>m</span>Uczelnia</a>
-                </div>
-
+                <div class="brand-area"><a href="#" class="logo-text"><span>m</span>Uczelnia</a></div>
                 <ul class="nav-menu">
-                    <li class="nav-item">
-                        <a href="#" class="nav-link active">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                                <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                            </svg>
-                            <span>Pulpit</span>
-                        </a>
-                    </li>
-                    <li class="nav-item"><a href="#" class="nav-link"><svg xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
-                                stroke-linejoin="round">
-                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                <line x1="16" y1="2" x2="16" y2="6"></line>
-                                <line x1="8" y1="2" x2="8" y2="6"></line>
-                                <line x1="3" y1="10" x2="21" y2="10"></line>
-                            </svg><span>Plan zajęć</span></a></li>
-                    <li class="nav-item"><a href="#" class="nav-link"><svg xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
-                                stroke-linejoin="round">
-                                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-                            </svg><span>Biblioteka</span></a></li>
+                    <li class="nav-item"><a href="#" class="nav-link active"><span>Pulpit</span></a></li>
                 </ul>
             </div>
-
-            <div class="logout-btn" id="logoutBtn">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                    <polyline points="16 17 21 12 16 7"></polyline>
-                    <line x1="21" y1="12" x2="9" y2="12"></line>
-                </svg>
-                <span style="margin-left: 10px;">Wyloguj</span>
-            </div>
+            <div class="logout-btn" id="logoutBtn"><span>Wyloguj</span></div>
         </aside>
 
         <main class="main-content">
             <div class="welcome-header">
-                <h1 id="welcome-message">Witaj!</h1>
-                <p>Oto podsumowanie Twoich aktywności na uczelni.</p>
+                <div>
+                    <h1 id="welcome-message">Witaj!</h1>
+                    <p>Wybierz moduł, aby kontynuować.</p>
+                </div>
             </div>
 
-            <div class="dashboard-grid" id="dashboard-grid">
-                <div style="grid-column: 1/-1; text-align:center; color:#888;">Ładowanie danych...</div>
+            <!-- STATIC DASHBOARD GRID -->
+            <div class="dashboard-grid">
+                
+                <!-- 1. LINK TO COURSES LIST -->
+                <a href="courses_list.html" class="widget-tile">
+                    <div class="widget-icon icon-course-active"></div>
+                    <h3>Moje Kursy</h3>
+                    <p class="course-meta">Przejdź do listy zajęć</p>
+                </a>
+
+                <!-- 2. QUIZZES (Placeholder) -->
+                <a href="#" class="widget-tile" onclick="alert('Moduł ćwiczeń w budowie!')">
+                    <div class="widget-icon icon-notes"></div>
+                    <h3>Ćwiczenia</h3>
+                    <p class="course-meta">Testy i Quizy</p>
+                </a>
+
+                <!-- 3. OTHER TOOLS -->
+                <a href="#" class="widget-tile">
+                    <div class="widget-icon icon-calendar"></div>
+                    <h3>Kalendarz</h3>
+                </a>
+
+                <a href="#" class="widget-tile">
+                    <div class="widget-icon icon-grades"></div>
+                    <h3>Oceny</h3>
+                </a>
+
+                <a href="#" class="widget-tile">
+                    <div class="widget-icon icon-notes"></div>
+                    <h3>Notatki</h3>
+                </a>
+
             </div>
         </main>
 
@@ -73,144 +67,43 @@
             <div class="profile-card">
                 <div class="avatar"></div>
                 <h2 class="profile-name" id="profile-name-display">...</h2>
-                <p class="profile-id" id="profile-email-display">...</p>
-            </div>
-
-            <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 30px 0;">
-
-            <div class="side-section">
-                <div class="section-title">Następne zajęcia</div>
-                <div class="next-class-card">
-                    <span class="class-time">10:15 - 11:45</span>
-                    <h4 class="class-name">Analiza Matematyczna</h4>
-                    <div class="class-location">Sala 304, Budynek C</div>
-                </div>
-            </div>
-
-            <div class="side-section">
-                <div class="section-title">Ostatnie powiadomienia</div>
-                <div class="notif-item">
-                    <div class="notif-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                            stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                        </svg></div>
-                    <div class="notif-content">
-                        <h4>Zmiana sali</h4>
-                        <p>Fizyka przeniesiona do s. 12</p>
-                    </div>
-                </div>
+                <p class="profile-id" id="profile-role-display">...</p>
             </div>
         </aside>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // 1. CONFIGURATION
         const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg'; // ⚠️ PASTE YOUR KEY AGAIN
+        // ✅ KEY INSERTED BELOW
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg'; 
+        
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
         document.addEventListener('DOMContentLoaded', async () => {
-
-            // A. CHECK AUTH
             const { data: { session } } = await _supabase.auth.getSession();
-            if (!session) {
-                window.location.href = 'login.html'; // Redirect to login
-                return;
-            }
+            if (!session) { window.location.href = 'index.html'; return; }
 
-            // B. FETCH USER PROFILE
             const userId = session.user.id;
-            const profileNameEl = document.getElementById('profile-name-display');
-            const profileEmailEl = document.getElementById('profile-email-display');
-            const welcomeMsgEl = document.getElementById('welcome-message');
-
-            // Set email immediately from session
-            profileEmailEl.textContent = session.user.email;
-
+            
+            // Just fetch profile info, no courses needed here anymore
             const { data: profile } = await _supabase
                 .from('users')
-                .select('username')
+                .select('username, role')
                 .eq('id', userId)
                 .single();
 
             if (profile) {
-                profileNameEl.textContent = profile.username;
-                welcomeMsgEl.textContent = `Witaj, ${profile.username}!`;
+                document.getElementById('profile-name-display').textContent = profile.username;
+                document.getElementById('profile-role-display').textContent = profile.role.toUpperCase();
+                document.getElementById('welcome-message').textContent = `Witaj, ${profile.username}!`;
             }
 
-        // C. FETCH & RENDER COURSES
-            // We specifically ask for 'course_id' here
-            const { data: enrollments, error } = await _supabase
-                .from('user_courses')
-                .select('course_id, progress_percentage, courses ( title, description )')
-                .eq('user_id', userId);
-
-            if (error) console.error("Supabase Error:", error);
-
-            const gridContainer = document.getElementById('dashboard-grid');
-            gridContainer.innerHTML = ''; 
-
-            if (enrollments && enrollments.length > 0) {
-                enrollments.forEach(item => {
-                    const course = item.courses;
-                    const tile = document.createElement('a');
-                    
-                    // DEBUG: If this prints 'undefined', the select query above is wrong
-                    console.log("Course ID is:", item.course_id); 
-
-                    // ✅ LINK CREATION
-                    tile.href = `course.html?id=${item.course_id}`; 
-                    
-                    tile.className = 'widget-tile';
-                    tile.innerHTML = `
-                        <div class="widget-icon icon-course-active"></div>
-                        <h3>${course.title}</h3>
-                        <div class="progress-track">
-                            <div class="progress-fill" style="width: ${item.progress_percentage}%"></div>
-                        </div>
-                        <div class="course-meta">${item.progress_percentage}% Ukończono</div>
-                    `;
-                    gridContainer.appendChild(tile);
-                });
-            } else {
-                 gridContainer.innerHTML += `<div class="widget-tile" style="grid-column:1/-1;"><h3>Brak aktywnych kursów</h3></div>`;
-            }
-
-            // 2. Append Static Tools (Visuals)
-            // These don't exist in DB yet, but we keep them for UI completeness
-            const staticTools = [
-                { title: 'Kalendarz', icon: 'icon-calendar' },
-                { title: 'Oceny', icon: 'icon-grades' },
-                { title: 'Notatki', icon: 'icon-notes' }
-            ];
-
-            staticTools.forEach(tool => {
-                const tile = document.createElement('a');
-                tile.href = '#';
-                tile.className = 'widget-tile';
-                tile.innerHTML = `
-                    <div class="widget-icon ${tool.icon}"></div>
-                    <h3>${tool.title}</h3>
-                `;
-                gridContainer.appendChild(tile);
-            });
-
-            // D. LOGOUT LOGIC
             document.getElementById('logoutBtn').addEventListener('click', async () => {
                 await _supabase.auth.signOut();
-                window.location.href = 'login.html';
+                window.location.href = 'index.html';
             });
         });
     </script>
 </body>
-
-
 </html>
-
-
-
-
-
