@@ -109,7 +109,7 @@
         // --- 2. MAIN LOGIC ---
         document.addEventListener('DOMContentLoaded', async () => {
             const { data: { session } } = await _supabase.auth.getSession();
-            if (!session) { window.location.href = 'index.html'; return; }
+            if (!session) { window.location.href = 'login.html'; return; }
 
             const userId = session.user.id;
             
@@ -180,9 +180,10 @@
             // Logout
             document.getElementById('logoutBtn').addEventListener('click', async () => {
                 await _supabase.auth.signOut();
-                window.location.href = 'index.html';
+                window.location.href = 'login.html';
             });
         });
     </script>
 </body>
 </html>
+
