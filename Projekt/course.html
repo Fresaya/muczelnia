@@ -8,11 +8,21 @@
 </head>
 <body>
 
+    <div class="mobile-overlay" id="mobile-overlay" onclick="toggleSidebar()"></div>
+
+    <div class="mobile-menu-btn" onclick="toggleSidebar()">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+        Lista Lekcji
+    </div>
+
     <div class="course-layout">
-        <aside class="course-sidebar">
+        <aside class="course-sidebar" id="course-sidebar">
             <div class="sidebar-header">
-                <a href="dashboard.html" class="back-btn">←</a>
-                <h3 style="margin:0" id="course-title">Ładowanie...</h3>
+                <a href="dashboard.html" class="back-btn">← Wróć</a>
+                <h3 style="margin:0; font-size:16px;" id="course-title">Ładowanie...</h3>
+                <span onclick="toggleSidebar()" style="margin-left:auto; cursor:pointer; font-size:24px; display:block; padding:0 10px;">&times;</span>
             </div>
             <ul class="lesson-list" id="lesson-list">
                 </ul>
@@ -21,11 +31,10 @@
         <main class="course-content">
             <div class="lesson-card" id="lesson-container">
                 <h1 class="lesson-title">Wybierz lekcję</h1>
-                <p class="lesson-text">Kliknij lekcję z menu po lewej stronie, aby rozpocząć.</p>
+                <p class="lesson-text">Kliknij przycisk "Lista Lekcji" powyżej, aby zobaczyć spis treści.</p>
             </div>
         </main>
     </div>
-
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
