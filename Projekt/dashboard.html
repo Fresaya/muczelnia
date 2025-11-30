@@ -141,28 +141,29 @@
                 welcomeMsgEl.textContent = `Witaj, ${profile.username}!`;
             }
 
-            // C. FETCH & RENDER COURSES
-            // We added 'course_id' to the list so we can use it in the link
+        // C. FETCH & RENDER COURSES
+            // We specifically ask for 'course_id' here
             const { data: enrollments, error } = await _supabase
                 .from('user_courses')
-                .select(`
-                    course_id,                 
-                    progress_percentage,
-                    courses ( title, description )
-                `)
+                .select('course_id, progress_percentage, courses ( title, description )')
                 .eq('user_id', userId);
 
-            const gridContainer = document.getElementById('dashboard-grid');
-            gridContainer.innerHTML = ''; // Clear loading text
+            if (error) console.error("Supabase Error:", error);
 
-            // 1. Render Actual Courses
+            const gridContainer = document.getElementById('dashboard-grid');
+            gridContainer.innerHTML = ''; 
+
             if (enrollments && enrollments.length > 0) {
                 enrollments.forEach(item => {
-                    console.log(item);
                     const course = item.courses;
                     const tile = document.createElement('a');
                     
-                    tile.href = `course.html?id=${item.course_id}`;
+                    // DEBUG: If this prints 'undefined', the select query above is wrong
+                    console.log("Course ID is:", item.course_id); 
+
+                    // ✅ LINK CREATION
+                    tile.href = `course.html?id=${item.course_id}`; 
+                    
                     tile.className = 'widget-tile';
                     tile.innerHTML = `
                         <div class="widget-icon icon-course-active"></div>
@@ -175,8 +176,7 @@
                     gridContainer.appendChild(tile);
                 });
             } else {
-                // If no courses, show a placeholder
-                gridContainer.innerHTML += `<div class="widget-tile" style="grid-column:1/-1;"><h3>Brak aktywnych kursów</h3></div>`;
+                 gridContainer.innerHTML += `<div class="widget-tile" style="grid-column:1/-1;"><h3>Brak aktywnych kursów</h3></div>`;
             }
 
             // 2. Append Static Tools (Visuals)
@@ -209,6 +209,7 @@
 
 
 </html>
+
 
 
 
