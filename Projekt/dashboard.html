@@ -76,16 +76,33 @@
             <form id="addUserForm">
                 <div style="margin-bottom:15px;">
                     <label style="display:block; margin-bottom:5px; font-weight:600;">Imię i Nazwisko</label>
-                    <input type="text" id="newUserName" placeholder="Jan Nowak" required style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc;">
+                    <input type="text" id="newUserName" placeholder="Jan Nowak" required style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; box-sizing: border-box;">
                 </div>
                 <div style="margin-bottom:15px;">
                     <label style="display:block; margin-bottom:5px; font-weight:600;">Email</label>
-                    <input type="email" id="newUserEmail" placeholder="student@uczelnia.pl" required style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc;">
+                    <input type="email" id="newUserEmail" placeholder="student@uczelnia.pl" required style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; box-sizing: border-box;">
                 </div>
                 <div style="margin-bottom:15px;">
                     <label style="display:block; margin-bottom:5px; font-weight:600;">Hasło</label>
-                    <input type="password" id="newUserPass" value="password123" required style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc;">
+                    <input type="password" id="newUserPass" value="password123" required style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; box-sizing: border-box;">
                 </div>
+                
+                <!-- NEW: SCHOOL SELECT -->
+                <div style="margin-bottom:15px;">
+                    <label style="display:block; margin-bottom:5px; font-weight:600;">Szkoła</label>
+                    <select id="newUserSchool" required style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; background: white; box-sizing: border-box;">
+                        <option value="">Wybierz szkołę...</option>
+                    </select>
+                </div>
+
+                <!-- NEW: CLASS SELECT -->
+                <div style="margin-bottom:15px;">
+                    <label style="display:block; margin-bottom:5px; font-weight:600;">Klasa</label>
+                    <select id="newUserClass" required style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; background: white; box-sizing: border-box;" disabled>
+                        <option value="">Najpierw wybierz szkołę...</option>
+                    </select>
+                </div>
+
                 <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
                     <button type="button" onclick="closeUserModal()" style="background:transparent; border:none; cursor:pointer; color:#888;">Anuluj</button>
                     <button type="submit" style="background:#f04a4a; color:white; border:none; padding:10px 20px; border-radius:8px; cursor:pointer;">Dodaj</button>
@@ -102,9 +119,59 @@
         
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        // --- 1. MODAL LOGIC ---
-        function openUserModal() { document.getElementById('userModal').style.display = 'flex'; }
+        // --- 1. MODAL & DATA FETCHING LOGIC ---
+        function openUserModal() { 
+            document.getElementById('userModal').style.display = 'flex'; 
+            fetchSchools(); // Load schools when modal opens
+        }
         function closeUserModal() { document.getElementById('userModal').style.display = 'none'; }
+
+        async function fetchSchools() {
+            const schoolSelect = document.getElementById('newUserSchool');
+            // Only fetch if empty to save calls
+            if(schoolSelect.options.length > 1) return;
+
+            const { data: schools, error } = await _supabase.from('schools').select('id, name');
+            if (schools) {
+                schools.forEach(school => {
+                    const opt = document.createElement('option');
+                    opt.value = school.id;
+                    opt.textContent = school.name;
+                    schoolSelect.appendChild(opt);
+                });
+            }
+        }
+
+        async function fetchClasses(schoolId) {
+            const classSelect = document.getElementById('newUserClass');
+            classSelect.innerHTML = '<option value="">Wybierz klasę...</option>';
+            classSelect.disabled = true;
+
+            if (!schoolId) return;
+
+            const { data: classes, error } = await _supabase
+                .from('classes')
+                .select('id, name')
+                .eq('school_id', schoolId);
+
+            if (classes && classes.length > 0) {
+                classSelect.disabled = false;
+                classes.forEach(cls => {
+                    const opt = document.createElement('option');
+                    opt.value = cls.id;
+                    opt.textContent = cls.name;
+                    classSelect.appendChild(opt);
+                });
+            } else {
+                classSelect.innerHTML = '<option value="">Brak klas w tej szkole</option>';
+            }
+        }
+
+        // Listen for School selection changes to load Classes
+        document.getElementById('newUserSchool').addEventListener('change', (e) => {
+            fetchClasses(e.target.value);
+        });
+
 
         // --- 2. MAIN LOGIC ---
         document.addEventListener('DOMContentLoaded', async () => {
@@ -116,7 +183,7 @@
             // Fetch Profile
             const { data: profile } = await _supabase
                 .from('users')
-                .select('username, role, school_id') // We need school_id to assign to new student
+                .select('username, role, school_id') 
                 .eq('id', userId)
                 .single();
 
@@ -128,6 +195,9 @@
                 // SHOW ADD BUTTON if Teacher, Manager or Admin
                 if (['teacher', 'manager', 'admin'].includes(profile.role)) {
                     document.getElementById('teacher-controls').style.display = 'block';
+                    
+                    // Optimization: If teacher is assigned to a school, pre-select it later?
+                    // For now, we let them choose manually to be safe.
                 }
             }
 
@@ -138,21 +208,22 @@
                 const name = document.getElementById('newUserName').value;
                 const email = document.getElementById('newUserEmail').value;
                 const password = document.getElementById('newUserPass').value;
+                const schoolId = document.getElementById('newUserSchool').value;
+                const classId = document.getElementById('newUserClass').value;
 
                 if(!confirm(`Dodać studenta: ${name}?`)) return;
 
                 try {
                     // 🛑 TRICK: Create a Temporary Client
-                    // This prevents the 'signUp' function from kicking the Teacher out of the dashboard.
                     const tempClient = supabase.createClient(supabaseUrl, supabaseKey, {
                         auth: {
-                            persistSession: false, // Don't save session to browser
+                            persistSession: false, 
                             autoRefreshToken: false,
                             detectSessionInUrl: false
                         }
                     });
 
-                    // ⚡ SIGN UP (This triggers the SQL automation)
+                    // ⚡ SIGN UP 
                     const { data, error } = await tempClient.auth.signUp({
                         email: email,
                         password: password,
@@ -160,8 +231,8 @@
                             data: {
                                 username: name,
                                 role: 'student',
-                                school_id: profile.school_id, // Assign to Teacher's school
-                                class_id: 1 // Default class for now
+                                school_id: parseInt(schoolId), // Pass Selected School
+                                class_id: parseInt(classId)    // Pass Selected Class
                             }
                         }
                     });
@@ -186,4 +257,3 @@
     </script>
 </body>
 </html>
-
