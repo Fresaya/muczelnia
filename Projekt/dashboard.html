@@ -25,7 +25,6 @@
                     <h1 id="welcome-message">Witaj!</h1>
                     <p>Wybierz moduł, aby kontynuować.</p>
                 </div>
-                <!-- ADD USER BUTTON (Hidden by default) -->
                 <div id="teacher-controls" style="display:none;">
                     <button class="admin-btn" onclick="openUserModal()" style="background:var(--text-main); color:white; border:none; padding:10px 20px; border-radius:8px; cursor:pointer; font-weight:bold;">
                         + Dodaj Studenta
@@ -33,7 +32,6 @@
                 </div>
             </div>
 
-            <!-- STATIC DASHBOARD GRID -->
             <div class="dashboard-grid">
                 <a href="courses_list.html" class="widget-tile">
                     <div class="widget-icon icon-course-active"></div>
@@ -69,7 +67,7 @@
         </aside>
     </div>
 
-    <!-- MODAL: ADD STUDENT -->
+    <!-- MODAL -->
     <div class="modal-overlay" id="userModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:none; justify-content:center; align-items:center; z-index:1000;">
         <div class="modal" style="background:white; padding:30px; border-radius:20px; width:400px; box-shadow:0 10px 40px rgba(0,0,0,0.2);">
             <h2 style="margin-top:0; color:#f04a4a;">Dodaj Studenta</h2>
@@ -87,7 +85,6 @@
                     <input type="password" id="newUserPass" value="password123" required style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; box-sizing: border-box;">
                 </div>
                 
-                <!-- NEW: SCHOOL SELECT -->
                 <div style="margin-bottom:15px;">
                     <label style="display:block; margin-bottom:5px; font-weight:600;">Szkoła</label>
                     <select id="newUserSchool" required style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; background: white; box-sizing: border-box;">
@@ -95,7 +92,6 @@
                     </select>
                 </div>
 
-                <!-- NEW: CLASS SELECT -->
                 <div style="margin-bottom:15px;">
                     <label style="display:block; margin-bottom:5px; font-weight:600;">Klasa</label>
                     <select id="newUserClass" required style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; background: white; box-sizing: border-box;" disabled>
@@ -114,24 +110,19 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
-        // ✅ KEY INSERTED
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg'; 
-        
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        // --- 1. MODAL & DATA FETCHING LOGIC ---
         function openUserModal() { 
             document.getElementById('userModal').style.display = 'flex'; 
-            fetchSchools(); // Load schools when modal opens
+            fetchSchools(); 
         }
         function closeUserModal() { document.getElementById('userModal').style.display = 'none'; }
 
         async function fetchSchools() {
             const schoolSelect = document.getElementById('newUserSchool');
-            // Only fetch if empty to save calls
             if(schoolSelect.options.length > 1) return;
-
-            const { data: schools, error } = await _supabase.from('schools').select('id, name');
+            const { data: schools } = await _supabase.from('schools').select('id, name');
             if (schools) {
                 schools.forEach(school => {
                     const opt = document.createElement('option');
@@ -146,14 +137,9 @@
             const classSelect = document.getElementById('newUserClass');
             classSelect.innerHTML = '<option value="">Wybierz klasę...</option>';
             classSelect.disabled = true;
-
             if (!schoolId) return;
 
-            const { data: classes, error } = await _supabase
-                .from('classes')
-                .select('id, name')
-                .eq('school_id', schoolId);
-
+            const { data: classes } = await _supabase.from('classes').select('id, name').eq('school_id', schoolId);
             if (classes && classes.length > 0) {
                 classSelect.disabled = false;
                 classes.forEach(cls => {
@@ -167,62 +153,47 @@
             }
         }
 
-        // Listen for School selection changes to load Classes
         document.getElementById('newUserSchool').addEventListener('change', (e) => {
             fetchClasses(e.target.value);
         });
 
-
-        // --- 2. MAIN LOGIC ---
         document.addEventListener('DOMContentLoaded', async () => {
             const { data: { session } } = await _supabase.auth.getSession();
             if (!session) { window.location.href = 'login.html'; return; }
 
             const userId = session.user.id;
-            
-            // Fetch Profile
-            const { data: profile } = await _supabase
-                .from('users')
-                .select('username, role, school_id') 
-                .eq('id', userId)
-                .single();
+            const { data: profile } = await _supabase.from('users').select('username, role, school_id').eq('id', userId).single();
 
             if (profile) {
                 document.getElementById('profile-name-display').textContent = profile.username;
                 document.getElementById('profile-role-display').textContent = profile.role.toUpperCase();
                 document.getElementById('welcome-message').textContent = `Witaj, ${profile.username}!`;
-
-                // SHOW ADD BUTTON if Teacher, Manager or Admin
                 if (['teacher', 'manager', 'admin'].includes(profile.role)) {
                     document.getElementById('teacher-controls').style.display = 'block';
                 }
             }
 
-            // --- 3. ADD USER LOGIC ---
+            // --- 3. ADD USER LOGIC (SAFE VERSION) ---
             document.getElementById('addUserForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 
-                // ✅ ADDED .trim() TO FIX "INVALID EMAIL" ERROR
                 const name = document.getElementById('newUserName').value.trim();
                 const email = document.getElementById('newUserEmail').value.trim();
                 const password = document.getElementById('newUserPass').value.trim();
-                
-                const schoolId = document.getElementById('newUserSchool').value;
-                const classId = document.getElementById('newUserClass').value;
+                const schoolInput = document.getElementById('newUserSchool').value;
+                const classInput = document.getElementById('newUserClass').value;
+
+                // 🛑 SAFETY CHECK: Convert empty strings to NULL
+                const schoolId = schoolInput ? parseInt(schoolInput) : null;
+                const classId = classInput ? parseInt(classInput) : null;
 
                 if(!confirm(`Dodać studenta: ${name}?`)) return;
 
                 try {
-                    // 🛑 TRICK: Create a Temporary Client
                     const tempClient = supabase.createClient(supabaseUrl, supabaseKey, {
-                        auth: {
-                            persistSession: false, 
-                            autoRefreshToken: false,
-                            detectSessionInUrl: false
-                        }
+                        auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
                     });
 
-                    // ⚡ SIGN UP 
                     const { data, error } = await tempClient.auth.signUp({
                         email: email,
                         password: password,
@@ -230,8 +201,8 @@
                             data: {
                                 username: name,
                                 role: 'student',
-                                school_id: parseInt(schoolId), // Pass Selected School
-                                class_id: parseInt(classId)    // Pass Selected Class
+                                school_id: schoolId, // Sending Safe Integer or Null
+                                class_id: classId    // Sending Safe Integer or Null
                             }
                         }
                     });
@@ -247,7 +218,6 @@
                 }
             });
 
-            // Logout
             document.getElementById('logoutBtn').addEventListener('click', async () => {
                 await _supabase.auth.signOut();
                 window.location.href = 'login.html';
