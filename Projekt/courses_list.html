@@ -14,8 +14,10 @@
                 <div class="brand-area"><a href="dashboard.html" class="logo-text"><span>m</span>Uczelnia</a></div>
                 <ul class="nav-menu">
                     <li class="nav-item"><a href="dashboard.html" class="nav-link"><span>Pulpit</span></a></li>
-                    <!-- Active state for this page -->
+                    <!-- Active state -->
                     <li class="nav-item"><a href="#" class="nav-link active"><span>Moje Kursy</span></a></li>
+                    <!-- Link to Quizzes -->
+                    <li class="nav-item"><a href="quizzes_list.html" class="nav-link"><span>Ćwiczenia</span></a></li>
                 </ul>
             </div>
         </aside>
@@ -29,7 +31,6 @@
                 </div>
             </div>
 
-            <!-- DYNAMIC COURSE GRID -->
             <div class="dashboard-grid" id="courses-grid">
                 <div style="grid-column: 1/-1; text-align:center; color:#888;">Ładowanie kursów...</div>
             </div>
@@ -37,17 +38,13 @@
 
         <aside class="sidebar-right">
             <div class="profile-card">
-                <!-- Avatar Trigger -->
                 <div class="avatar" id="avatarTrigger" title="Kliknij, aby otworzyć opcje"></div>
-                
-                <!-- Dropdown Menu -->
                 <div class="dropdown-menu" id="profileDropdown">
                     <div class="dropdown-item" id="logoutBtn">
                         <div class="icon-logout"></div>
                         Wyloguj się
                     </div>
                 </div>
-
                 <h2 class="profile-name" id="profile-name-display">...</h2>
                 <p class="profile-id" id="profile-school-display" style="font-size:12px; color:#888; margin-top:2px;">...</p>
                 <p class="profile-id" id="profile-class-display" style="font-size:12px; color:#555; font-weight:bold; margin-top:2px;">...</p>
@@ -59,7 +56,6 @@
     <script>
         const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg';
-        
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
         document.addEventListener('DOMContentLoaded', async () => {
@@ -68,108 +64,75 @@
 
             const userId = session.user.id;
 
-            // 1. Fetch Profile (Get User's Class ID)
+            // Fetch Profile
             const { data: profile } = await _supabase
                 .from('users')
-                .select('username, school_id, class_id, schools(name), classes(name)')
+                .select('username, school_id, class_id, schools(name), classes(name), role')
                 .eq('id', userId)
                 .single();
             
             if (profile) {
                 document.getElementById('profile-name-display').textContent = profile.username;
-                if(profile.schools) {
-                    document.getElementById('profile-school-display').textContent = profile.schools.name;
-                }
-                if(profile.classes) {
-                    document.getElementById('profile-class-display').textContent = `Klasa: ${profile.classes.name}`;
-                } else {
-                    document.getElementById('profile-class-display').textContent = "Brak przypisanej klasy";
-                }
+                if(profile.schools) document.getElementById('profile-school-display').textContent = profile.schools.name;
+                if(profile.classes) document.getElementById('profile-class-display').textContent = `Klasa: ${profile.classes.name}`;
             }
 
-            // If user has no class (e.g. fresh account or admin), show empty or all
-            if (!profile.class_id && profile.role === 'student') {
-                document.getElementById('courses-grid').innerHTML = `
-                    <div class="widget-tile" style="grid-column:1/-1; text-align:center; padding:50px;">
-                        <h3>Brak klasy</h3>
-                        <p style="color:#888;">Poproś administratora o przypisanie Cię do klasy.</p>
-                    </div>`;
-                return;
-            }
-
-            // 2. FETCH COURSES (Include TYPE)
-        let query = _supabase
-            .from('course_classes')
-            .select('course_id, courses ( id, title, description, type )'); // Added type
-        
-        if (profile.role === 'admin' || profile.role === 'manager') {
-             const { data: allCourses } = await _supabase.from('courses').select('id, title, description, type');
-             renderCourses(allCourses ? allCourses.map(c => ({ courses: c })) : []);
-             return;
-        } else {
-            query = query.eq('class_id', profile.class_id);
-        }
-
-        const { data: linkedCourses } = await query;
-        renderCourses(linkedCourses);
-
-        function renderCourses(data) {
-            const gridContainer = document.getElementById('courses-grid');
-            gridContainer.innerHTML = ''; 
-
-            if (data && data.length > 0) {
-                data.forEach(item => {
-                    const course = item.courses;
-                    if (!course) return;
-
-                    const tile = document.createElement('a');
-                    tile.href = `course.html?id=${course.id}`; 
-                    tile.className = 'widget-tile';
-                    
-                    // ICON LOGIC
-                    let iconClass = 'icon-course-active'; // Default book
-                    let typeLabel = 'Kurs';
-                    
-                    if (course.type === 'quiz') {
-                        // Change icon for quiz (using SVG inline for reliability or different class)
-                        iconClass = 'icon-quiz'; // We can add this class or just swap HTML
-                        typeLabel = 'Quiz / Test';
-                    }
-
-                    // Custom SVG for Quiz if needed
-                    const iconHtml = course.type === 'quiz' 
-                        ? `<div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23333%22 stroke-width=%221.5%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><circle cx=%2212%22 cy=%2212%22 r=%2210%22></circle><path d=%22M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3%22></path><line x1=%2212%22 y1=%2217%22 x2=%2212.01%22 y2=%2217%22></line></svg>');"></div>`
-                        : `<div class="widget-icon icon-course-active"></div>`;
-
-                    tile.innerHTML = `
-                        ${iconHtml}
-                        <h3>${course.title}</h3>
-                        <div class="course-meta" style="margin-top:15px; color:${course.type==='quiz'?'#9C27B0':'#888'}">${typeLabel}</div>
-                    `;
-                    gridContainer.appendChild(tile);
-                });
+            // Fetch Data
+            let rawData = [];
+            
+            if (profile.role === 'admin' || profile.role === 'manager') {
+                 const { data: allCourses } = await _supabase.from('courses').select('id, title, description, type');
+                 rawData = allCourses ? allCourses.map(c => ({ courses: c })) : [];
             } else {
-                 gridContainer.innerHTML += `<div class="widget-tile" style="grid-column:1/-1;"><h3>Brak materiałów</h3></div>`;
+                if (!profile.class_id) {
+                    renderCourses([]); return;
+                }
+                const { data: linkedCourses } = await _supabase
+                    .from('course_classes')
+                    .select('course_id, courses ( id, title, description, type )')
+                    .eq('class_id', profile.class_id);
+                rawData = linkedCourses || [];
             }
-        }
 
-            // Dropdown & Logout Logic
+            renderCourses(rawData);
+
+            function renderCourses(data) {
+                const gridContainer = document.getElementById('courses-grid');
+                gridContainer.innerHTML = ''; 
+
+                // FILTER: Exclude quizzes
+                const courses = data.filter(item => item.courses && item.courses.type !== 'quiz');
+
+                if (courses.length > 0) {
+                    courses.forEach(item => {
+                        const course = item.courses;
+                        const tile = document.createElement('a');
+                        tile.href = `course.html?id=${course.id}`; 
+                        tile.className = 'widget-tile';
+                        
+                        tile.innerHTML = `
+                            <div class="widget-icon icon-course-active"></div>
+                            <h3>${course.title}</h3>
+                            <div class="course-meta" style="margin-top:15px;">Przejdź do kursu →</div>
+                        `;
+                        gridContainer.appendChild(tile);
+                    });
+                } else {
+                     gridContainer.innerHTML += `
+                        <div class="widget-tile" style="grid-column:1/-1; text-align:center; padding:50px;">
+                            <h3>Brak kursów</h3>
+                            <p style="color:#888;">Brak materiałów do wyświetlenia.</p>
+                        </div>`;
+                }
+            }
+
+            // Logout Logic
             const avatarTrigger = document.getElementById('avatarTrigger');
             const dropdown = document.getElementById('profileDropdown');
             const logoutBtn = document.getElementById('logoutBtn');
-
-            if(avatarTrigger && dropdown) {
-                avatarTrigger.addEventListener('click', (e) => { e.stopPropagation(); dropdown.classList.toggle('show'); });
-            }
-            window.addEventListener('click', () => {
-                if (dropdown && dropdown.classList.contains('show')) dropdown.classList.remove('show');
-            });
-            if(logoutBtn) {
-                logoutBtn.addEventListener('click', async () => {
-                    await _supabase.auth.signOut();
-                    window.location.href = 'login.html';
-                });
-            }
+            avatarTrigger.addEventListener('click', (e) => { e.stopPropagation(); dropdown.classList.toggle('show'); });
+            window.addEventListener('click', () => { if (dropdown.classList.contains('show')) dropdown.classList.remove('show'); });
+            logoutBtn.addEventListener('click', async () => { await _supabase.auth.signOut(); window.location.href = 'login.html'; });
         });
     </script>
 </body>
