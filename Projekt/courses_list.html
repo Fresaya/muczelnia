@@ -18,7 +18,6 @@
                     <li class="nav-item"><a href="#" class="nav-link active"><span>Moje Kursy</span></a></li>
                 </ul>
             </div>
-            <!-- Old Logout button removed -->
         </aside>
 
         <main class="main-content">
@@ -26,7 +25,7 @@
                 <div>
                     <a href="dashboard.html" style="text-decoration:none; color:#888; font-size:14px;">← Wróć do pulpitu</a>
                     <h1>Moje Kursy</h1>
-                    <p>Lista przedmiotów dostępnych dla Twojej klasy.</p>
+                    <p>Lista przedmiotów przypisanych do Twojej klasy.</p>
                 </div>
             </div>
 
@@ -51,6 +50,7 @@
 
                 <h2 class="profile-name" id="profile-name-display">...</h2>
                 <p class="profile-id" id="profile-school-display" style="font-size:12px; color:#888; margin-top:2px;">...</p>
+                <p class="profile-id" id="profile-class-display" style="font-size:12px; color:#555; font-weight:bold; margin-top:2px;">...</p>
             </div>
         </aside>
     </div>
@@ -68,10 +68,10 @@
 
             const userId = session.user.id;
 
-            // 1. Fetch Profile (School & Class is crucial now)
+            // 1. Fetch Profile (Get User's Class ID)
             const { data: profile } = await _supabase
                 .from('users')
-                .select('username, school_id, class_id, schools(name)')
+                .select('username, school_id, class_id, schools(name), classes(name)')
                 .eq('id', userId)
                 .single();
             
@@ -80,64 +80,76 @@
                 if(profile.schools) {
                     document.getElementById('profile-school-display').textContent = profile.schools.name;
                 }
+                if(profile.classes) {
+                    document.getElementById('profile-class-display').textContent = `Klasa: ${profile.classes.name}`;
+                } else {
+                    document.getElementById('profile-class-display').textContent = "Brak przypisanej klasy";
+                }
             }
 
-            // 2. FETCH AVAILABLE COURSES
-            // We fetch from 'courses' table. RLS (Security Policy) automatically filters 
-            // so we only receive courses for our School/Class.
-            const { data: availableCourses, error: courseError } = await _supabase
-                .from('courses')
-                .select('id, title, description, school_id, class_id');
-
-            // 3. FETCH PROGRESS (Separately)
-            // We check which of these courses the user has actually started
-            const { data: myProgress } = await _supabase
-                .from('user_courses')
-                .select('course_id, progress_percentage')
-                .eq('user_id', userId);
-
-            // Create a map for fast lookup: { courseId: percentage }
-            const progressMap = {};
-            if (myProgress) {
-                myProgress.forEach(p => progressMap[p.course_id] = p.progress_percentage);
-            }
-
-            // 4. RENDER
-            const gridContainer = document.getElementById('courses-grid');
-            gridContainer.innerHTML = ''; 
-
-            if (availableCourses && availableCourses.length > 0) {
-                availableCourses.forEach(course => {
-                    const progress = progressMap[course.id] || 0; // Default to 0% if not started
-                    
-                    const tile = document.createElement('a');
-                    
-                    // Link to the lesson player (automatically creates enrollment on first click if handled by backend, 
-                    // or we just view it since we have access)
-                    tile.href = `course.html?id=${course.id}`; 
-                    
-                    tile.className = 'widget-tile';
-                    
-                    // Visual tweak: Show "Start" if 0%, else show percentage
-                    const statusText = progress === 0 ? "Rozpocznij" : `${progress}% Ukończono`;
-                    const barWidth = progress > 0 ? progress : 5; // Minimal visual width
-
-                    tile.innerHTML = `
-                        <div class="widget-icon icon-course-active"></div>
-                        <h3>${course.title}</h3>
-                        <div class="progress-track">
-                            <div class="progress-fill" style="width: ${progress}%"></div>
-                        </div>
-                        <div class="course-meta">${statusText}</div>
-                    `;
-                    gridContainer.appendChild(tile);
-                });
-            } else {
-                 gridContainer.innerHTML += `
+            // If user has no class (e.g. fresh account or admin), show empty or all
+            if (!profile.class_id && profile.role === 'student') {
+                document.getElementById('courses-grid').innerHTML = `
                     <div class="widget-tile" style="grid-column:1/-1; text-align:center; padding:50px;">
-                        <h3>Brak kursów</h3>
-                        <p style="color:#888;">Nie ma jeszcze kursów przypisanych do Twojej szkoły lub klasy.</p>
+                        <h3>Brak klasy</h3>
+                        <p style="color:#888;">Poproś administratora o przypisanie Cię do klasy.</p>
                     </div>`;
+                return;
+            }
+
+            // 2. FETCH COURSES VIA JUNCTION TABLE
+            // Query: "Give me rows from course_classes where class_id is MY class, and include the course details"
+            let query = _supabase
+                .from('course_classes')
+                .select('course_id, courses ( id, title, description )');
+            
+            // If student, filter by their class. If admin, maybe fetch all unique? 
+            // For now, let's show courses for the user's class context.
+            // If admin has no class_id, this might return empty, so let's handle admin separately or require class.
+            
+            if (profile.role === 'admin' || profile.role === 'manager') {
+                 // For Admins/Managers, let's just show ALL courses for now (or distinct ones)
+                 // Or keep it simple: fetch directly from courses table
+                 const { data: allCourses } = await _supabase.from('courses').select('id, title, description');
+                 renderCourses(allCourses ? allCourses.map(c => ({ courses: c })) : []); // Adapter format
+                 return;
+            } else {
+                query = query.eq('class_id', profile.class_id);
+            }
+
+            const { data: linkedCourses, error } = await query;
+
+            renderCourses(linkedCourses);
+
+            function renderCourses(data) {
+                const gridContainer = document.getElementById('courses-grid');
+                gridContainer.innerHTML = ''; 
+
+                if (data && data.length > 0) {
+                    data.forEach(item => {
+                        // The structure is { course_id: 1, courses: { title: '...', ... } }
+                        const course = item.courses;
+                        if (!course) return;
+
+                        const tile = document.createElement('a');
+                        tile.href = `course.html?id=${course.id}`; 
+                        tile.className = 'widget-tile';
+                        
+                        // NO PROGRESS BAR HERE
+                        tile.innerHTML = `
+                            <div class="widget-icon icon-course-active"></div>
+                            <h3>${course.title}</h3>
+                            <div class="course-meta" style="margin-top:15px;">Przejdź do kursu →</div>
+                        `;
+                        gridContainer.appendChild(tile);
+                    });
+                } else {
+                     gridContainer.innerHTML += `
+                        <div class="widget-tile" style="grid-column:1/-1; text-align:center; padding:50px;">
+                            <h3>Brak kursów</h3>
+                            <p style="color:#888;">Twoja klasa nie ma jeszcze przypisanych kursów.</p>
+                        </div>`;
+                }
             }
 
             // Dropdown & Logout Logic
