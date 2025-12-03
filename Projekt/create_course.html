@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mUczelnia - Kreator Kursu</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Layout copied from course.html for consistency -->
+    <div class="course-layout">
+        <aside class="course-sidebar">
+            <div class="sidebar-header">
+                <a href="dashboard.html" class="back-btn">← Anuluj</a>
+                <h3 style="margin:0; font-size:16px; margin-left: 10px;">Edytor Kursu</h3>
+            </div>
+            
+            <!-- List of lessons being created -->
+            <ul class="lesson-list" id="editor-lesson-list">
+                <!-- Items will be injected here JS -->
+            </ul>
+
+            <!-- Button to add new lesson -->
+            <div class="add-lesson-btn" onclick="addNewLesson()">+ Nowa Lekcja</div>
+        </aside>
+
+        <main class="course-content">
+            <div class="lesson-card">
+                
+                <!-- GLOBAL COURSE SETTINGS (Always visible) -->
+                <div style="border-bottom: 2px solid #eee; margin-bottom: 30px; padding-bottom: 20px;">
+                    <label style="font-size: 12px; color: #888; text-transform: uppercase; font-weight: bold;">Tytuł całego kursu</label>
+                    <input type="text" id="course-title-input" class="edit-input title-input" placeholder="Wpisz nazwę kursu..." oninput="updateCourseState()">
+                    
+                    <label style="font-size: 12px; color: #888; text-transform: uppercase; font-weight: bold;">Opis kursu</label>
+                    <textarea id="course-desc-input" class="edit-input" style="min-height: 80px;" placeholder="O czym jest ten kurs?" oninput="updateCourseState()"></textarea>
+                </div>
+
+                <!-- ACTIVE LESSON EDITOR -->
+                <div id="active-lesson-editor" style="display: none;">
+                    <h2 style="color: var(--accent-color);">Edycja Lekcji</h2>
+                    
+                    <label style="font-size: 12px; color: #888; text-transform: uppercase; font-weight: bold;">Tytuł lekcji</label>
+                    <input type="text" id="lesson-title-input" class="edit-input title-input" placeholder="Np. Wstęp do zagadnienia" oninput="updateLessonState()">
+
+                    <label style="font-size: 12px; color: #888; text-transform: uppercase; font-weight: bold;">Treść lekcji (HTML dozwolony)</label>
+                    <textarea id="lesson-content-input" class="edit-area" placeholder="Wpisz treść lekcji tutaj... Możesz używać znaczników <p>, <b>, <h3> etc." oninput="updateLessonState()"></textarea>
+                </div>
+
+                <div id="no-selection-msg" style="text-align: center; color: #888; padding: 50px;">
+                    Kliknij <b>+ Nowa Lekcja</b> po lewej stronie, aby rozpocząć dodawanie materiału.
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Floating Save Button -->
+    <button class="save-course-fab" onclick="saveCourseToDB()" id="saveBtn">
+        <span>💾 Zapisz Kurs</span>
+    </button>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg'; 
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        // --- STATE MANAGEMENT ---
+        // We keep everything in memory until "Save" is clicked
+        let courseData = {
+            title: "",
+            description: "",
+            author_id: null
+        };
+
+        // Array of lesson objects: { id: 1, title: "", content: "" }
+        let lessons = []; 
+        let activeLessonId = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 1. Check Admin Permissions
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (!session) { window.location.href = 'login.html'; return; }
+            
+            const userId = session.user.id;
+            courseData.author_id = userId;
+
+            const { data: profile } = await _supabase.from('users').select('role').eq('id', userId).single();
+            if (!profile || profile.role !== 'admin') {
+                alert("Brak uprawnień. Tylko administrator może tworzyć kursy.");
+                window.location.href = 'dashboard.html';
+            }
+        });
+
+        // --- CORE FUNCTIONS ---
+
+        function addNewLesson() {
+            const newId = Date.now(); // Simple temp ID
+            lessons.push({
+                id: newId,
+                title: "Nowa lekcja",
+                content: "<p>Wpisz treść tutaj...</p>"
+            });
+            renderSidebar();
+            selectLesson(newId);
+        }
+
+        function renderSidebar() {
+            const list = document.getElementById('editor-lesson-list');
+            list.innerHTML = '';
+
+            lessons.forEach((l, index) => {
+                const li = document.createElement('li');
+                li.className = `lesson-item ${l.id === activeLessonId ? 'active' : ''}`;
+                li.innerHTML = `
+                    <span>${index + 1}. ${l.title}</span>
+                    <span style="color:red; font-weight:bold;" onclick="removeLesson(event, ${l.id})">&times;</span>
+                `;
+                li.onclick = () => selectLesson(l.id);
+                list.appendChild(li);
+            });
+        }
+
+        function selectLesson(id) {
+            activeLessonId = id;
+            
+            // Show Editor
+            document.getElementById('no-selection-msg').style.display = 'none';
+            document.getElementById('active-lesson-editor').style.display = 'block';
+
+            // Fill inputs with data from memory
+            const lesson = lessons.find(l => l.id === id);
+            document.getElementById('lesson-title-input').value = lesson.title;
+            document.getElementById('lesson-content-input').value = lesson.content;
+
+            renderSidebar(); // Update active class
+        }
+
+        function removeLesson(e, id) {
+            e.stopPropagation();
+            if(confirm("Czy na pewno usunąć tę lekcję?")) {
+                lessons = lessons.filter(l => l.id !== id);
+                if (activeLessonId === id) {
+                    activeLessonId = null;
+                    document.getElementById('active-lesson-editor').style.display = 'none';
+                    document.getElementById('no-selection-msg').style.display = 'block';
+                }
+                renderSidebar();
+            }
+        }
+
+        // --- INPUT HANDLERS (Update Memory) ---
+
+        function updateCourseState() {
+            courseData.title = document.getElementById('course-title-input').value;
+            courseData.description = document.getElementById('course-desc-input').value;
+        }
+
+        function updateLessonState() {
+            if (!activeLessonId) return;
+            const lesson = lessons.find(l => l.id === activeLessonId);
+            lesson.title = document.getElementById('lesson-title-input').value;
+            lesson.content = document.getElementById('lesson-content-input').value;
+            
+            // Refresh sidebar to show new title live
+            renderSidebar();
+        }
+
+        // --- SAVE TO SUPABASE ---
+
+        async function saveCourseToDB() {
+            const btn = document.getElementById('saveBtn');
+            
+            // Validation
+            if (!courseData.title) return alert("Podaj tytuł kursu!");
+            if (lessons.length === 0) return alert("Kurs musi mieć przynajmniej jedną lekcję!");
+
+            btn.disabled = true;
+            btn.innerHTML = "⏳ Zapisywanie...";
+
+            try {
+                // 1. Insert Course
+                const { data: courseParams, error: courseError } = await _supabase
+                    .from('courses')
+                    .insert({
+                        title: courseData.title,
+                        description: courseData.description,
+                        author_id: courseData.author_id
+                    })
+                    .select()
+                    .single();
+
+                if (courseError) throw courseError;
+                const newCourseId = courseParams.id;
+
+                // 2. Insert Lessons Loop
+                // We use a regular for loop to keep order and handle async properly
+                for (let i = 0; i < lessons.length; i++) {
+                    const l = lessons[i];
+
+                    // A. Create Lesson
+                    const { data: lessonParams, error: lessonError } = await _supabase
+                        .from('lessons')
+                        .insert({
+                            course_id: newCourseId,
+                            title: l.title,
+                            order_index: i + 1
+                        })
+                        .select()
+                        .single();
+                    
+                    if (lessonError) throw lessonError;
+
+                    // B. Create Content Block
+                    const { data: contentParams, error: contentError } = await _supabase
+                        .from('content_text_blocks')
+                        .insert({ content: l.content })
+                        .select()
+                        .single();
+
+                    if (contentError) throw contentError;
+
+                    // C. Link Components
+                    const { error: componentError } = await _supabase
+                        .from('lesson_components')
+                        .insert({
+                            lesson_id: lessonParams.id,
+                            order_index: 1,
+                            component_type: 'text',
+                            content_text_block_id: contentParams.id
+                        });
+                    
+                    if (componentError) throw componentError;
+                }
+
+                alert("✅ Kurs został pomyślnie utworzony!");
+                window.location.href = 'dashboard.html';
+
+            } catch (err) {
+                console.error(err);
+                alert("Błąd podczas zapisywania: " + err.message);
+                btn.disabled = false;
+                btn.innerHTML = "💾 Zapisz Kurs";
+            }
+        }
+    </script>
+</body>
+</html>
