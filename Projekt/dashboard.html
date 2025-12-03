@@ -38,11 +38,11 @@
                     <p class="course-meta">Administrator</p>
                 </a>
                 
-                <!-- 2. ADMIN: DODAJ UŻYTKOWNIKA -->
+                <!-- 2. ADMIN & MANAGER: DODAJ UŻYTKOWNIKA -->
                 <div id="widget-add-user" class="widget-tile" style="display: none; border: 2px dashed #555; cursor: pointer;">
                     <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23555%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2%22></path><circle cx=%228.5%22 cy=%227%22 r=%224%22></circle><line x1=%2220%22 y1=%228%22 x2=%2220%22 y2=%2214%22></line><line x1=%2223%22 y1=%2211%22 x2=%2217%22 y2=%2211%22></line></svg>');"></div>
                     <h3 style="color: #555;">Dodaj Użytkownika</h3>
-                    <p class="course-meta">Administrator</p>
+                    <p class="course-meta">Admin & Manager</p>
                 </div>
 
                 <!-- 3. ADMIN ONLY: DODAJ SZKOŁĘ -->
@@ -257,10 +257,14 @@
                 if (currentUserRole === 'manager') {
                     show('widget-add-class');
                     show('widget-manage-students');
+                    // NEW: Allow manager to add users
+                    show('widget-add-user');
 
                     // Bind Actions
                     document.getElementById('widget-add-class').onclick = () => openClassModal();
                     document.getElementById('widget-manage-students').onclick = () => openManageStudentsModal();
+                    // NEW: Bind add user for manager
+                    document.getElementById('widget-add-user').onclick = () => openCreateUserModal();
                 }
             }
 
@@ -317,11 +321,40 @@
             else { alert("Klasa dodana!"); closeModal('addClassModal'); document.getElementById('addClassForm').reset(); }
         }
 
-        // 3. CREATE USER (UPDATED - No Class)
+        // 3. CREATE USER (UPDATED - No Class, Role Restricted)
         async function openCreateUserModal() {
             openModal('createUserModal');
             const schoolSelect = document.getElementById('new-user-school');
+            const roleSelect = document.getElementById('new-role');
+            
+            // ROLE FILTERING FOR MANAGER
+            if (currentUserRole === 'manager') {
+                Array.from(roleSelect.options).forEach(opt => {
+                    // Hide Admin and Manager options for Manager users
+                    if (opt.value === 'admin' || opt.value === 'manager') {
+                        opt.style.display = 'none';
+                        opt.disabled = true;
+                    } else {
+                        opt.style.display = '';
+                        opt.disabled = false;
+                    }
+                });
+                // Default to student if current value is hidden
+                if (roleSelect.value === 'admin' || roleSelect.value === 'manager') {
+                    roleSelect.value = 'student';
+                    roleSelect.dispatchEvent(new Event('change')); // Trigger logic
+                }
+            } else {
+                // Admin sees all
+                Array.from(roleSelect.options).forEach(opt => {
+                    opt.style.display = '';
+                    opt.disabled = false;
+                });
+            }
+
+            // FETCH SCHOOLS
             const { data: schools } = await _supabase.from('schools').select('id, name');
+            
             schoolSelect.innerHTML = '<option value="" selected>-- Brak / Ogólne --</option>';
             if (schools) {
                 schools.forEach(s => {
@@ -330,6 +363,13 @@
                     opt.textContent = s.name;
                     schoolSelect.appendChild(opt);
                 });
+            }
+
+            // Pre-select school if Manager has one
+            if (currentUserRole === 'manager' && currentUserSchoolId) {
+                schoolSelect.value = currentUserSchoolId;
+                // Optional: disable changing school if manager is tied to one
+                // schoolSelect.disabled = true; 
             }
         }
 
