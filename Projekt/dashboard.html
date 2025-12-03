@@ -202,7 +202,198 @@
             });
 
             // Logout Logic
+            document.getElementById('logoutBtn').addEventListener('click', async (e) => {<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mUczelnia - Pulpit</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="layout-wrapper">
+        <aside class="sidebar-left">
+            <div class="top-section">
+                <div class="brand-area"><a href="#" class="logo-text"><span>m</span>Uczelnia</a></div>
+                <ul class="nav-menu">
+                    <li class="nav-item"><a href="#" class="nav-link active"><span>Pulpit</span></a></li>
+                </ul>
+            </div>
+            <!-- Logout moved to top right -->
+        </aside>
+
+        <main class="main-content">
+            <div class="welcome-header">
+                <div>
+                    <h1 id="welcome-message">Witaj!</h1>
+                    <p>Wybierz moduł, aby kontynuować.</p>
+                </div>
+                
+                <!-- ACTION BUTTONS (Hidden by default, shown via JS) -->
+                <div class="header-actions">
+                    <button id="btnAddUser" class="action-btn btn-add-user" onclick="openModal('userModal')" style="display:none;">
+                        + Użytkownik
+                    </button>
+                    <button id="btnAddCourse" class="action-btn btn-add-course" onclick="openModal('courseModal')" style="display:none;">
+                        + Kurs
+                    </button>
+                </div>
+            </div>
+
+            <div class="dashboard-grid">
+                <a href="courses_list.html" class="widget-tile">
+                    <div class="widget-icon icon-course-active"></div>
+                    <h3>Moje Kursy</h3>
+                    <p class="course-meta">Przejdź do listy zajęć</p>
+                </a>
+                <a href="#" class="widget-tile" onclick="alert('Moduł ćwiczeń w budowie!')">
+                    <div class="widget-icon icon-notes"></div>
+                    <h3>Ćwiczenia</h3>
+                    <p class="course-meta">Testy i Quizy</p>
+                </a>
+                <a href="#" class="widget-tile">
+                    <div class="widget-icon icon-calendar"></div>
+                    <h3>Kalendarz</h3>
+                </a>
+                <a href="#" class="widget-tile">
+                    <div class="widget-icon icon-grades"></div>
+                    <h3>Oceny</h3>
+                </a>
+                <a href="#" class="widget-tile">
+                    <div class="widget-icon icon-notes"></div>
+                    <h3>Notatki</h3>
+                </a>
+            </div>
+        </main>
+
+        <aside class="sidebar-right">
+            <!-- PROFILE CARD (Clickable for Menu) -->
+            <div class="profile-card" onclick="toggleProfileMenu()">
+                <div class="avatar"></div>
+                <h2 class="profile-name" id="profile-name-display">...</h2>
+                <p class="profile-id" id="profile-role-display">...</p>
+                
+                <!-- DROPDOWN MENU -->
+                <div class="profile-dropdown-menu" id="profileMenu">
+                    <button class="dropdown-item" onclick="alert('Profil w budowie')">Edytuj Profil</button>
+                    <button class="dropdown-item danger" id="logoutBtn">Wyloguj się</button>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- MODAL: ADD USER -->
+    <div class="modal-overlay" id="userModal" onclick="if(event.target === this) closeModal('userModal')">
+        <div class="modal">
+            <h2>Dodaj Użytkownika</h2>
+            <form id="addUserForm">
+                <div class="form-group"><label>Imię i Nazwisko</label><input type="text" id="uName" required></div>
+                <div class="form-group"><label>Email</label><input type="email" id="uEmail" required></div>
+                <div class="form-group"><label>Hasło</label><input type="password" id="uPass" value="password123" required></div>
+                <div class="form-group"><label>Rola</label>
+                    <select id="uRole" style="width:100%; padding:10px; border-radius:8px;">
+                        <option value="student">Student</option>
+                        <option value="teacher">Nauczyciel</option>
+                        <option value="manager">Manager</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" onclick="closeModal('userModal')">Anuluj</button>
+                    <button type="submit" class="btn-save">Dodaj</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD COURSE -->
+    <div class="modal-overlay" id="courseModal" onclick="if(event.target === this) closeModal('courseModal')">
+        <div class="modal">
+            <h2>Nowy Kurs</h2>
+            <form id="addCourseForm">
+                <div class="form-group"><label>Tytuł Kursu</label><input type="text" id="cTitle" required></div>
+                <div class="form-group"><label>Opis</label><input type="text" id="cDesc" required></div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" onclick="closeModal('courseModal')">Anuluj</button>
+                    <button type="submit" class="btn-save">Utwórz</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg'; 
+        
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        // --- UI HELPERS ---
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        function toggleProfileMenu() { 
+            const menu = document.getElementById('profileMenu');
+            menu.classList.toggle('active');
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (!session) { window.location.href = 'login.html'; return; }
+
+            const userId = session.user.id;
+            
+            // Fetch Profile
+            const { data: profile } = await _supabase
+                .from('users')
+                .select('username, role, school_id')
+                .eq('id', userId)
+                .single();
+
+            if (profile) {
+                document.getElementById('profile-name-display').textContent = profile.username;
+                document.getElementById('profile-role-display').textContent = profile.role.toUpperCase();
+                document.getElementById('welcome-message').textContent = `Witaj, ${profile.username}!`;
+
+                // SHOW BUTTONS based on role (Visual Only)
+                if (['admin', 'manager', 'teacher'].includes(profile.role)) {
+                    document.getElementById('btnAddUser').style.display = 'flex';
+                }
+                if (profile.role === 'admin') {
+                    document.getElementById('btnAddCourse').style.display = 'flex';
+                }
+            }
+
+            // --- ADD USER HANDLER (VISUAL ONLY) ---
+            document.getElementById('addUserForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const name = document.getElementById('uName').value.trim();
+                
+                // 🛑 LOGIC DISABLED FOR NOW 🛑
+                // We just show a fake success message
+                alert(`(Symulacja) Użytkownik ${name} został dodany!`);
+                closeModal('userModal');
+            });
+
+            // --- ADD COURSE HANDLER (VISUAL ONLY) ---
+            document.getElementById('addCourseForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const title = document.getElementById('cTitle').value;
+
+                // 🛑 LOGIC DISABLED FOR NOW 🛑
+                alert(`(Symulacja) Kurs "${title}" został utworzony!`);
+                closeModal('courseModal');
+            });
+
+            // Logout Logic (Still Functional)
             document.getElementById('logoutBtn').addEventListener('click', async (e) => {
+                e.stopPropagation(); 
+                await _supabase.auth.signOut();
+                window.location.href = 'login.html';
+            });
+        });
+    </script>
+</body>
+</html>
                 e.stopPropagation(); // Stop click from bubbling to profile card toggle
                 await _supabase.auth.signOut();
                 window.location.href = 'login.html';
@@ -211,3 +402,4 @@
     </script>
 </body>
 </html>
+
