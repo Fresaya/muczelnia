@@ -5,6 +5,55 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>mUczelnia - Kurs</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* DODATKOWE STYLE DLA TRYBU EGZAMINACYJNEGO */
+        
+        /* Zwykły stan odpowiedzi */
+        .quiz-option {
+            background-color: #fff;
+            border: 2px solid #e0e0e0;
+            color: #333;
+            font-weight: 500;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        /* Stan zaznaczenia (Niebieski - "Mój wybór") */
+        .quiz-option.selected {
+            border-color: #2196F3;
+            background-color: #E3F2FD;
+            color: #0d47a1;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(33, 150, 243, 0.2);
+        }
+
+        /* Raport końcowy - style */
+        .summary-card {
+            background: #fff;
+            border: 1px solid #eee;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            text-align: left;
+            border-left: 5px solid #ccc;
+        }
+        .summary-card.correct { border-left-color: #4CAF50; background: #f9fff9; }
+        .summary-card.wrong { border-left-color: #F44336; background: #fff5f5; }
+
+        .summary-q-title { font-weight: bold; margin-bottom: 10px; display: block; font-size: 16px; }
+        .summary-ans { font-size: 14px; margin: 4px 0; }
+        .ans-user { color: #555; }
+        .ans-correct { color: #2e7d32; font-weight: bold; }
+        
+        .score-circle {
+            width: 120px; height: 120px;
+            border-radius: 50%;
+            background: #f4f4f4;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 32px; font-weight: bold;
+            margin: 0 auto 20px;
+            border: 5px solid #ccc;
+        }
+    </style>
 </head>
 <body>
 
@@ -49,7 +98,12 @@
         let currentLessonId = null;
         let userId = null;
         let completedSet = new Set(); 
-        let isQuizMode = false; // Flag to check if this is a quiz
+        let isQuizMode = false;
+
+        // --- QUIZ STATE ---
+        // Stores user answers: { questionId: { title, userAnsText, correctAnsText, isCorrect } }
+        let quizResults = []; 
+        let currentSelection = null; // Currently selected answer object (before clicking next)
 
         function toggleSidebar() {
             document.getElementById('course-sidebar').classList.toggle('active');
@@ -63,7 +117,6 @@
 
             if (!courseId) { alert("Błąd ID"); window.location.href = 'dashboard.html'; return; }
 
-            // 1. Get Course Info & Type
             const { data: course } = await _supabase.from('courses').select('title, type').eq('id', courseId).single();
             if (course) {
                 document.getElementById('course-title').innerText = course.title;
@@ -77,8 +130,8 @@
         function updateLabels() {
             if (isQuizMode) {
                 document.getElementById('mobile-menu-label').innerText = "Lista Pytań";
-                document.getElementById('placeholder-title').innerText = "Wybierz pytanie";
-                document.getElementById('placeholder-text').innerText = "Wybierz pytanie z listy, aby rozpocząć quiz.";
+                document.getElementById('placeholder-title').innerText = "Rozpocznij Quiz";
+                document.getElementById('placeholder-text').innerText = "Wybierz pierwsze pytanie z listy, aby rozpocząć.";
             }
         }
 
@@ -108,12 +161,14 @@
                 li.id = `sidebar-item-${lesson.id}`;
                 li.className = `lesson-item ${isCompleted ? 'completed' : ''}`;
                 
-                // Label: "1. Tytuł" for course, "Pytanie 1" for quiz if title is just "Pytanie X" or show title
-                // We'll stick to index + title as it's flexible
+                // Hide "Question 1" prefix if the title already says "Pytanie..."
                 const prefix = isQuizMode ? `Pytanie ${index + 1}` : `${index + 1}.`;
-                // If title is just "Pytanie X", prevent duplication like "Pytanie 1. Pytanie 1"
-                const displayTitle = lesson.title.startsWith("Pytanie") && isQuizMode ? lesson.title : `${prefix} ${lesson.title}`;
+                const displayTitle = (isQuizMode && lesson.title.toLowerCase().startsWith("pytanie")) 
+                    ? lesson.title 
+                    : `${prefix} ${lesson.title}`;
 
+                // In Quiz Mode, we hide the checkmarks until the very end ideally, 
+                // but keeping them simple for now is fine.
                 li.innerHTML = `<span>${displayTitle}</span><span class="status-icon">${isCompleted ? '✔' : '○'}</span>`;
                 li.onclick = () => {
                     loadLessonContent(lesson.id, li);
@@ -125,24 +180,25 @@
 
         async function loadLessonContent(lessonId, liElement) {
             currentLessonId = lessonId;
+            currentSelection = null; // Reset selection for new question
+
             document.querySelectorAll('.lesson-item').forEach(el => el.classList.remove('active'));
             if(liElement) liElement.classList.add('active');
             
             const container = document.getElementById('lesson-container');
-            container.innerHTML = '<p>Ładowanie...</p>';
+            container.innerHTML = '<p style="text-align:center; padding:40px;">Ładowanie pytania...</p>';
 
-            // Fetch Text Content
+            // Fetch Content
             const { data: component } = await _supabase.from('lesson_components')
                 .select(`content_text_blocks ( content )`)
                 .eq('lesson_id', lessonId).eq('component_type', 'text').single();
 
-            // Fetch Quiz Answers
+            // Fetch Answers
             const { data: answers } = await _supabase.from('lesson_answers')
                 .select('id, answer_text, is_correct')
                 .eq('lesson_id', lessonId);
 
             let text = component?.content_text_blocks?.content || "";
-            // HIDE DUMMY TEXT
             if (text.trim() === "Pytanie quizowe" || text.trim() === "Pytanie") text = "";
 
             const currentLesson = allLessons.find(l => l.id === lessonId);
@@ -152,27 +208,18 @@
             let html = `<h1 class="lesson-title">${currentLesson.title}</h1>`;
             if (text) html += `<div class="lesson-text">${text}</div>`;
 
-            if (isQuizLesson && !isDone) {
-                // INTERACTIVE QUIZ
+            if (isQuizLesson) {
+                // RENDER INTERACTIVE QUIZ
                 html += `<div class="quiz-container" id="quiz-area"></div>`;
-                html += `<div id="quiz-feedback" style="margin-top:20px; font-weight:bold; font-size:18px;"></div>`;
-                html += `<button id="action-btn" class="complete-btn" onclick="nextStep()" style="display:none;">Dalej</button>`;
-            } else if (isQuizLesson && isDone) {
-                // COMPLETED QUIZ QUESTION
-                html += `<div class="quiz-container">`;
-                answers.forEach(a => {
-                    const styleClass = a.is_correct ? 'correct' : 'disabled';
-                    html += `<div class="quiz-option ${styleClass}">${a.answer_text} ${a.is_correct ? '✔' : ''}</div>`;
-                });
-                html += `</div>`;
-                // If it's the last lesson, show Summary button instead of just "Undo"
-                if (isLastLesson(lessonId)) {
-                     html += `<button class="complete-btn is-completed" onclick="showSummary()">Zobacz Wynik Quizu</button>`;
-                } else {
-                     html += `<button class="complete-btn is-completed" onclick="toggleComplete()">✔ Ukończono (Cofnij)</button>`;
-                }
+                // Info message (hidden by default)
+                html += `<div id="quiz-feedback" style="margin-top:20px; color:#666;">Wybierz odpowiedź i kliknij Dalej.</div>`;
+                
+                // Button Text Logic
+                const btnText = isLastLesson(lessonId) ? "Zakończ Quiz" : "Następne Pytanie";
+                // Button is DISABLED initially
+                html += `<button id="action-btn" class="complete-btn" onclick="saveAndNext()" style="margin-top:20px; opacity:0.5; cursor:not-allowed;" disabled>${btnText}</button>`;
             } else {
-                // STANDARD LESSON
+                // STANDARD LESSON (Not a quiz question)
                 html += `<button id="action-btn" class="complete-btn ${isDone ? 'is-completed' : ''}" onclick="toggleComplete()">
                     ${isDone ? '✔ Ukończono (Cofnij)' : 'Oznacz jako ukończone'}
                 </button>`;
@@ -180,15 +227,22 @@
 
             container.innerHTML = html;
 
-            if (isQuizLesson && !isDone) {
+            if (isQuizLesson) {
                 const quizArea = document.getElementById('quiz-area');
                 answers.forEach(ans => {
                     const btn = document.createElement('div');
                     btn.className = 'quiz-option';
                     btn.innerText = ans.answer_text;
-                    btn.onclick = () => checkAnswer(ans, btn, answers);
+                    // Pass the correct answer info needed for summary later
+                    const correctAnswer = answers.find(a => a.is_correct)?.answer_text || "Brak danych";
+                    
+                    btn.onclick = () => selectAnswer(ans, btn, correctAnswer, currentLesson.title);
                     quizArea.appendChild(btn);
                 });
+                
+                // If user already answered this in this session, restore selection (optional feature, 
+                // for simplicity we reset on reload unless we store in DB/localstorage. 
+                // Here we keep it fresh per session).
             }
         }
 
@@ -197,40 +251,55 @@
             return allLessons[allLessons.length - 1].id === id;
         }
 
-        function checkAnswer(selected, btnElement, allAnswers) {
-            const feedback = document.getElementById('quiz-feedback');
-            const completeBtn = document.getElementById('action-btn');
-            const buttons = document.querySelectorAll('.quiz-option');
-            
-            if (selected.is_correct) {
-                btnElement.classList.add('correct');
-                feedback.innerHTML = '<span style="color:green;">Dobrze!</span>';
-                buttons.forEach(b => b.classList.add('disabled'));
-                
-                completeBtn.style.display = 'inline-block';
-                // If last lesson, change button text
-                if (isLastLesson(currentLessonId)) {
-                    completeBtn.innerText = "Zakończ i Zobacz Wynik";
-                } else {
-                    completeBtn.innerText = "Następne Pytanie";
-                }
-            } else {
-                btnElement.classList.add('wrong');
-                btnElement.classList.add('disabled');
-                feedback.innerHTML = '<span style="color:red;">Źle. Próbuj dalej.</span>';
-            }
+        // --- NEW LOGIC: JUST SELECT, DON'T VALIDATE YET ---
+        function selectAnswer(answerObj, btnElement, correctText, questionTitle) {
+            // 1. Visual update
+            document.querySelectorAll('.quiz-option').forEach(b => b.classList.remove('selected'));
+            btnElement.classList.add('selected');
+
+            // 2. Enable Next Button
+            const nextBtn = document.getElementById('action-btn');
+            nextBtn.disabled = false;
+            nextBtn.style.opacity = "1";
+            nextBtn.style.cursor = "pointer";
+
+            // 3. Store temporary choice
+            currentSelection = {
+                questionId: currentLessonId,
+                questionTitle: questionTitle,
+                userAnsText: answerObj.answer_text,
+                correctAnsText: correctText,
+                isCorrect: answerObj.is_correct
+            };
         }
 
-        // Handles the "Next / Finish" button logic
-        async function nextStep() {
-            // 1. Mark as complete
-            await toggleComplete(true); // force true (don't toggle off)
+        // --- SAVE RESULT AND MOVE ON ---
+        async function saveAndNext() {
+            if (!currentSelection) return;
 
-            // 2. Decide where to go
+            // 1. Add to session results
+            // Remove duplicates if user went back
+            quizResults = quizResults.filter(r => r.questionId !== currentLessonId);
+            quizResults.push(currentSelection);
+
+            // 2. Mark as "completed" in DB (just to track progress bar), but visual feedback is delayed
+            // We do this silently.
+            await _supabase.from('user_lesson_progress')
+                .upsert({ 
+                    user_id: userId, 
+                    lesson_id: currentLessonId, 
+                    is_completed: true, // We count it as "done" because they answered
+                    completed_at: new Date() 
+                }, { onConflict: 'user_id, lesson_id' });
+            
+            completedSet.add(currentLessonId);
+            renderSidebar();
+
+            // 3. Navigation
             if (isLastLesson(currentLessonId)) {
-                showSummary();
+                showFullSummary();
             } else {
-                // Find next lesson
+                // Go to next
                 const idx = allLessons.findIndex(l => l.id === currentLessonId);
                 if (idx < allLessons.length - 1) {
                     const nextLesson = allLessons[idx + 1];
@@ -240,61 +309,91 @@
             }
         }
 
-        async function toggleComplete(forceState = null) {
-            if (!currentLessonId) return;
-            let newStatus;
-            
-            if (forceState !== null) {
-                newStatus = forceState;
-            } else {
-                const oldStatus = completedSet.has(currentLessonId);
-                newStatus = !oldStatus;
-            }
-            
-            const { error } = await _supabase.from('user_lesson_progress')
-                .upsert({ user_id: userId, lesson_id: currentLessonId, is_completed: newStatus, completed_at: newStatus ? new Date() : null }, { onConflict: 'user_id, lesson_id' });
-
-            if (error) { alert("Błąd: " + error.message); return; }
-
-            if (newStatus) completedSet.add(currentLessonId);
-            else completedSet.delete(currentLessonId);
-
-            renderSidebar(); 
-            // Also refresh course progress
-            const total = allLessons.length;
-            const completedCount = completedSet.size;
-            const percentage = Math.round((completedCount / total) * 100);
-            /* Optional: update DB progress here if needed */
-        }
-
-        function showSummary() {
+        // --- FINAL SUMMARY SCREEN ---
+        function showFullSummary() {
             const container = document.getElementById('lesson-container');
-            const total = allLessons.length;
-            const completedCount = completedSet.size;
-            const percentage = Math.round((completedCount / total) * 100);
-
-            let msg = "";
-            let color = "";
             
-            if (percentage === 100) {
-                msg = "Gratulacje! Wszystko zaliczone.";
-                color = "#4CAF50"; // Green
-            } else {
-                msg = "Jeszcze trochę brakuje.";
-                color = "#FF9800"; // Orange
-            }
+            // Calculate Score based on quizResults array
+            let correctCount = 0;
+            quizResults.forEach(r => { if (r.isCorrect) correctCount++; });
+            
+            const total = quizResults.length || allLessons.length; // Use results length for accuracy
+            const percentage = Math.round((correctCount / total) * 100);
+            
+            let color = percentage >= 50 ? "#4CAF50" : "#F44336"; // Green or Red
 
-            container.innerHTML = `
-                <div style="text-align:center; padding: 40px;">
-                    <div style="font-size: 60px;">🏆</div>
-                    <h1 style="margin-bottom: 10px;">Podsumowanie Quizu</h1>
-                    <h2 style="font-size: 48px; color: ${color}; margin: 20px 0;">${percentage}%</h2>
-                    <p style="font-size: 18px; color: #555;">${msg}</p>
-                    <p>Ukończono ${completedCount} z ${total} pytań.</p>
+            let html = `
+                <div style="text-align:center; padding-bottom: 30px;">
+                    <h1 style="margin-bottom: 20px;">Wynik Quizu</h1>
                     
-                    <a href="courses_list.html" class="complete-btn" style="display:inline-block; text-decoration:none; margin-top:30px;">Wróć do listy kursów</a>
+                    <div class="score-circle" style="border-color:${color}; color:${color}">
+                        ${percentage}%
+                    </div>
+                    <p style="font-size: 18px; margin-bottom:30px;">
+                        Odpowiedziałeś poprawnie na <b>${correctCount}</b> z <b>${total}</b> pytań.
+                    </p>
+                </div>
+                
+                <h3 style="border-bottom:1px solid #ccc; padding-bottom:10px; margin-bottom:20px;">Szczegółowy Raport:</h3>
+            `;
+
+            // Generate list of answers
+            // Note: If user skipped questions, they might not be in quizResults. 
+            // Better to iterate allLessons and find matching result.
+            
+            allLessons.forEach((lesson, idx) => {
+                const result = quizResults.find(r => r.questionId === lesson.id);
+                
+                if (!result) {
+                    // Skipped / Not answered
+                    html += `
+                        <div class="summary-card wrong">
+                            <span class="summary-q-title">${idx+1}. ${lesson.title}</span>
+                            <div class="summary-ans" style="color:#999;">Brak odpowiedzi</div>
+                        </div>`;
+                    return;
+                }
+
+                if (result.isCorrect) {
+                    // Correct
+                    html += `
+                        <div class="summary-card correct">
+                            <span class="summary-q-title">${idx+1}. ${result.questionTitle}</span>
+                            <div class="summary-ans ans-correct">✔ Twoja odpowiedź: ${result.userAnsText}</div>
+                        </div>`;
+                } else {
+                    // Wrong
+                    html += `
+                        <div class="summary-card wrong">
+                            <span class="summary-q-title">${idx+1}. ${result.questionTitle}</span>
+                            <div class="summary-ans ans-user">❌ Twoja odpowiedź: ${result.userAnsText}</div>
+                            <div class="summary-ans ans-correct">➡ Poprawna: ${result.correctAnsText}</div>
+                        </div>`;
+                }
+            });
+
+            html += `
+                <div style="text-align:center; margin-top:30px;">
+                    <a href="courses_list.html" class="complete-btn" style="text-decoration:none; display:inline-block;">Wróć do listy kursów</a>
                 </div>
             `;
+
+            container.innerHTML = html;
+        }
+
+        async function toggleComplete() {
+            // Standard lesson logic (unchanged)
+            if (!currentLessonId) return;
+            const oldStatus = completedSet.has(currentLessonId);
+            const newStatus = !oldStatus;
+            const btn = document.getElementById('action-btn');
+            btn.disabled = true;
+            await _supabase.from('user_lesson_progress')
+                .upsert({ user_id: userId, lesson_id: currentLessonId, is_completed: newStatus, completed_at: new Date() }, { onConflict: 'user_id, lesson_id' });
+            if (newStatus) completedSet.add(currentLessonId); else completedSet.delete(currentLessonId);
+            renderSidebar();
+            const li = document.getElementById(`sidebar-item-${currentLessonId}`);
+            loadLessonContent(currentLessonId, li);
         }
     </script>
 </body>
