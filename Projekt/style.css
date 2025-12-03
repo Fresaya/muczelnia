@@ -515,3 +515,57 @@ body.login-page {
     transform: translateY(-2px) scale(1.05);
     background-color: #d03a3a;
 }
+
+/* =========================================
+   9. STUDENT MANAGEMENT TABLE
+   ========================================= */
+.student-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    font-size: 14px;
+}
+
+.student-table th {
+    text-align: left;
+    padding: 12px;
+    background-color: var(--bg-color);
+    border-bottom: 2px solid var(--border-color);
+    color: var(--text-muted);
+}
+
+.student-table td {
+    padding: 12px;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-main);
+    vertical-align: middle;
+}
+
+.student-table tr:hover {
+    background-color: var(--hover-bg);
+}
+
+.class-select-small {
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    background: var(--panel-bg);
+    color: var(--text-main);
+    width: 100%;
+    max-width: 200px;
+}
+
+.save-mini-btn {
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background 0.2s;
+}
+
+.save-mini-btn:hover {
+    background-color: #d03a3a;
+}
