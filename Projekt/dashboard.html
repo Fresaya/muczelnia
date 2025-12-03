@@ -9,7 +9,6 @@
 <body>
 
     <div class="layout-wrapper">
-        <!-- LEFT SIDEBAR -->
         <aside class="sidebar-left">
             <div class="top-section">
                 <div class="brand-area"><a href="#" class="logo-text"><span>m</span>Uczelnia</a></div>
@@ -19,7 +18,6 @@
             </div>
         </aside>
 
-        <!-- MAIN CONTENT -->
         <main class="main-content">
             <div class="welcome-header">
                 <div>
@@ -28,13 +26,19 @@
                 </div>
             </div>
 
-            <!-- DASHBOARD GRID -->
             <div class="dashboard-grid">
                 
                 <!-- 1. ADMIN: UTWÓRZ KURS -->
                 <a href="create_course.html" id="widget-create-course" class="widget-tile" style="display: none; border: 2px dashed var(--accent-color);">
                     <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23f04a4a%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><rect x=%223%22 y=%223%22 width=%2218%22 height=%2218%22 rx=%222%22 ry=%222%22></rect><line x1=%2212%22 y1=%228%22 x2=%2212%22 y2=%2216%22></line><line x1=%228%22 y1=%2212%22 x2=%2216%22 y2=%2212%22></line></svg>');"></div>
                     <h3 style="color: var(--accent-color);">Utwórz Kurs</h3>
+                    <p class="course-meta">Administrator</p>
+                </a>
+
+                <!-- 1b. ADMIN: UTWÓRZ QUIZ (NEW) -->
+                <a href="create_quiz.html" id="widget-create-quiz" class="widget-tile" style="display: none; border: 2px dashed #9C27B0;">
+                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%239C27B0%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z%22></path><polyline points=%2214 2 14 8 20 8%22></polyline><line x1=%2212%22 y1=%2218%22 x2=%2212%22 y2=%2218%22></line><line x1=%2212%22 y1=%2214%22 x2=%2212%22 y2=%2212%22></line></svg>');"></div>
+                    <h3 style="color: #9C27B0;">Utwórz Quiz</h3>
                     <p class="course-meta">Administrator</p>
                 </a>
                 
@@ -66,26 +70,24 @@
                     <p class="course-meta">Przypisz klasy</p>
                 </div>
 
-                <!-- 6. NEW: PRZYPISZ KURS (Teacher, Admin, Manager) -->
+                <!-- 6. TEACHER/ADMIN/MANAGER: PRZYPISZ KURS/QUIZ -->
                 <div id="widget-assign-course" class="widget-tile" style="display: none; border: 2px dashed #9C27B0; cursor: pointer;">
                     <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%239C27B0%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M4 19.5A2.5 2.5 0 0 1 6.5 17H20%22></path><path d=%22M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z%22></path><path d=%22M12 11h5%22></path><path d=%22M12 8h5%22></path></svg>');"></div>
-                    <h3 style="color: #9C27B0;">Przypisz Kurs</h3>
-                    <p class="course-meta">Do klasy</p>
+                    <h3 style="color: #9C27B0;">Przypisz Materiał</h3>
+                    <p class="course-meta">Kurs lub Quiz</p>
                 </div>
 
-                <!-- STANDARD TILES -->
                 <a href="courses_list.html" class="widget-tile">
                     <div class="widget-icon icon-course-active"></div>
                     <h3>Moje Kursy</h3>
-                    <p class="course-meta">Przejdź do listy zajęć</p>
+                    <p class="course-meta">Lista zajęć i testów</p>
                 </a>
             </div>
         </main>
 
-        <!-- RIGHT SIDEBAR -->
         <aside class="sidebar-right">
             <div class="profile-card">
-                <div class="avatar" id="avatarTrigger" title="Kliknij, aby otworzyć opcje"></div>
+                <div class="avatar" id="avatarTrigger"></div>
                 <div class="dropdown-menu" id="profileDropdown">
                     <div class="dropdown-item" id="logoutBtn">
                         <div class="icon-logout"></div>
@@ -97,7 +99,6 @@
             </div>
         </aside>
     </div>
-
     <!-- ================= MODALS ================= -->
 
     <!-- 1. CREATE USER MODAL -->
@@ -249,29 +250,25 @@
             if (!session) { window.location.href = 'login.html'; return; }
 
             const userId = session.user.id;
-            const { data: profile } = await _supabase
-                .from('users').select('username, role, school_id').eq('id', userId).single();
+            const { data: profile } = await _supabase.from('users').select('username, role, school_id').eq('id', userId).single();
 
             if (profile) {
                 currentUserRole = profile.role;
                 currentUserSchoolId = profile.school_id;
-
                 document.getElementById('profile-name-display').textContent = profile.username;
                 document.getElementById('profile-role-display').textContent = profile.role.toUpperCase();
                 document.getElementById('welcome-message').textContent = `Witaj, ${profile.username}!`;
 
                 // --- ROLE VISIBILITY ---
                 
-                // Common Widget: Assign Course (Teacher, Manager, Admin)
                 if (['admin', 'manager', 'teacher'].includes(currentUserRole)) {
-                    const btnAssign = document.getElementById('widget-assign-course');
-                    btnAssign.style.display = 'flex';
-                    btnAssign.onclick = () => openAssignCourseModal();
+                    document.getElementById('widget-assign-course').style.display = 'flex';
+                    document.getElementById('widget-assign-course').onclick = () => openAssignCourseModal();
                 }
 
-                // ADMIN SPECIFIC
                 if (currentUserRole === 'admin') {
                     show('widget-create-course');
+                    show('widget-create-quiz'); // NEW
                     show('widget-add-user');
                     show('widget-add-school');
                     show('widget-add-class');
@@ -283,19 +280,17 @@
                     document.getElementById('widget-manage-students').onclick = () => openManageStudentsModal();
                 }
 
-                // MANAGER SPECIFIC
                 if (currentUserRole === 'manager') {
                     show('widget-add-user');
                     show('widget-add-class');
                     show('widget-manage-students');
-
                     document.getElementById('widget-add-user').onclick = () => openCreateUserModal();
                     document.getElementById('widget-add-class').onclick = () => openClassModal();
                     document.getElementById('widget-manage-students').onclick = () => openManageStudentsModal();
                 }
             }
 
-            // Dropdown & Logout
+            // Dropdown/Logout
             const avatarTrigger = document.getElementById('avatarTrigger');
             const dropdown = document.getElementById('profileDropdown');
             const logoutBtn = document.getElementById('logoutBtn');
@@ -303,61 +298,53 @@
             window.addEventListener('click', () => { if (dropdown.classList.contains('show')) dropdown.classList.remove('show'); });
             logoutBtn.addEventListener('click', async () => { await _supabase.auth.signOut(); window.location.href = 'login.html'; });
 
-            // --- FORM SUBMITS ---
+            // Form Listeners
             document.getElementById('createUserForm').addEventListener('submit', createNewUser);
             document.getElementById('addSchoolForm').addEventListener('submit', addSchool);
             document.getElementById('addClassForm').addEventListener('submit', addClass);
             document.getElementById('assignCourseForm').addEventListener('submit', assignCourseToClass);
-
-            // Dynamic logic
+            
+            // Dynamic UI
             document.getElementById('new-role').addEventListener('change', function() {
                 const role = this.value;
                 const schoolContainer = document.getElementById('school-select-container');
-                if (role === 'admin') schoolContainer.style.display = 'none';
-                else schoolContainer.style.display = 'block';
+                if (role === 'admin') schoolContainer.style.display = 'none'; else schoolContainer.style.display = 'block';
             });
-            document.getElementById('manage-school-select').addEventListener('change', function() {
-                loadStudentsForSchool(this.value);
-            });
-            
-            // FILTER LOGIC - Class Select
+            document.getElementById('manage-school-select').addEventListener('change', function() { loadStudentsForSchool(this.value); });
             document.getElementById('filter-class-select').addEventListener('change', filterStudentsTable);
         });
 
-        // --- CORE FUNCTIONS ---
+        // --- FUNCTIONS (Standard) ---
         function show(id) { document.getElementById(id).style.display = 'flex'; }
         function openModal(id) { document.getElementById(id).classList.add('active'); }
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
-        // --- NEW: ASSIGN COURSE MODAL LOGIC ---
+        // --- ASSIGN MODAL (UPDATED to Show Type) ---
         async function openAssignCourseModal() {
             openModal('assignCourseModal');
             const courseSelect = document.getElementById('assign-course-select');
             const classSelect = document.getElementById('assign-class-select');
             
-            // 1. Load Courses
             courseSelect.innerHTML = '<option value="" disabled selected>Ładowanie...</option>';
-            const { data: courses } = await _supabase.from('courses').select('id, title');
+            // Fetch ID, Title AND Type
+            const { data: courses } = await _supabase.from('courses').select('id, title, type');
             if(courses) {
-                courseSelect.innerHTML = '<option value="" selected>-- Wybierz Kurs --</option>';
+                courseSelect.innerHTML = '<option value="" selected>-- Wybierz Materiał --</option>';
                 courses.forEach(c => {
                     const opt = document.createElement('option');
                     opt.value = c.id;
-                    opt.textContent = c.title;
+                    // Add label (Quiz/Kurs)
+                    const typeLabel = c.type === 'quiz' ? '[QUIZ]' : '[KURS]';
+                    opt.textContent = `${typeLabel} ${c.title}`;
                     courseSelect.appendChild(opt);
                 });
             }
 
-            // 2. Load Classes (Based on Role)
             classSelect.innerHTML = '<option value="" disabled selected>Ładowanie...</option>';
             let query = _supabase.from('classes').select('id, name');
-
-            // If teacher/manager, filter by school
             if ((currentUserRole === 'teacher' || currentUserRole === 'manager') && currentUserSchoolId) {
                 query = query.eq('school_id', currentUserSchoolId);
             }
-            // If admin, we fetch all (or we could force selecting a school first, but simpler to show all for now)
-            
             const { data: classes } = await query;
             if(classes) {
                 classSelect.innerHTML = '<option value="" selected>-- Wybierz Klasę --</option>';
@@ -367,32 +354,18 @@
                     opt.textContent = c.name;
                     classSelect.appendChild(opt);
                 });
-            } else {
-                classSelect.innerHTML = '<option value="" disabled>Brak klas w Twojej szkole</option>';
-            }
+            } else { classSelect.innerHTML = '<option value="" disabled>Brak klas</option>'; }
         }
 
         async function assignCourseToClass(e) {
             e.preventDefault();
             const courseId = document.getElementById('assign-course-select').value;
             const classId = document.getElementById('assign-class-select').value;
-
             if(!courseId || !classId) return alert("Wybierz kurs i klasę!");
-
-            const { error } = await _supabase.from('course_classes').insert({
-                course_id: courseId,
-                class_id: classId
-            });
-
-            if(error) {
-                if(error.code === '23505') alert("Ten kurs jest już przypisany do tej klasy!");
-                else alert("Błąd: " + error.message);
-            } else {
-                alert("✅ Kurs został przypisany do klasy!");
-                closeModal('assignCourseModal');
-            }
+            const { error } = await _supabase.from('course_classes').insert({ course_id: courseId, class_id: classId });
+            if(error) { if(error.code === '23505') alert("Już przypisano!"); else alert("Błąd: " + error.message); } 
+            else { alert("✅ Przypisano!"); closeModal('assignCourseModal'); }
         }
-
         // --- EXISTING FUNCTIONS (Add School, Class, User, etc) ---
         async function addSchool(e) {
             e.preventDefault();
@@ -669,3 +642,4 @@
     </script>
 </body>
 </html>
+
