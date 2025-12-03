@@ -26,6 +26,7 @@
                 </div>
             </div>
 
+            <!-- DASHBOARD GRID -->
             <div class="dashboard-grid">
                 
                 <!-- 1. ADMIN: UTWÓRZ KURS -->
@@ -35,7 +36,7 @@
                     <p class="course-meta">Administrator</p>
                 </a>
 
-                <!-- 1b. ADMIN: UTWÓRZ QUIZ (NEW) -->
+                <!-- 1b. ADMIN: UTWÓRZ QUIZ -->
                 <a href="create_quiz.html" id="widget-create-quiz" class="widget-tile" style="display: none; border: 2px dashed #9C27B0;">
                     <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%239C27B0%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z%22></path><polyline points=%2214 2 14 8 20 8%22></polyline><line x1=%2212%22 y1=%2218%22 x2=%2212%22 y2=%2218%22></line><line x1=%2212%22 y1=%2214%22 x2=%2212%22 y2=%2212%22></line></svg>');"></div>
                     <h3 style="color: #9C27B0;">Utwórz Quiz</h3>
@@ -70,24 +71,37 @@
                     <p class="course-meta">Przypisz klasy</p>
                 </div>
 
-                <!-- 6. TEACHER/ADMIN/MANAGER: PRZYPISZ KURS/QUIZ -->
+                <!-- 6. ASSIGN COURSE -->
                 <div id="widget-assign-course" class="widget-tile" style="display: none; border: 2px dashed #9C27B0; cursor: pointer;">
                     <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%239C27B0%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M4 19.5A2.5 2.5 0 0 1 6.5 17H20%22></path><path d=%22M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z%22></path><path d=%22M12 11h5%22></path><path d=%22M12 8h5%22></path></svg>');"></div>
                     <h3 style="color: #9C27B0;">Przypisz Materiał</h3>
                     <p class="course-meta">Kurs lub Quiz</p>
                 </div>
 
+                <!-- LINK TO COURSES LIST -->
                 <a href="courses_list.html" class="widget-tile">
                     <div class="widget-icon icon-course-active"></div>
                     <h3>Moje Kursy</h3>
-                    <p class="course-meta">Lista zajęć i testów</p>
+                    <p class="course-meta">Przejdź do listy zajęć</p>
+                </a>
+
+                <!-- LINK TO QUIZZES LIST (UPDATED) -->
+                <a href="quizzes_list.html" class="widget-tile">
+                    <div class="widget-icon icon-notes"></div>
+                    <h3>Ćwiczenia</h3>
+                    <p class="course-meta">Testy i Quizy</p>
+                </a>
+
+                <a href="#" class="widget-tile" onclick="alert('Moduł w budowie!')">
+                    <div class="widget-icon icon-grades"></div>
+                    <h3>Oceny</h3>
                 </a>
             </div>
         </main>
 
         <aside class="sidebar-right">
             <div class="profile-card">
-                <div class="avatar" id="avatarTrigger"></div>
+                <div class="avatar" id="avatarTrigger" title="Kliknij, aby otworzyć opcje"></div>
                 <div class="dropdown-menu" id="profileDropdown">
                     <div class="dropdown-item" id="logoutBtn">
                         <div class="icon-logout"></div>
@@ -268,7 +282,7 @@
 
                 if (currentUserRole === 'admin') {
                     show('widget-create-course');
-                    show('widget-create-quiz'); // NEW
+                    show('widget-create-quiz');
                     show('widget-add-user');
                     show('widget-add-school');
                     show('widget-add-class');
@@ -319,21 +333,18 @@
         function openModal(id) { document.getElementById(id).classList.add('active'); }
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
-        // --- ASSIGN MODAL (UPDATED to Show Type) ---
         async function openAssignCourseModal() {
             openModal('assignCourseModal');
             const courseSelect = document.getElementById('assign-course-select');
             const classSelect = document.getElementById('assign-class-select');
             
             courseSelect.innerHTML = '<option value="" disabled selected>Ładowanie...</option>';
-            // Fetch ID, Title AND Type
             const { data: courses } = await _supabase.from('courses').select('id, title, type');
             if(courses) {
                 courseSelect.innerHTML = '<option value="" selected>-- Wybierz Materiał --</option>';
                 courses.forEach(c => {
                     const opt = document.createElement('option');
                     opt.value = c.id;
-                    // Add label (Quiz/Kurs)
                     const typeLabel = c.type === 'quiz' ? '[QUIZ]' : '[KURS]';
                     opt.textContent = `${typeLabel} ${c.title}`;
                     courseSelect.appendChild(opt);
@@ -642,4 +653,5 @@
     </script>
 </body>
 </html>
+
 
