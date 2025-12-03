@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>mUczelnia - Pulpit_2020</title>
+    <title>mUczelnia - Pulpit</title>
     <link rel="stylesheet" href="style.css">
-   
 </head>
 <body>
 
     <div class="layout-wrapper">
+        <!-- LEFT SIDEBAR -->
         <aside class="sidebar-left">
             <div class="top-section">
                 <div class="brand-area"><a href="#" class="logo-text"><span>m</span>Uczelnia</a></div>
@@ -17,8 +17,9 @@
                     <li class="nav-item"><a href="#" class="nav-link active"><span>Pulpit</span></a></li>
                 </ul>
             </div>
-            </aside>
+        </aside>
 
+        <!-- MAIN CONTENT -->
         <main class="main-content">
             <div class="welcome-header">
                 <div>
@@ -27,14 +28,24 @@
                 </div>
             </div>
 
+            <!-- STATIC DASHBOARD GRID -->
             <div class="dashboard-grid">
                 
+                <!-- 0. ADMIN TILE (Hidden by default, shown via JS) -->
+                <div id="admin-widget" class="widget-tile" style="display: none; border: 2px dashed var(--accent-color); cursor: pointer;">
+                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23f04a4a%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2%22></path><circle cx=%228.5%22 cy=%227%22 r=%224%22></circle><line x1=%2220%22 y1=%228%22 x2=%2220%22 y2=%2214%22></line><line x1=%2223%22 y1=%2211%22 x2=%2217%22 y2=%2211%22></line></svg>');"></div>
+                    <h3 style="color: var(--accent-color);">Dodaj Użytkownika</h3>
+                    <p class="course-meta">Panel Administratora</p>
+                </div>
+
+                <!-- 1. LINK TO COURSES LIST -->
                 <a href="courses_list.html" class="widget-tile">
                     <div class="widget-icon icon-course-active"></div>
                     <h3>Moje Kursy</h3>
                     <p class="course-meta">Przejdź do listy zajęć</p>
                 </a>
 
+                <!-- 2. OTHER TOOLS -->
                 <a href="#" class="widget-tile" onclick="alert('Moduł ćwiczeń w budowie!')">
                     <div class="widget-icon icon-notes"></div>
                     <h3>Ćwiczenia</h3>
@@ -50,30 +61,63 @@
                     <div class="widget-icon icon-grades"></div>
                     <h3>Oceny</h3>
                 </a>
-
-                <a href="#" class="widget-tile">
-                    <div class="widget-icon icon-notes"></div>
-                    <h3>Notatki</h3>
-                </a>
-
             </div>
         </main>
 
+        <!-- RIGHT SIDEBAR -->
         <aside class="sidebar-right">
             <div class="profile-card">
                 <div class="avatar" id="avatarTrigger" title="Kliknij, aby otworzyć opcje"></div>
-                
                 <div class="dropdown-menu" id="profileDropdown">
                     <div class="dropdown-item" id="logoutBtn">
                         <div class="icon-logout"></div>
                         Wyloguj się
                     </div>
                 </div>
-
                 <h2 class="profile-name" id="profile-name-display">...</h2>
                 <p class="profile-id" id="profile-role-display">...</p>
             </div>
         </aside>
+    </div>
+
+    <!-- CREATE USER MODAL -->
+    <div class="modal-overlay" id="createUserModal">
+        <div class="modal-window">
+            <div class="modal-header">
+                <h3 class="modal-title">Dodaj nowego użytkownika</h3>
+                <span class="close-modal" onclick="closeModal()">&times;</span>
+            </div>
+            
+            <form id="createUserForm" class="modal-form">
+                <label>Nazwa (Imię i Nazwisko)</label>
+                <div class="input-wrapper" style="margin-bottom: 15px;">
+                    <input type="text" id="new-username" placeholder="Jan Kowalski" required 
+                           style="width:100%; padding:10px; border-radius:50px; border:1px solid #ccc; background:var(--bg-color); color:var(--text-main);">
+                </div>
+
+                <label>Adres E-mail</label>
+                <div class="input-wrapper" style="margin-bottom: 15px;">
+                    <input type="email" id="new-email" placeholder="student@muczelnia.pl" required
+                           style="width:100%; padding:10px; border-radius:50px; border:1px solid #ccc; background:var(--bg-color); color:var(--text-main);">
+                </div>
+
+                <label>Hasło</label>
+                <div class="input-wrapper" style="margin-bottom: 15px;">
+                    <input type="password" id="new-password" placeholder="Minimum 6 znaków" required
+                           style="width:100%; padding:10px; border-radius:50px; border:1px solid #ccc; background:var(--bg-color); color:var(--text-main);">
+                </div>
+
+                <label>Rola</label>
+                <select id="new-role">
+                    <option value="student">Student</option>
+                    <option value="teacher">Nauczyciel (Teacher)</option>
+                    <option value="manager">Dziekanat (Manager)</option>
+                    <option value="admin">Administrator</option>
+                </select>
+
+                <button type="submit" class="login-button full-width-btn" id="createBtn">Utwórz konto</button>
+            </form>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -84,12 +128,13 @@
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
         document.addEventListener('DOMContentLoaded', async () => {
+            // 1. Auth Check
             const { data: { session } } = await _supabase.auth.getSession();
             if (!session) { window.location.href = 'login.html'; return; }
 
             const userId = session.user.id;
             
-            // Just fetch profile info
+            // 2. Fetch Profile
             const { data: profile } = await _supabase
                 .from('users')
                 .select('username, role')
@@ -100,35 +145,113 @@
                 document.getElementById('profile-name-display').textContent = profile.username;
                 document.getElementById('profile-role-display').textContent = profile.role.toUpperCase();
                 document.getElementById('welcome-message').textContent = `Witaj, ${profile.username}!`;
+
+                // 3. CHECK ROLE - Show Admin Button if authorized
+                const allowedRoles = ['admin', 'manager', 'teacher'];
+                if (allowedRoles.includes(profile.role)) {
+                    const adminWidget = document.getElementById('admin-widget');
+                    adminWidget.style.display = 'flex'; // Show it
+                    adminWidget.addEventListener('click', openModal);
+                }
             }
 
-            // --- LOGOUT & DROPDOWN LOGIC ---
+            // --- DROPDOWN LOGIC ---
             const avatarTrigger = document.getElementById('avatarTrigger');
             const dropdown = document.getElementById('profileDropdown');
             const logoutBtn = document.getElementById('logoutBtn');
 
-            // Toggle menu
             avatarTrigger.addEventListener('click', (e) => {
-                e.stopPropagation(); // Stop click from bubbling to window
+                e.stopPropagation();
                 dropdown.classList.toggle('show');
             });
 
-            // Close menu when clicking outside
             window.addEventListener('click', () => {
-                if (dropdown.classList.contains('show')) {
-                    dropdown.classList.remove('show');
-                }
+                if (dropdown.classList.contains('show')) dropdown.classList.remove('show');
             });
 
-            // Handle Logout
             logoutBtn.addEventListener('click', async () => {
                 await _supabase.auth.signOut();
                 window.location.href = 'login.html';
             });
+
+            // --- CREATE USER FORM LOGIC ---
+            document.getElementById('createUserForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await createNewUser();
+            });
         });
+
+        // MODAL FUNCTIONS
+        function openModal() {
+            document.getElementById('createUserModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('createUserModal').classList.remove('active');
+        }
+
+        // --- THE MAGIC CREATE USER FUNCTION ---
+        async function createNewUser() {
+            const btn = document.getElementById('createBtn');
+            const originalText = btn.textContent;
+            btn.textContent = "Tworzenie...";
+            btn.disabled = true;
+
+            const email = document.getElementById('new-email').value;
+            const password = document.getElementById('new-password').value;
+            const username = document.getElementById('new-username').value;
+            const role = document.getElementById('new-role').value;
+
+            try {
+                // TRICK: Create a TEMPORARY Supabase client.
+                // Why? Standard .auth.signUp() logs out the current user. 
+                // By creating a new client with persistSession: false, we keep the admin logged in.
+                const tempSupabase = supabase.createClient(supabaseUrl, supabaseKey, {
+                    auth: {
+                        persistSession: false, // Don't save this session to browser storage
+                        autoRefreshToken: false,
+                        detectSessionInUrl: false
+                    }
+                });
+
+                // A. Create User in Auth System
+                const { data: authData, error: authError } = await tempSupabase.auth.signUp({
+                    email: email,
+                    password: password
+                });
+
+                if (authError) throw authError;
+                if (!authData.user) throw new Error("Nie udało się utworzyć użytkownika Auth.");
+
+                const newUserId = authData.user.id;
+
+                // B. Insert Extra Data into public.users table using the MAIN client (Admin permissions)
+                const { error: dbError } = await _supabase
+                    .from('users')
+                    .insert({
+                        id: newUserId,
+                        email: email,
+                        username: username,
+                        role: role
+                    });
+
+                if (dbError) {
+                    // Cleanup if DB insert fails (Optional but good practice)
+                    console.error("DB Error:", dbError);
+                    alert("Użytkownik Auth utworzony, ale wystąpił błąd zapisu profilu: " + dbError.message);
+                } else {
+                    alert(`✅ Sukces! Utworzono użytkownika: ${username} (${role})`);
+                    closeModal();
+                    document.getElementById('createUserForm').reset();
+                }
+
+            } catch (err) {
+                alert("Błąd: " + err.message);
+            } finally {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        }
     </script>
 </body>
 </html>
-
-
-
