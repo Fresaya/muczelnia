@@ -16,8 +16,7 @@
                     <li class="nav-item"><a href="#" class="nav-link active"><span>Pulpit</span></a></li>
                 </ul>
             </div>
-            <div class="logout-btn" id="logoutBtn"><span>Wyloguj</span></div>
-        </aside>
+            </aside>
 
         <main class="main-content">
             <div class="welcome-header">
@@ -27,24 +26,20 @@
                 </div>
             </div>
 
-            <!-- STATIC DASHBOARD  fGRID -->
             <div class="dashboard-grid">
                 
-                <!-- 1. LINK TO COURSES LIST -->
                 <a href="courses_list.html" class="widget-tile">
                     <div class="widget-icon icon-course-active"></div>
                     <h3>Moje Kursy</h3>
                     <p class="course-meta">Przejdź do listy zajęć</p>
                 </a>
 
-                <!-- 2. QUIZZES (Placeholder) -->
                 <a href="#" class="widget-tile" onclick="alert('Moduł ćwiczeń w budowie!')">
                     <div class="widget-icon icon-notes"></div>
                     <h3>Ćwiczenia</h3>
                     <p class="course-meta">Testy i Quizy</p>
                 </a>
 
-                <!-- 3. OTHER TOOLS -->
                 <a href="#" class="widget-tile">
                     <div class="widget-icon icon-calendar"></div>
                     <h3>Kalendarz</h3>
@@ -65,7 +60,15 @@
 
         <aside class="sidebar-right">
             <div class="profile-card">
-                <div class="avatar"></div>
+                <div class="avatar" id="avatarTrigger" title="Kliknij, aby otworzyć opcje"></div>
+                
+                <div class="dropdown-menu" id="profileDropdown">
+                    <div class="dropdown-item" id="logoutBtn">
+                        <div class="icon-logout"></div>
+                        Wyloguj się
+                    </div>
+                </div>
+
                 <h2 class="profile-name" id="profile-name-display">...</h2>
                 <p class="profile-id" id="profile-role-display">...</p>
             </div>
@@ -98,7 +101,26 @@
                 document.getElementById('welcome-message').textContent = `Witaj, ${profile.username}!`;
             }
 
-            document.getElementById('logoutBtn').addEventListener('click', async () => {
+            // --- LOGOUT & DROPDOWN LOGIC ---
+            const avatarTrigger = document.getElementById('avatarTrigger');
+            const dropdown = document.getElementById('profileDropdown');
+            const logoutBtn = document.getElementById('logoutBtn');
+
+            // Toggle menu
+            avatarTrigger.addEventListener('click', (e) => {
+                e.stopPropagation(); // Stop click from bubbling to window
+                dropdown.classList.toggle('show');
+            });
+
+            // Close menu when clicking outside
+            window.addEventListener('click', () => {
+                if (dropdown.classList.contains('show')) {
+                    dropdown.classList.remove('show');
+                }
+            });
+
+            // Handle Logout
+            logoutBtn.addEventListener('click', async () => {
                 await _supabase.auth.signOut();
                 window.location.href = 'login.html';
             });
@@ -106,4 +128,3 @@
     </script>
 </body>
 </html>
-
