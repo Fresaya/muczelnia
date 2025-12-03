@@ -91,7 +91,7 @@
 
     <!-- ================= MODALS ================= -->
 
-    <!-- 1. CREATE USER MODAL -->
+    <!-- 1. CREATE USER MODAL (UPDATED WITH SCHOOL/CLASS) -->
     <div class="modal-overlay" id="createUserModal">
         <div class="modal-window">
             <div class="modal-header">
@@ -105,13 +105,31 @@
                 <input type="email" id="new-email" class="edit-input" required>
                 <label>Hasło</label>
                 <input type="password" id="new-password" class="edit-input" required>
+                
                 <label>Rola</label>
-                <select id="new-role" class="edit-input" style="border:1px solid #ccc;">
-                    <option value="student">Student</option>
+                <select id="new-role" class="edit-input" style="border:1px solid #ccc; margin-bottom: 15px;">
+                    <option value="student" selected>Student</option>
                     <option value="teacher">Nauczyciel</option>
                     <option value="manager">Dziekanat (Manager)</option>
                     <option value="admin">Administrator</option>
                 </select>
+
+                <!-- NEW: SCHOOL SELECT -->
+                <div id="school-select-container" style="display: block;">
+                    <label>Szkoła / Wydział</label>
+                    <select id="new-user-school" class="edit-input" style="border:1px solid #ccc; margin-bottom: 15px;">
+                        <option value="" selected>-- Brak / Ogólne --</option>
+                    </select>
+                </div>
+
+                <!-- NEW: CLASS SELECT (Hidden for teachers/admins) -->
+                <div id="class-select-container" style="display: block;">
+                    <label>Klasa / Grupa</label>
+                    <select id="new-user-class" class="edit-input" style="border:1px solid #ccc; margin-bottom: 15px;" disabled>
+                        <option value="" selected>-- Najpierw wybierz szkołę --</option>
+                    </select>
+                </div>
+
                 <button type="submit" class="login-button full-width-btn" id="createBtn">Utwórz konto</button>
             </form>
         </div>
@@ -182,14 +200,12 @@
                 document.getElementById('welcome-message').textContent = `Witaj, ${profile.username}!`;
 
                 // --- ROLE BASED VISIBILITY ---
-                
-                // ADMIN: Widzi wszystko
                 if (profile.role === 'admin') {
                     document.getElementById('widget-create-course').style.display = 'flex';
                     
                     const btnUser = document.getElementById('widget-add-user');
                     btnUser.style.display = 'flex';
-                    btnUser.onclick = () => openModal('createUserModal');
+                    btnUser.onclick = () => openCreateUserModal(); // Updated function
 
                     const btnSchool = document.getElementById('widget-add-school');
                     btnSchool.style.display = 'flex';
@@ -197,10 +213,9 @@
 
                     const btnClass = document.getElementById('widget-add-class');
                     btnClass.style.display = 'flex';
-                    btnClass.onclick = () => openClassModal(); // Special function to load schools
+                    btnClass.onclick = () => openClassModal();
                 }
 
-                // MANAGER: Widzi tylko dodawanie klasy
                 if (profile.role === 'manager') {
                     const btnClass = document.getElementById('widget-add-class');
                     btnClass.style.display = 'flex';
@@ -256,6 +271,36 @@
                     document.getElementById('addClassForm').reset();
                 }
             });
+
+            // --- DYNAMIC UX FOR CREATE USER FORM ---
+            
+            // Toggle visibility based on role
+            document.getElementById('new-role').addEventListener('change', function() {
+                const role = this.value;
+                const classContainer = document.getElementById('class-select-container');
+                const schoolContainer = document.getElementById('school-select-container');
+                
+                // Show School for Student, Teacher, Manager
+                if (role === 'admin') {
+                    schoolContainer.style.display = 'none';
+                    classContainer.style.display = 'none';
+                } else {
+                    schoolContainer.style.display = 'block';
+                    // Show Class ONLY for Student
+                    if (role === 'student') {
+                        classContainer.style.display = 'block';
+                    } else {
+                        classContainer.style.display = 'none';
+                        document.getElementById('new-user-class').value = ""; // Clear class if switching to teacher
+                    }
+                }
+            });
+
+            // Load classes when school changes
+            document.getElementById('new-user-school').addEventListener('change', async function() {
+                const schoolId = this.value;
+                await loadClassesForSchool(schoolId);
+            });
         });
 
         // --- HELPER FUNCTIONS ---
@@ -263,13 +308,61 @@
         function openModal(id) { document.getElementById(id).classList.add('active'); }
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
+        // Fetch schools when opening Create User modal
+        async function openCreateUserModal() {
+            openModal('createUserModal');
+            const schoolSelect = document.getElementById('new-user-school');
+            
+            // Fetch schools
+            const { data: schools } = await _supabase.from('schools').select('id, name');
+            
+            schoolSelect.innerHTML = '<option value="" selected>-- Brak / Ogólne --</option>';
+            if (schools) {
+                schools.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.id;
+                    opt.textContent = s.name;
+                    schoolSelect.appendChild(opt);
+                });
+            }
+        }
+
+        // Fetch classes dynamically
+        async function loadClassesForSchool(schoolId) {
+            const classSelect = document.getElementById('new-user-class');
+            classSelect.innerHTML = '<option value="" selected>Ładowanie...</option>';
+            classSelect.disabled = true;
+
+            if (!schoolId) {
+                classSelect.innerHTML = '<option value="" selected>-- Najpierw wybierz szkołę --</option>';
+                return;
+            }
+
+            const { data: classes } = await _supabase
+                .from('classes')
+                .select('id, name')
+                .eq('school_id', schoolId);
+
+            classSelect.innerHTML = '<option value="" selected>-- Wybierz Klasę --</option>';
+            if (classes && classes.length > 0) {
+                classes.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c.id;
+                    opt.textContent = c.name;
+                    classSelect.appendChild(opt);
+                });
+                classSelect.disabled = false;
+            } else {
+                classSelect.innerHTML = '<option value="" selected>-- Brak klas w tej szkole --</option>';
+            }
+        }
+
+        // Fetch schools for "Add Class" modal (Admin/Manager)
         async function openClassModal() {
             openModal('addClassModal');
             const select = document.getElementById('class-school-select');
-            
-            // Only fetch if empty or needs refresh
             if (select.options.length <= 1) {
-                const { data: schools, error } = await _supabase.from('schools').select('id, name');
+                const { data: schools } = await _supabase.from('schools').select('id, name');
                 if (schools) {
                     select.innerHTML = '<option value="" disabled selected>-- Wybierz Szkołę --</option>';
                     schools.forEach(s => {
@@ -292,15 +385,25 @@
             const password = document.getElementById('new-password').value;
             const username = document.getElementById('new-username').value;
             const role = document.getElementById('new-role').value;
+            const schoolId = document.getElementById('new-user-school').value;
+            const classId = document.getElementById('new-user-class').value;
 
             try {
                 const tempSupabase = supabase.createClient(supabaseUrl, supabaseKey, {
                     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
                 });
 
+                // SEND DATA VIA METADATA (Trigger handles insertion)
                 const { data: authData, error: authError } = await tempSupabase.auth.signUp({
                     email: email, password: password,
-                    options: { data: { username: username, role: role } }
+                    options: { 
+                        data: { 
+                            username: username, 
+                            role: role,
+                            school_id: schoolId || null, // Send ID or null
+                            class_id: classId || null    // Send ID or null
+                        } 
+                    }
                 });
 
                 if (authError) throw authError;
