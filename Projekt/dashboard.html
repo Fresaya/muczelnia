@@ -16,7 +16,6 @@
                     <li class="nav-item"><a href="#" class="nav-link active"><span>Pulpit</span></a></li>
                 </ul>
             </div>
-            <!-- Logout moved to top right -->
         </aside>
 
         <main class="main-content">
@@ -26,7 +25,7 @@
                     <p>Wybierz moduł, aby kontynuować.</p>
                 </div>
                 
-                <!-- ACTION BUTTONS (Hidden by default, shown via JS) -->
+                <!-- ACTION BUTTONS (Hidden by default) -->
                 <div class="header-actions">
                     <button id="btnAddUser" class="action-btn btn-add-user" onclick="openModal('userModal')" style="display:none;">
                         + Użytkownik
@@ -64,7 +63,7 @@
         </main>
 
         <aside class="sidebar-right">
-            <!-- PROFILE CARD (Clickable for Menu) -->
+            <!-- PROFILE CARD -->
             <div class="profile-card" onclick="toggleProfileMenu()">
                 <div class="avatar"></div>
                 <h2 class="profile-name" id="profile-name-display">...</h2>
@@ -124,12 +123,20 @@
         
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        // --- UI HELPERS ---
-        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        function toggleProfileMenu() { 
+        // --- GLOBAL UI FUNCTIONS ---
+        // Attached to window to ensure HTML onclick can see them
+        window.openModal = function(id) { 
+            document.getElementById(id).style.display = 'flex'; 
+        }
+        
+        window.closeModal = function(id) { 
+            document.getElementById(id).style.display = 'none'; 
+        }
+        
+        window.toggleProfileMenu = function() { 
+            console.log("Toggling profile menu...");
             const menu = document.getElementById('profileMenu');
-            menu.classList.toggle('active');
+            if (menu) menu.classList.toggle('active');
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
@@ -150,20 +157,22 @@
                 document.getElementById('profile-role-display').textContent = profile.role.toUpperCase();
                 document.getElementById('welcome-message').textContent = `Witaj, ${profile.username}!`;
 
-                // SHOW BUTTONS based on role (Functional)
-                if (['admin', 'manager', 'teacher'].includes(profile.role)) {
+                // Safe Role Checking (Case Insensitive)
+                const role = profile.role.toLowerCase().trim();
+                console.log("Logged in as role:", role);
+
+                // Show buttons based on role
+                if (['admin', 'manager', 'teacher'].includes(role)) {
                     document.getElementById('btnAddUser').style.display = 'flex';
                 }
-                if (profile.role === 'admin') {
+                if (role === 'admin') {
                     document.getElementById('btnAddCourse').style.display = 'flex';
                 }
             }
 
-            // --- ADD USER HANDLER (ACTIVE LOGIC) ---
+            // --- ADD USER LOGIC ---
             document.getElementById('addUserForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
-                
-                // Trim inputs to avoid invalid email errors
                 const name = document.getElementById('uName').value.trim();
                 const email = document.getElementById('uEmail').value.trim();
                 const password = document.getElementById('uPass').value.trim();
@@ -172,72 +181,48 @@
                 if(!confirm(`Dodać użytkownika: ${name}?`)) return;
 
                 try {
-                    // 1. Create a "Disposable" Client
-                    // This prevents the 'signUp' function from logging out the current admin
+                    // Create temp client to keep admin logged in
                     const tempClient = supabase.createClient(supabaseUrl, supabaseKey, {
-                        auth: {
-                            persistSession: false, // Don't save session to browser
-                            autoRefreshToken: false,
-                            detectSessionInUrl: false
-                        }
+                        auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
                     });
 
-                    // 2. Create the User
-                    // The Metadata { ... } is read by the SQL Trigger we just ran
-                    const { data, error } = await tempClient.auth.signUp({
-                        email: email,
-                        password: password,
-                        options: {
-                            data: {
-                                username: name,
-                                role: role,
-                                school_id: profile.school_id || null // Link to current admin's school if available
-                            }
-                        }
+                    const { error } = await tempClient.auth.signUp({
+                        email: email, password: password,
+                        options: { data: { username: name, role: role, school_id: profile.school_id } }
                     });
 
                     if (error) throw error;
 
-                    alert(`✅ Sukces! Użytkownik ${name} dodany.`);
-                    closeModal('userModal');
-                    // Clear inputs
+                    alert("✅ Użytkownik dodany!");
+                    window.closeModal('userModal');
                     document.getElementById('addUserForm').reset();
 
                 } catch (err) {
-                    console.error(err);
                     alert("Błąd: " + err.message);
                 }
             });
 
-            // --- ADD COURSE HANDLER (ACTIVE LOGIC) ---
+            // --- ADD COURSE LOGIC ---
             document.getElementById('addCourseForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const title = document.getElementById('cTitle').value.trim();
-                const desc = document.getElementById('cDesc').value.trim();
-
-                if(!confirm(`Utworzyć kurs: ${title}?`)) return;
+                const title = document.getElementById('cTitle').value;
+                const desc = document.getElementById('cDesc').value;
 
                 const { error } = await _supabase
                     .from('courses')
-                    .insert({ 
-                        title: title, 
-                        description: desc, 
-                        school_id: profile.school_id, // Link to school if applicable
-                        author_id: userId 
-                    }); 
+                    .insert({ title: title, description: desc, author_id: userId, school_id: profile.school_id });
 
-                if (error) {
-                    alert("Błąd: " + error.message);
-                } else { 
+                if (error) alert("Błąd: " + error.message);
+                else { 
                     alert("✅ Kurs utworzony!"); 
-                    closeModal('courseModal'); 
+                    window.closeModal('courseModal'); 
                     document.getElementById('addCourseForm').reset();
                 }
             });
 
             // Logout Logic
             document.getElementById('logoutBtn').addEventListener('click', async (e) => {
-                e.stopPropagation(); 
+                e.stopPropagation(); // Prevents menu from closing immediately
                 await _supabase.auth.signOut();
                 window.location.href = 'login.html';
             });
