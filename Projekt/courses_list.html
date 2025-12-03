@@ -97,60 +97,61 @@
                 return;
             }
 
-            // 2. FETCH COURSES VIA JUNCTION TABLE
-            // Query: "Give me rows from course_classes where class_id is MY class, and include the course details"
-            let query = _supabase
-                .from('course_classes')
-                .select('course_id, courses ( id, title, description )');
-            
-            // If student, filter by their class. If admin, maybe fetch all unique? 
-            // For now, let's show courses for the user's class context.
-            // If admin has no class_id, this might return empty, so let's handle admin separately or require class.
-            
-            if (profile.role === 'admin' || profile.role === 'manager') {
-                 // For Admins/Managers, let's just show ALL courses for now (or distinct ones)
-                 // Or keep it simple: fetch directly from courses table
-                 const { data: allCourses } = await _supabase.from('courses').select('id, title, description');
-                 renderCourses(allCourses ? allCourses.map(c => ({ courses: c })) : []); // Adapter format
-                 return;
+            // 2. FETCH COURSES (Include TYPE)
+        let query = _supabase
+            .from('course_classes')
+            .select('course_id, courses ( id, title, description, type )'); // Added type
+        
+        if (profile.role === 'admin' || profile.role === 'manager') {
+             const { data: allCourses } = await _supabase.from('courses').select('id, title, description, type');
+             renderCourses(allCourses ? allCourses.map(c => ({ courses: c })) : []);
+             return;
+        } else {
+            query = query.eq('class_id', profile.class_id);
+        }
+
+        const { data: linkedCourses } = await query;
+        renderCourses(linkedCourses);
+
+        function renderCourses(data) {
+            const gridContainer = document.getElementById('courses-grid');
+            gridContainer.innerHTML = ''; 
+
+            if (data && data.length > 0) {
+                data.forEach(item => {
+                    const course = item.courses;
+                    if (!course) return;
+
+                    const tile = document.createElement('a');
+                    tile.href = `course.html?id=${course.id}`; 
+                    tile.className = 'widget-tile';
+                    
+                    // ICON LOGIC
+                    let iconClass = 'icon-course-active'; // Default book
+                    let typeLabel = 'Kurs';
+                    
+                    if (course.type === 'quiz') {
+                        // Change icon for quiz (using SVG inline for reliability or different class)
+                        iconClass = 'icon-quiz'; // We can add this class or just swap HTML
+                        typeLabel = 'Quiz / Test';
+                    }
+
+                    // Custom SVG for Quiz if needed
+                    const iconHtml = course.type === 'quiz' 
+                        ? `<div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23333%22 stroke-width=%221.5%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><circle cx=%2212%22 cy=%2212%22 r=%2210%22></circle><path d=%22M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3%22></path><line x1=%2212%22 y1=%2217%22 x2=%2212.01%22 y2=%2217%22></line></svg>');"></div>`
+                        : `<div class="widget-icon icon-course-active"></div>`;
+
+                    tile.innerHTML = `
+                        ${iconHtml}
+                        <h3>${course.title}</h3>
+                        <div class="course-meta" style="margin-top:15px; color:${course.type==='quiz'?'#9C27B0':'#888'}">${typeLabel}</div>
+                    `;
+                    gridContainer.appendChild(tile);
+                });
             } else {
-                query = query.eq('class_id', profile.class_id);
+                 gridContainer.innerHTML += `<div class="widget-tile" style="grid-column:1/-1;"><h3>Brak materiałów</h3></div>`;
             }
-
-            const { data: linkedCourses, error } = await query;
-
-            renderCourses(linkedCourses);
-
-            function renderCourses(data) {
-                const gridContainer = document.getElementById('courses-grid');
-                gridContainer.innerHTML = ''; 
-
-                if (data && data.length > 0) {
-                    data.forEach(item => {
-                        // The structure is { course_id: 1, courses: { title: '...', ... } }
-                        const course = item.courses;
-                        if (!course) return;
-
-                        const tile = document.createElement('a');
-                        tile.href = `course.html?id=${course.id}`; 
-                        tile.className = 'widget-tile';
-                        
-                        // NO PROGRESS BAR HERE
-                        tile.innerHTML = `
-                            <div class="widget-icon icon-course-active"></div>
-                            <h3>${course.title}</h3>
-                            <div class="course-meta" style="margin-top:15px;">Przejdź do kursu →</div>
-                        `;
-                        gridContainer.appendChild(tile);
-                    });
-                } else {
-                     gridContainer.innerHTML += `
-                        <div class="widget-tile" style="grid-column:1/-1; text-align:center; padding:50px;">
-                            <h3>Brak kursów</h3>
-                            <p style="color:#888;">Twoja klasa nie ma jeszcze przypisanych kursów.</p>
-                        </div>`;
-                }
-            }
+        }
 
             // Dropdown & Logout Logic
             const avatarTrigger = document.getElementById('avatarTrigger');
