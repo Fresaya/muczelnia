@@ -59,16 +59,18 @@
                     <p class="course-meta">Admin & Manager</p>
                 </div>
 
+                <!-- 5. NEW: ZARZĄDZAJ UCZNIAMI (Admin & Manager) -->
+                <div id="widget-manage-students" class="widget-tile" style="display: none; border: 2px dashed #FF9800; cursor: pointer;">
+                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23FF9800%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2%22></path><circle cx=%229%22 cy=%227%22 r=%224%22></circle><path d=%22M23 21v-2a4 4 0 0 0-3-3.87%22></path><path d=%22M16 3.13a4 4 0 0 1 0 7.75%22></path></svg>');"></div>
+                    <h3 style="color: #FF9800;">Uczniowie</h3>
+                    <p class="course-meta">Przypisz klasy</p>
+                </div>
+
                 <!-- STANDARD TILES -->
                 <a href="courses_list.html" class="widget-tile">
                     <div class="widget-icon icon-course-active"></div>
                     <h3>Moje Kursy</h3>
                     <p class="course-meta">Przejdź do listy zajęć</p>
-                </a>
-
-                <a href="#" class="widget-tile" onclick="alert('Moduł w budowie!')">
-                    <div class="widget-icon icon-grades"></div>
-                    <h3>Oceny</h3>
                 </a>
             </div>
         </main>
@@ -91,7 +93,7 @@
 
     <!-- ================= MODALS ================= -->
 
-    <!-- 1. CREATE USER MODAL (UPDATED WITH SCHOOL/CLASS) -->
+    <!-- 1. CREATE USER MODAL (CLASS REMOVED) -->
     <div class="modal-overlay" id="createUserModal">
         <div class="modal-window">
             <div class="modal-header">
@@ -114,28 +116,21 @@
                     <option value="admin">Administrator</option>
                 </select>
 
-                <!-- NEW: SCHOOL SELECT -->
+                <!-- SCHOOL SELECT -->
                 <div id="school-select-container" style="display: block;">
                     <label>Szkoła / Wydział</label>
                     <select id="new-user-school" class="edit-input" style="border:1px solid #ccc; margin-bottom: 15px;">
                         <option value="" selected>-- Brak / Ogólne --</option>
                     </select>
                 </div>
-
-                <!-- NEW: CLASS SELECT (Hidden for teachers/admins) -->
-                <div id="class-select-container" style="display: block;">
-                    <label>Klasa / Grupa</label>
-                    <select id="new-user-class" class="edit-input" style="border:1px solid #ccc; margin-bottom: 15px;" disabled>
-                        <option value="" selected>-- Najpierw wybierz szkołę --</option>
-                    </select>
-                </div>
+                <!-- CLASS SELECT IS REMOVED FROM HERE -->
 
                 <button type="submit" class="login-button full-width-btn" id="createBtn">Utwórz konto</button>
             </form>
         </div>
     </div>
 
-    <!-- 2. ADD SCHOOL MODAL (Admin Only) -->
+    <!-- 2. ADD SCHOOL MODAL -->
     <div class="modal-overlay" id="addSchoolModal">
         <div class="modal-window">
             <div class="modal-header">
@@ -152,7 +147,7 @@
         </div>
     </div>
 
-    <!-- 3. ADD CLASS MODAL (Admin & Manager) -->
+    <!-- 3. ADD CLASS MODAL -->
     <div class="modal-overlay" id="addClassModal">
         <div class="modal-window">
             <div class="modal-header">
@@ -164,14 +159,50 @@
                 <select id="class-school-select" class="edit-input" style="border:1px solid #ccc;" required>
                     <option value="" disabled selected>Ładowanie szkół...</option>
                 </select>
-                
                 <label>Nazwa Klasy</label>
                 <input type="text" id="class-name" class="edit-input" placeholder="np. 1A - Informatyka" required>
-                
                 <button type="submit" class="login-button full-width-btn">Zapisz Klasę</button>
             </form>
         </div>
     </div>
+
+    <!-- 4. MANAGE STUDENTS MODAL (NEW) -->
+    <div class="modal-overlay" id="manageStudentsModal">
+        <div class="modal-window" style="max-width: 800px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Zarządzanie Uczniami</h3>
+                <span class="close-modal" onclick="closeModal('manageStudentsModal')">&times;</span>
+            </div>
+            
+            <!-- School Filter (Only for Admin) -->
+            <div id="manage-school-wrapper" style="margin-bottom: 20px;">
+                <label>Wybierz szkołę, aby zobaczyć uczniów:</label>
+                <select id="manage-school-select" class="edit-input" style="border:1px solid #ccc;">
+                    <option value="" disabled selected>Wybierz...</option>
+                </select>
+            </div>
+
+            <div id="students-loading" style="display:none; text-align:center;">Ładowanie listy...</div>
+            
+            <div id="students-table-container" style="max-height: 400px; overflow-y: auto; display: none;">
+                <table class="student-table">
+                    <thead>
+                        <tr>
+                            <th>Imię i Nazwisko</th>
+                            <th>Email</th>
+                            <th>Przypisana Klasa</th>
+                            <th>Akcja</th>
+                        </tr>
+                    </thead>
+                    <tbody id="students-table-body">
+                        <!-- Rows injected via JS -->
+                    </tbody>
+                </table>
+                <p id="no-students-msg" style="text-align:center; color:#888; display:none; padding:20px;">Brak studentów w tej szkole.</p>
+            </div>
+        </div>
+    </div>
+
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
@@ -180,6 +211,9 @@
         
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
+        let currentUserRole = null;
+        let currentUserSchoolId = null;
+
         document.addEventListener('DOMContentLoaded', async () => {
             // 1. Auth Check
             const { data: { session } } = await _supabase.auth.getSession();
@@ -187,39 +221,46 @@
 
             const userId = session.user.id;
             
-            // 2. Fetch Profile & Check Roles
+            // 2. Fetch Profile
             const { data: profile } = await _supabase
                 .from('users')
-                .select('username, role')
+                .select('username, role, school_id')
                 .eq('id', userId)
                 .single();
 
             if (profile) {
+                currentUserRole = profile.role;
+                currentUserSchoolId = profile.school_id;
+
                 document.getElementById('profile-name-display').textContent = profile.username;
                 document.getElementById('profile-role-display').textContent = profile.role.toUpperCase();
                 document.getElementById('welcome-message').textContent = `Witaj, ${profile.username}!`;
 
                 // --- ROLE BASED VISIBILITY ---
-                if (profile.role === 'admin') {
-                    document.getElementById('widget-create-course').style.display = 'flex';
-                    
-                    const btnUser = document.getElementById('widget-add-user');
-                    btnUser.style.display = 'flex';
-                    btnUser.onclick = () => openCreateUserModal(); // Updated function
+                
+                // ADMIN
+                if (currentUserRole === 'admin') {
+                    show('widget-create-course');
+                    show('widget-add-user');
+                    show('widget-add-school');
+                    show('widget-add-class');
+                    show('widget-manage-students');
 
-                    const btnSchool = document.getElementById('widget-add-school');
-                    btnSchool.style.display = 'flex';
-                    btnSchool.onclick = () => openModal('addSchoolModal');
-
-                    const btnClass = document.getElementById('widget-add-class');
-                    btnClass.style.display = 'flex';
-                    btnClass.onclick = () => openClassModal();
+                    // Bind Actions
+                    document.getElementById('widget-add-user').onclick = () => openCreateUserModal();
+                    document.getElementById('widget-add-school').onclick = () => openModal('addSchoolModal');
+                    document.getElementById('widget-add-class').onclick = () => openClassModal();
+                    document.getElementById('widget-manage-students').onclick = () => openManageStudentsModal();
                 }
 
-                if (profile.role === 'manager') {
-                    const btnClass = document.getElementById('widget-add-class');
-                    btnClass.style.display = 'flex';
-                    btnClass.onclick = () => openClassModal();
+                // MANAGER
+                if (currentUserRole === 'manager') {
+                    show('widget-add-class');
+                    show('widget-manage-students');
+
+                    // Bind Actions
+                    document.getElementById('widget-add-class').onclick = () => openClassModal();
+                    document.getElementById('widget-manage-students').onclick = () => openManageStudentsModal();
                 }
             }
 
@@ -227,95 +268,60 @@
             const avatarTrigger = document.getElementById('avatarTrigger');
             const dropdown = document.getElementById('profileDropdown');
             const logoutBtn = document.getElementById('logoutBtn');
-
             avatarTrigger.addEventListener('click', (e) => { e.stopPropagation(); dropdown.classList.toggle('show'); });
             window.addEventListener('click', () => { if (dropdown.classList.contains('show')) dropdown.classList.remove('show'); });
             logoutBtn.addEventListener('click', async () => { await _supabase.auth.signOut(); window.location.href = 'login.html'; });
 
-            // --- FORM LISTENERS ---
+            // --- FORM SUBMITS ---
+            document.getElementById('createUserForm').addEventListener('submit', createNewUser);
+            document.getElementById('addSchoolForm').addEventListener('submit', addSchool);
+            document.getElementById('addClassForm').addEventListener('submit', addClass);
 
-            // 1. Create User
-            document.getElementById('createUserForm').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                await createNewUser();
-            });
-
-            // 2. Add School
-            document.getElementById('addSchoolForm').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const name = document.getElementById('school-name').value;
-                const address = document.getElementById('school-address').value;
-
-                const { error } = await _supabase.from('schools').insert({ name, address });
-                if (error) alert("Błąd: " + error.message);
-                else {
-                    alert("Szkoła dodana!");
-                    closeModal('addSchoolModal');
-                    document.getElementById('addSchoolForm').reset();
-                }
-            });
-
-            // 3. Add Class
-            document.getElementById('addClassForm').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const schoolId = document.getElementById('class-school-select').value;
-                const name = document.getElementById('class-name').value;
-
-                if (!schoolId) return alert("Wybierz szkołę!");
-
-                const { error } = await _supabase.from('classes').insert({ school_id: schoolId, name });
-                if (error) alert("Błąd: " + error.message);
-                else {
-                    alert("Klasa dodana!");
-                    closeModal('addClassModal');
-                    document.getElementById('addClassForm').reset();
-                }
-            });
-
-            // --- DYNAMIC UX FOR CREATE USER FORM ---
-            
-            // Toggle visibility based on role
+            // Create User - Toggle School visibility
             document.getElementById('new-role').addEventListener('change', function() {
                 const role = this.value;
-                const classContainer = document.getElementById('class-select-container');
                 const schoolContainer = document.getElementById('school-select-container');
-                
-                // Show School for Student, Teacher, Manager
-                if (role === 'admin') {
-                    schoolContainer.style.display = 'none';
-                    classContainer.style.display = 'none';
-                } else {
-                    schoolContainer.style.display = 'block';
-                    // Show Class ONLY for Student
-                    if (role === 'student') {
-                        classContainer.style.display = 'block';
-                    } else {
-                        classContainer.style.display = 'none';
-                        document.getElementById('new-user-class').value = ""; // Clear class if switching to teacher
-                    }
-                }
+                if (role === 'admin') schoolContainer.style.display = 'none';
+                else schoolContainer.style.display = 'block';
             });
 
-            // Load classes when school changes
-            document.getElementById('new-user-school').addEventListener('change', async function() {
-                const schoolId = this.value;
-                await loadClassesForSchool(schoolId);
+            // Student Manager - School Select Change
+            document.getElementById('manage-school-select').addEventListener('change', function() {
+                loadStudentsForSchool(this.value);
             });
         });
 
-        // --- HELPER FUNCTIONS ---
-
+        // --- FUNCTIONS ---
+        function show(id) { document.getElementById(id).style.display = 'flex'; }
         function openModal(id) { document.getElementById(id).classList.add('active'); }
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
-        // Fetch schools when opening Create User modal
+        // 1. ADD SCHOOL
+        async function addSchool(e) {
+            e.preventDefault();
+            const name = document.getElementById('school-name').value;
+            const address = document.getElementById('school-address').value;
+            const { error } = await _supabase.from('schools').insert({ name, address });
+            if (error) alert("Błąd: " + error.message);
+            else { alert("Szkoła dodana!"); closeModal('addSchoolModal'); document.getElementById('addSchoolForm').reset(); }
+        }
+
+        // 2. ADD CLASS
+        async function addClass(e) {
+            e.preventDefault();
+            const schoolId = document.getElementById('class-school-select').value;
+            const name = document.getElementById('class-name').value;
+            if (!schoolId) return alert("Wybierz szkołę!");
+            const { error } = await _supabase.from('classes').insert({ school_id: schoolId, name });
+            if (error) alert("Błąd: " + error.message);
+            else { alert("Klasa dodana!"); closeModal('addClassModal'); document.getElementById('addClassForm').reset(); }
+        }
+
+        // 3. CREATE USER (UPDATED - No Class)
         async function openCreateUserModal() {
             openModal('createUserModal');
             const schoolSelect = document.getElementById('new-user-school');
-            
-            // Fetch schools
             const { data: schools } = await _supabase.from('schools').select('id, name');
-            
             schoolSelect.innerHTML = '<option value="" selected>-- Brak / Ogólne --</option>';
             if (schools) {
                 schools.forEach(s => {
@@ -327,41 +333,65 @@
             }
         }
 
-        // Fetch classes dynamically
-        async function loadClassesForSchool(schoolId) {
-            const classSelect = document.getElementById('new-user-class');
-            classSelect.innerHTML = '<option value="" selected>Ładowanie...</option>';
-            classSelect.disabled = true;
+        async function createNewUser(e) {
+            e.preventDefault();
+            const btn = document.getElementById('createBtn');
+            const originalText = btn.textContent;
+            btn.textContent = "Tworzenie...";
+            btn.disabled = true;
 
-            if (!schoolId) {
-                classSelect.innerHTML = '<option value="" selected>-- Najpierw wybierz szkołę --</option>';
-                return;
-            }
+            const email = document.getElementById('new-email').value;
+            const password = document.getElementById('new-password').value;
+            const username = document.getElementById('new-username').value;
+            const role = document.getElementById('new-role').value;
+            const schoolId = document.getElementById('new-user-school').value;
+            // No classId here anymore
 
-            const { data: classes } = await _supabase
-                .from('classes')
-                .select('id, name')
-                .eq('school_id', schoolId);
-
-            classSelect.innerHTML = '<option value="" selected>-- Wybierz Klasę --</option>';
-            if (classes && classes.length > 0) {
-                classes.forEach(c => {
-                    const opt = document.createElement('option');
-                    opt.value = c.id;
-                    opt.textContent = c.name;
-                    classSelect.appendChild(opt);
+            try {
+                const tempSupabase = supabase.createClient(supabaseUrl, supabaseKey, {
+                    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
                 });
-                classSelect.disabled = false;
-            } else {
-                classSelect.innerHTML = '<option value="" selected>-- Brak klas w tej szkole --</option>';
-            }
+
+                const { data: authData, error: authError } = await tempSupabase.auth.signUp({
+                    email: email, password: password,
+                    options: { 
+                        data: { 
+                            username: username, 
+                            role: role,
+                            school_id: schoolId || null, 
+                            class_id: null // Explicitly null
+                        } 
+                    }
+                });
+
+                if (authError) throw authError;
+                alert(`✅ Sukces! Utworzono użytkownika: ${username}`);
+                closeModal('createUserModal');
+                document.getElementById('createUserForm').reset();
+            } catch (err) { alert("Błąd: " + err.message); } 
+            finally { btn.textContent = originalText; btn.disabled = false; }
         }
 
-        // Fetch schools for "Add Class" modal (Admin/Manager)
+        // 4. HELPERS FOR MODALS
         async function openClassModal() {
             openModal('addClassModal');
             const select = document.getElementById('class-school-select');
-            if (select.options.length <= 1) {
+            
+            // If Manager, auto-select school
+            if (currentUserRole === 'manager' && currentUserSchoolId) {
+                select.innerHTML = ''; // Clear
+                const { data: school } = await _supabase.from('schools').select('id, name').eq('id', currentUserSchoolId).single();
+                const opt = document.createElement('option');
+                opt.value = school.id;
+                opt.textContent = school.name;
+                opt.selected = true;
+                select.appendChild(opt);
+                select.disabled = true; // Can't change school
+                return;
+            }
+
+            // If Admin, load all
+            if (currentUserRole === 'admin' && select.options.length <= 1) {
                 const { data: schools } = await _supabase.from('schools').select('id, name');
                 if (schools) {
                     select.innerHTML = '<option value="" disabled selected>-- Wybierz Szkołę --</option>';
@@ -375,43 +405,146 @@
             }
         }
 
-        async function createNewUser() {
-            const btn = document.getElementById('createBtn');
+        // 5. MANAGE STUDENTS LOGIC (NEW)
+        async function openManageStudentsModal() {
+            openModal('manageStudentsModal');
+            const schoolSelect = document.getElementById('manage-school-select');
+            const tableContainer = document.getElementById('students-table-container');
+            const loading = document.getElementById('students-loading');
+
+            // Reset UI
+            tableContainer.style.display = 'none';
+            document.getElementById('students-table-body').innerHTML = '';
+
+            // If Manager: Auto-load their school
+            if (currentUserRole === 'manager' && currentUserSchoolId) {
+                schoolSelect.parentElement.style.display = 'none'; // Hide dropdown
+                loadStudentsForSchool(currentUserSchoolId);
+            } 
+            // If Admin: Load school list
+            else if (currentUserRole === 'admin') {
+                schoolSelect.parentElement.style.display = 'block';
+                schoolSelect.innerHTML = '<option value="" disabled selected>Ładowanie szkół...</option>';
+                const { data: schools } = await _supabase.from('schools').select('id, name');
+                schoolSelect.innerHTML = '<option value="" disabled selected>Wybierz...</option>';
+                schools.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.id;
+                    opt.textContent = s.name;
+                    schoolSelect.appendChild(opt);
+                });
+            }
+        }
+
+        async function loadStudentsForSchool(schoolId) {
+            if (!schoolId) return;
+            const tableBody = document.getElementById('students-table-body');
+            const container = document.getElementById('students-table-container');
+            const msg = document.getElementById('no-students-msg');
+            const loading = document.getElementById('students-loading');
+
+            loading.style.display = 'block';
+            container.style.display = 'none';
+            msg.style.display = 'none';
+            tableBody.innerHTML = '';
+
+            // 1. Fetch Students
+            const { data: students, error: sErr } = await _supabase
+                .from('users')
+                .select('id, username, email, class_id')
+                .eq('school_id', schoolId)
+                .eq('role', 'student');
+
+            // 2. Fetch Classes for this school (for dropdowns)
+            const { data: classes, error: cErr } = await _supabase
+                .from('classes')
+                .select('id, name')
+                .eq('school_id', schoolId);
+
+            loading.style.display = 'none';
+            container.style.display = 'block';
+
+            if (!students || students.length === 0) {
+                msg.style.display = 'block';
+                return;
+            }
+
+            // 3. Render Table
+            students.forEach(student => {
+                const tr = document.createElement('tr');
+                
+                // Name & Email
+                const tdName = document.createElement('td');
+                tdName.innerHTML = `<b>${student.username}</b>`;
+                
+                const tdEmail = document.createElement('td');
+                tdEmail.textContent = student.email;
+
+                // Class Selector
+                const tdClass = document.createElement('td');
+                const select = document.createElement('select');
+                select.className = 'class-select-small';
+                select.id = `class-select-${student.id}`;
+                
+                // Default option
+                const defOpt = document.createElement('option');
+                defOpt.value = "";
+                defOpt.textContent = "-- Brak klasy --";
+                if (!student.class_id) defOpt.selected = true;
+                select.appendChild(defOpt);
+
+                // Add classes
+                if (classes) {
+                    classes.forEach(c => {
+                        const opt = document.createElement('option');
+                        opt.value = c.id;
+                        opt.textContent = c.name;
+                        if (student.class_id === c.id) opt.selected = true;
+                        select.appendChild(opt);
+                    });
+                }
+                tdClass.appendChild(select);
+
+                // Action Button
+                const tdAction = document.createElement('td');
+                const btn = document.createElement('button');
+                btn.className = 'save-mini-btn';
+                btn.textContent = 'Zapisz';
+                btn.onclick = () => updateStudentClass(student.id, select.value, btn);
+                tdAction.appendChild(btn);
+
+                tr.appendChild(tdName);
+                tr.appendChild(tdEmail);
+                tr.appendChild(tdClass);
+                tr.appendChild(tdAction);
+                tableBody.appendChild(tr);
+            });
+        }
+
+        async function updateStudentClass(userId, classId, btn) {
             const originalText = btn.textContent;
-            btn.textContent = "Tworzenie...";
+            btn.textContent = "...";
             btn.disabled = true;
 
-            const email = document.getElementById('new-email').value;
-            const password = document.getElementById('new-password').value;
-            const username = document.getElementById('new-username').value;
-            const role = document.getElementById('new-role').value;
-            const schoolId = document.getElementById('new-user-school').value;
-            const classId = document.getElementById('new-user-class').value;
+            const finalClassId = classId ? parseInt(classId) : null;
 
-            try {
-                const tempSupabase = supabase.createClient(supabaseUrl, supabaseKey, {
-                    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
-                });
+            const { error } = await _supabase
+                .from('users')
+                .update({ class_id: finalClassId })
+                .eq('id', userId);
 
-                // SEND DATA VIA METADATA (Trigger handles insertion)
-                const { data: authData, error: authError } = await tempSupabase.auth.signUp({
-                    email: email, password: password,
-                    options: { 
-                        data: { 
-                            username: username, 
-                            role: role,
-                            school_id: schoolId || null, // Send ID or null
-                            class_id: classId || null    // Send ID or null
-                        } 
-                    }
-                });
-
-                if (authError) throw authError;
-                alert(`✅ Sukces! Utworzono użytkownika: ${username}`);
-                closeModal('createUserModal');
-                document.getElementById('createUserForm').reset();
-            } catch (err) { alert("Błąd: " + err.message); } 
-            finally { btn.textContent = originalText; btn.disabled = false; }
+            if (error) {
+                alert("Błąd: " + error.message);
+                btn.textContent = originalText;
+            } else {
+                btn.textContent = "✔ OK";
+                btn.style.background = "green";
+                setTimeout(() => {
+                    btn.textContent = "Zapisz";
+                    btn.style.background = "";
+                    btn.disabled = false;
+                }, 1500);
+            }
         }
     </script>
 </body>
