@@ -14,20 +14,23 @@
                 <div class="brand-area"><a href="dashboard.html" class="logo-text"><span>m</span>Uczelnia</a></div>
                 <ul class="nav-menu">
                     <li class="nav-item"><a href="dashboard.html" class="nav-link"><span>Pulpit</span></a></li>
+                    <!-- Active state for this page -->
                     <li class="nav-item"><a href="#" class="nav-link active"><span>Moje Kursy</span></a></li>
                 </ul>
             </div>
-            </aside>
+            <!-- Old Logout button removed -->
+        </aside>
 
         <main class="main-content">
             <div class="welcome-header">
                 <div>
                     <a href="dashboard.html" style="text-decoration:none; color:#888; font-size:14px;">← Wróć do pulpitu</a>
                     <h1>Moje Kursy</h1>
-                    <p>Lista przedmiotów, na które jesteś zapisany.</p>
+                    <p>Lista przedmiotów dostępnych dla Twojej klasy.</p>
                 </div>
             </div>
 
+            <!-- DYNAMIC COURSE GRID -->
             <div class="dashboard-grid" id="courses-grid">
                 <div style="grid-column: 1/-1; text-align:center; color:#888;">Ładowanie kursów...</div>
             </div>
@@ -35,8 +38,10 @@
 
         <aside class="sidebar-right">
             <div class="profile-card">
+                <!-- Avatar Trigger -->
                 <div class="avatar" id="avatarTrigger" title="Kliknij, aby otworzyć opcje"></div>
                 
+                <!-- Dropdown Menu -->
                 <div class="dropdown-menu" id="profileDropdown">
                     <div class="dropdown-item" id="logoutBtn">
                         <div class="icon-logout"></div>
@@ -45,6 +50,7 @@
                 </div>
 
                 <h2 class="profile-name" id="profile-name-display">...</h2>
+                <p class="profile-id" id="profile-school-display" style="font-size:12px; color:#888; margin-top:2px;">...</p>
             </div>
         </aside>
     </div>
@@ -58,71 +64,97 @@
 
         document.addEventListener('DOMContentLoaded', async () => {
             const { data: { session } } = await _supabase.auth.getSession();
-            if (!session) { window.location.href = 'login.html'; return; }
+            if (!session) { window.location.href = 'index.html'; return; }
 
             const userId = session.user.id;
 
-            // Fetch Profile
-            const { data: profile } = await _supabase.from('users').select('username').eq('id', userId).single();
-            if (profile) document.getElementById('profile-name-display').textContent = profile.username;
+            // 1. Fetch Profile (School & Class is crucial now)
+            const { data: profile } = await _supabase
+                .from('users')
+                .select('username, school_id, class_id, schools(name)')
+                .eq('id', userId)
+                .single();
+            
+            if (profile) {
+                document.getElementById('profile-name-display').textContent = profile.username;
+                if(profile.schools) {
+                    document.getElementById('profile-school-display').textContent = profile.schools.name;
+                }
+            }
 
-            // --- FETCH COURSES ---
-            const { data: enrollments, error } = await _supabase
+            // 2. FETCH AVAILABLE COURSES
+            // We fetch from 'courses' table. RLS (Security Policy) automatically filters 
+            // so we only receive courses for our School/Class.
+            const { data: availableCourses, error: courseError } = await _supabase
+                .from('courses')
+                .select('id, title, description, school_id, class_id');
+
+            // 3. FETCH PROGRESS (Separately)
+            // We check which of these courses the user has actually started
+            const { data: myProgress } = await _supabase
                 .from('user_courses')
-                .select('course_id, progress_percentage, courses ( title, description )')
+                .select('course_id, progress_percentage')
                 .eq('user_id', userId);
 
+            // Create a map for fast lookup: { courseId: percentage }
+            const progressMap = {};
+            if (myProgress) {
+                myProgress.forEach(p => progressMap[p.course_id] = p.progress_percentage);
+            }
+
+            // 4. RENDER
             const gridContainer = document.getElementById('courses-grid');
             gridContainer.innerHTML = ''; 
 
-            if (enrollments && enrollments.length > 0) {
-                enrollments.forEach(item => {
-                    const course = item.courses;
+            if (availableCourses && availableCourses.length > 0) {
+                availableCourses.forEach(course => {
+                    const progress = progressMap[course.id] || 0; // Default to 0% if not started
+                    
                     const tile = document.createElement('a');
                     
-                    // Link to the lesson player
-                    tile.href = `course.html?id=${item.course_id}`; 
+                    // Link to the lesson player (automatically creates enrollment on first click if handled by backend, 
+                    // or we just view it since we have access)
+                    tile.href = `course.html?id=${course.id}`; 
                     
                     tile.className = 'widget-tile';
+                    
+                    // Visual tweak: Show "Start" if 0%, else show percentage
+                    const statusText = progress === 0 ? "Rozpocznij" : `${progress}% Ukończono`;
+                    const barWidth = progress > 0 ? progress : 5; // Minimal visual width
+
                     tile.innerHTML = `
                         <div class="widget-icon icon-course-active"></div>
                         <h3>${course.title}</h3>
                         <div class="progress-track">
-                            <div class="progress-fill" style="width: ${item.progress_percentage}%"></div>
+                            <div class="progress-fill" style="width: ${progress}%"></div>
                         </div>
-                        <div class="course-meta">${item.progress_percentage}% Ukończono</div>
+                        <div class="course-meta">${statusText}</div>
                     `;
                     gridContainer.appendChild(tile);
                 });
             } else {
-                 gridContainer.innerHTML += `<div class="widget-tile" style="grid-column:1/-1;"><h3>Brak aktywnych kursów</h3></div>`;
+                 gridContainer.innerHTML += `
+                    <div class="widget-tile" style="grid-column:1/-1; text-align:center; padding:50px;">
+                        <h3>Brak kursów</h3>
+                        <p style="color:#888;">Nie ma jeszcze kursów przypisanych do Twojej szkoły lub klasy.</p>
+                    </div>`;
             }
 
-            // --- DROPDOWN & LOGOUT LOGIC ---
+            // Dropdown & Logout Logic
             const avatarTrigger = document.getElementById('avatarTrigger');
             const dropdown = document.getElementById('profileDropdown');
             const logoutBtn = document.getElementById('logoutBtn');
 
-            // Toggle menu
             if(avatarTrigger && dropdown) {
-                avatarTrigger.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    dropdown.classList.toggle('show');
-                });
+                avatarTrigger.addEventListener('click', (e) => { e.stopPropagation(); dropdown.classList.toggle('show'); });
             }
-
-            // Close menu when clicking outside
             window.addEventListener('click', () => {
-                if (dropdown && dropdown.classList.contains('show')) {
-                    dropdown.classList.remove('show');
-                }
+                if (dropdown && dropdown.classList.contains('show')) dropdown.classList.remove('show');
             });
-
-            // Handle Logout
             if(logoutBtn) {
                 logoutBtn.addEventListener('click', async () => {
                     await _supabase.auth.signOut();
-                    window.location.href = 'login.html'; // Assuming index.html is the login page
+                    window.location.href = 'index.html';
                 });
             }
         });
