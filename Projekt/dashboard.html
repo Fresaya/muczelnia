@@ -16,7 +16,7 @@
                     <li class="nav-item"><a href="#" class="nav-link active"><span>Pulpit</span></a></li>
                 </ul>
             </div>
-            <div class="logout-btn" id="logoutBtn"><span>Wyloguj</span></div>
+            <!-- Logout removed from here -->
         </aside>
 
         <main class="main-content">
@@ -25,51 +25,96 @@
                     <h1 id="welcome-message">Witaj!</h1>
                     <p>Wybierz moduł, aby kontynuować.</p>
                 </div>
+                
+                <!-- ACTION BUTTONS (Hidden by default, shown via JS) -->
+                <div class="header-actions">
+                    <button id="btnAddUser" class="action-btn btn-add-user" onclick="openModal('userModal')" style="display:none;">
+                        + Użytkownik
+                    </button>
+                    <button id="btnAddCourse" class="action-btn btn-add-course" onclick="openModal('courseModal')" style="display:none;">
+                        + Kurs
+                    </button>
+                </div>
             </div>
 
-            <!-- STATIC DASHBOARD GRID -->
             <div class="dashboard-grid">
-                
-                <!-- 1. LINK TO COURSES LIST -->
                 <a href="courses_list.html" class="widget-tile">
                     <div class="widget-icon icon-course-active"></div>
                     <h3>Moje Kursy</h3>
                     <p class="course-meta">Przejdź do listy zajęć</p>
                 </a>
-
-                <!-- 2. QUIZZES (Placeholder) -->
                 <a href="#" class="widget-tile" onclick="alert('Moduł ćwiczeń w budowie!')">
                     <div class="widget-icon icon-notes"></div>
                     <h3>Ćwiczenia</h3>
                     <p class="course-meta">Testy i Quizy</p>
                 </a>
-
-                <!-- 3. OTHER TOOLS -->
                 <a href="#" class="widget-tile">
                     <div class="widget-icon icon-calendar"></div>
                     <h3>Kalendarz</h3>
                 </a>
-
                 <a href="#" class="widget-tile">
                     <div class="widget-icon icon-grades"></div>
                     <h3>Oceny</h3>
                 </a>
-
                 <a href="#" class="widget-tile">
                     <div class="widget-icon icon-notes"></div>
                     <h3>Notatki</h3>
                 </a>
-
             </div>
         </main>
 
         <aside class="sidebar-right">
-            <div class="profile-card">
+            <!-- PROFILE CARD (Now Clickable) -->
+            <div class="profile-card" onclick="toggleProfileMenu()">
                 <div class="avatar"></div>
                 <h2 class="profile-name" id="profile-name-display">...</h2>
                 <p class="profile-id" id="profile-role-display">...</p>
+                
+                <!-- DROPDOWN MENU -->
+                <div class="profile-dropdown-menu" id="profileMenu">
+                    <button class="dropdown-item" onclick="alert('Profil w budowie')">Edytuj Profil</button>
+                    <button class="dropdown-item danger" id="logoutBtn">Wyloguj się</button>
+                </div>
             </div>
         </aside>
+    </div>
+
+    <!-- MODAL: ADD USER -->
+    <div class="modal-overlay" id="userModal" onclick="if(event.target === this) closeModal('userModal')">
+        <div class="modal">
+            <h2>Dodaj Użytkownika</h2>
+            <form id="addUserForm">
+                <div class="form-group"><label>Imię i Nazwisko</label><input type="text" id="uName" required></div>
+                <div class="form-group"><label>Email</label><input type="email" id="uEmail" required></div>
+                <div class="form-group"><label>Hasło</label><input type="password" id="uPass" value="password123" required></div>
+                <div class="form-group"><label>Rola</label>
+                    <select id="uRole" style="width:100%; padding:10px; border-radius:8px;">
+                        <option value="student">Student</option>
+                        <option value="teacher">Nauczyciel</option>
+                        <option value="manager">Manager</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" onclick="closeModal('userModal')">Anuluj</button>
+                    <button type="submit" class="btn-save">Dodaj</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD COURSE -->
+    <div class="modal-overlay" id="courseModal" onclick="if(event.target === this) closeModal('courseModal')">
+        <div class="modal">
+            <h2>Nowy Kurs</h2>
+            <form id="addCourseForm">
+                <div class="form-group"><label>Tytuł Kursu</label><input type="text" id="cTitle" required></div>
+                <div class="form-group"><label>Opis</label><input type="text" id="cDesc" required></div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" onclick="closeModal('courseModal')">Anuluj</button>
+                    <button type="submit" class="btn-save">Utwórz</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -79,16 +124,24 @@
         
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
+        // --- UI HELPERS ---
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        function toggleProfileMenu() { 
+            const menu = document.getElementById('profileMenu');
+            menu.classList.toggle('active');
+        }
+
         document.addEventListener('DOMContentLoaded', async () => {
             const { data: { session } } = await _supabase.auth.getSession();
             if (!session) { window.location.href = 'login.html'; return; }
 
             const userId = session.user.id;
             
-            // Just fetch profile info
+            // Fetch Profile
             const { data: profile } = await _supabase
                 .from('users')
-                .select('username, role')
+                .select('username, role, school_id')
                 .eq('id', userId)
                 .single();
 
@@ -96,9 +149,61 @@
                 document.getElementById('profile-name-display').textContent = profile.username;
                 document.getElementById('profile-role-display').textContent = profile.role.toUpperCase();
                 document.getElementById('welcome-message').textContent = `Witaj, ${profile.username}!`;
+
+                // 1. LOGIC: Add User Button (Admin, Manager, Teacher)
+                if (['admin', 'manager', 'teacher'].includes(profile.role)) {
+                    document.getElementById('btnAddUser').style.display = 'flex';
+                }
+
+                // 2. LOGIC: Add Course Button (Admin Only)
+                if (profile.role === 'admin') {
+                    document.getElementById('btnAddCourse').style.display = 'flex';
+                }
             }
 
-            document.getElementById('logoutBtn').addEventListener('click', async () => {
+            // --- ADD USER HANDLER ---
+            document.getElementById('addUserForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const name = document.getElementById('uName').value.trim();
+                const email = document.getElementById('uEmail').value.trim();
+                const password = document.getElementById('uPass').value.trim();
+                const role = document.getElementById('uRole').value;
+
+                if(!confirm(`Dodać użytkownika: ${name}?`)) return;
+
+                // Temp client to avoid logging out current user
+                const tempClient = supabase.createClient(supabaseUrl, supabaseKey, {
+                    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+                });
+
+                const { error } = await tempClient.auth.signUp({
+                    email: email, password: password,
+                    options: { data: { username: name, role: role, school_id: profile.school_id } }
+                });
+
+                if (error) alert("Błąd: " + error.message);
+                else { alert("✅ Użytkownik dodany!"); closeModal('userModal'); }
+            });
+
+            // --- ADD COURSE HANDLER ---
+            document.getElementById('addCourseForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const title = document.getElementById('cTitle').value;
+                const desc = document.getElementById('cDesc').value;
+
+                if(!confirm(`Utworzyć kurs: ${title}?`)) return;
+
+                const { error } = await _supabase
+                    .from('courses')
+                    .insert({ title: title, description: desc, author_id: userId }); // Admin is author
+
+                if (error) alert("Błąd: " + error.message);
+                else { alert("✅ Kurs utworzony!"); closeModal('courseModal'); }
+            });
+
+            // Logout Logic
+            document.getElementById('logoutBtn').addEventListener('click', async (e) => {
+                e.stopPropagation(); // Stop click from bubbling to profile card toggle
                 await _supabase.auth.signOut();
                 window.location.href = 'login.html';
             });
