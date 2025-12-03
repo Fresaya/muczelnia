@@ -14,12 +14,10 @@
                 <div class="brand-area"><a href="dashboard.html" class="logo-text"><span>m</span>Uczelnia</a></div>
                 <ul class="nav-menu">
                     <li class="nav-item"><a href="dashboard.html" class="nav-link"><span>Pulpit</span></a></li>
-                    <!-- Active state for this page -->
                     <li class="nav-item"><a href="#" class="nav-link active"><span>Moje Kursy</span></a></li>
                 </ul>
             </div>
-            <div class="logout-btn" id="logoutBtn"><span>Wyloguj</span></div>
-        </aside>
+            </aside>
 
         <main class="main-content">
             <div class="welcome-header">
@@ -30,7 +28,6 @@
                 </div>
             </div>
 
-            <!-- DYNAMIC COURSE GRID -->
             <div class="dashboard-grid" id="courses-grid">
                 <div style="grid-column: 1/-1; text-align:center; color:#888;">Ładowanie kursów...</div>
             </div>
@@ -38,7 +35,15 @@
 
         <aside class="sidebar-right">
             <div class="profile-card">
-                <div class="avatar"></div>
+                <div class="avatar" id="avatarTrigger" title="Kliknij, aby otworzyć opcje"></div>
+                
+                <div class="dropdown-menu" id="profileDropdown">
+                    <div class="dropdown-item" id="logoutBtn">
+                        <div class="icon-logout"></div>
+                        Wyloguj się
+                    </div>
+                </div>
+
                 <h2 class="profile-name" id="profile-name-display">...</h2>
             </div>
         </aside>
@@ -47,7 +52,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
-        // ✅ KEY INSERTED BELOW
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg';
         
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
@@ -94,11 +98,33 @@
                  gridContainer.innerHTML += `<div class="widget-tile" style="grid-column:1/-1;"><h3>Brak aktywnych kursów</h3></div>`;
             }
 
-            // Logout
-            document.getElementById('logoutBtn').addEventListener('click', async () => {
-                await _supabase.auth.signOut();
-                window.location.href = 'index.html';
+            // --- DROPDOWN & LOGOUT LOGIC ---
+            const avatarTrigger = document.getElementById('avatarTrigger');
+            const dropdown = document.getElementById('profileDropdown');
+            const logoutBtn = document.getElementById('logoutBtn');
+
+            // Toggle menu
+            if(avatarTrigger && dropdown) {
+                avatarTrigger.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    dropdown.classList.toggle('show');
+                });
+            }
+
+            // Close menu when clicking outside
+            window.addEventListener('click', () => {
+                if (dropdown && dropdown.classList.contains('show')) {
+                    dropdown.classList.remove('show');
+                }
             });
+
+            // Handle Logout
+            if(logoutBtn) {
+                logoutBtn.addEventListener('click', async () => {
+                    await _supabase.auth.signOut();
+                    window.location.href = 'index.html'; // Assuming index.html is the login page
+                });
+            }
         });
     </script>
 </body>
