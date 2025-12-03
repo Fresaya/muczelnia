@@ -28,43 +28,45 @@
                 </div>
             </div>
 
-            <!-- STATIC DASHBOARD GRID -->
+            <!-- DASHBOARD GRID -->
             <div class="dashboard-grid">
                 
-                <!-- 0. ADMIN TILE - CREATE COURSE (Visible only to Admin) -->
-                <a href="create_course.html" id="admin-create-course-widget" class="widget-tile" style="display: none; border: 2px dashed var(--accent-color);">
+                <!-- 1. ADMIN: UTWÓRZ KURS -->
+                <a href="create_course.html" id="widget-create-course" class="widget-tile" style="display: none; border: 2px dashed var(--accent-color);">
                     <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23f04a4a%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><rect x=%223%22 y=%223%22 width=%2218%22 height=%2218%22 rx=%222%22 ry=%222%22></rect><line x1=%2212%22 y1=%228%22 x2=%2212%22 y2=%2216%22></line><line x1=%228%22 y1=%2212%22 x2=%2216%22 y2=%2212%22></line></svg>');"></div>
                     <h3 style="color: var(--accent-color);">Utwórz Kurs</h3>
-                    <p class="course-meta">Panel Administratora</p>
+                    <p class="course-meta">Administrator</p>
                 </a>
                 
-                <!-- 0b. ADMIN TILE - ADD USER (From previous step) -->
-                <div id="admin-widget" class="widget-tile" style="display: none; border: 2px dashed #888; cursor: pointer;">
-                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2%22></path><circle cx=%228.5%22 cy=%227%22 r=%224%22></circle><line x1=%2220%22 y1=%228%22 x2=%2220%22 y2=%2214%22></line><line x1=%2223%22 y1=%2211%22 x2=%2217%22 y2=%2211%22></line></svg>');"></div>
-                    <h3 style="color: #888;">Dodaj Użytkownika</h3>
-                    <p class="course-meta">Panel Administratora</p>
+                <!-- 2. ADMIN: DODAJ UŻYTKOWNIKA -->
+                <div id="widget-add-user" class="widget-tile" style="display: none; border: 2px dashed #555; cursor: pointer;">
+                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23555%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2%22></path><circle cx=%228.5%22 cy=%227%22 r=%224%22></circle><line x1=%2220%22 y1=%228%22 x2=%2220%22 y2=%2214%22></line><line x1=%2223%22 y1=%2211%22 x2=%2217%22 y2=%2211%22></line></svg>');"></div>
+                    <h3 style="color: #555;">Dodaj Użytkownika</h3>
+                    <p class="course-meta">Administrator</p>
                 </div>
 
-                <!-- 1. LINK TO COURSES LIST -->
+                <!-- 3. ADMIN ONLY: DODAJ SZKOŁĘ -->
+                <div id="widget-add-school" class="widget-tile" style="display: none; border: 2px dashed #2196F3; cursor: pointer;">
+                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%232196F3%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M3 21h18M5 21V7l8-4 8 4v14M8 21v-4h8v4%22></path></svg>');"></div>
+                    <h3 style="color: #2196F3;">Dodaj Szkołę</h3>
+                    <p class="course-meta">Administrator</p>
+                </div>
+
+                <!-- 4. ADMIN & MANAGER: DODAJ KLASĘ -->
+                <div id="widget-add-class" class="widget-tile" style="display: none; border: 2px dashed #4CAF50; cursor: pointer;">
+                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%234CAF50%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2%22></path><circle cx=%229%22 cy=%227%22 r=%224%22></circle><path d=%22M23 21v-2a4 4 0 0 0-3-3.87%22></path><path d=%22M16 3.13a4 4 0 0 1 0 7.75%22></path></svg>');"></div>
+                    <h3 style="color: #4CAF50;">Dodaj Klasę</h3>
+                    <p class="course-meta">Admin & Manager</p>
+                </div>
+
+                <!-- STANDARD TILES -->
                 <a href="courses_list.html" class="widget-tile">
                     <div class="widget-icon icon-course-active"></div>
                     <h3>Moje Kursy</h3>
                     <p class="course-meta">Przejdź do listy zajęć</p>
                 </a>
 
-                <!-- 2. OTHER TOOLS -->
-                <a href="#" class="widget-tile" onclick="alert('Moduł ćwiczeń w budowie!')">
-                    <div class="widget-icon icon-notes"></div>
-                    <h3>Ćwiczenia</h3>
-                    <p class="course-meta">Testy i Quizy</p>
-                </a>
-
-                <a href="#" class="widget-tile">
-                    <div class="widget-icon icon-calendar"></div>
-                    <h3>Kalendarz</h3>
-                </a>
-
-                <a href="#" class="widget-tile">
+                <a href="#" class="widget-tile" onclick="alert('Moduł w budowie!')">
                     <div class="widget-icon icon-grades"></div>
                     <h3>Oceny</h3>
                 </a>
@@ -87,27 +89,68 @@
         </aside>
     </div>
 
-    <!-- CREATE USER MODAL (Previous Code) -->
+    <!-- ================= MODALS ================= -->
+
+    <!-- 1. CREATE USER MODAL -->
     <div class="modal-overlay" id="createUserModal">
         <div class="modal-window">
             <div class="modal-header">
-                <h3 class="modal-title">Dodaj nowego użytkownika</h3>
-                <span class="close-modal" onclick="closeModal()">&times;</span>
+                <h3 class="modal-title">Dodaj Użytkownika</h3>
+                <span class="close-modal" onclick="closeModal('createUserModal')">&times;</span>
             </div>
             <form id="createUserForm" class="modal-form">
                 <label>Nazwa</label>
-                <input type="text" id="new-username" class="edit-input" required style="border:1px solid #ccc;">
+                <input type="text" id="new-username" class="edit-input" required>
                 <label>Email</label>
-                <input type="email" id="new-email" class="edit-input" required style="border:1px solid #ccc;">
+                <input type="email" id="new-email" class="edit-input" required>
                 <label>Hasło</label>
-                <input type="password" id="new-password" class="edit-input" required style="border:1px solid #ccc;">
+                <input type="password" id="new-password" class="edit-input" required>
                 <label>Rola</label>
-                <select id="new-role" style="width:100%; padding:10px; border-radius:50px; border:1px solid #ccc; margin-bottom:15px;">
+                <select id="new-role" class="edit-input" style="border:1px solid #ccc;">
                     <option value="student">Student</option>
                     <option value="teacher">Nauczyciel</option>
+                    <option value="manager">Dziekanat (Manager)</option>
                     <option value="admin">Administrator</option>
                 </select>
                 <button type="submit" class="login-button full-width-btn" id="createBtn">Utwórz konto</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. ADD SCHOOL MODAL (Admin Only) -->
+    <div class="modal-overlay" id="addSchoolModal">
+        <div class="modal-window">
+            <div class="modal-header">
+                <h3 class="modal-title">Dodaj Szkołę/Wydział</h3>
+                <span class="close-modal" onclick="closeModal('addSchoolModal')">&times;</span>
+            </div>
+            <form id="addSchoolForm" class="modal-form">
+                <label>Nazwa Szkoły</label>
+                <input type="text" id="school-name" class="edit-input" placeholder="np. Wydział Informatyki" required>
+                <label>Adres (Opcjonalnie)</label>
+                <input type="text" id="school-address" class="edit-input" placeholder="ul. Słoneczna 5">
+                <button type="submit" class="login-button full-width-btn">Zapisz Szkołę</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 3. ADD CLASS MODAL (Admin & Manager) -->
+    <div class="modal-overlay" id="addClassModal">
+        <div class="modal-window">
+            <div class="modal-header">
+                <h3 class="modal-title">Dodaj Klasę/Grupę</h3>
+                <span class="close-modal" onclick="closeModal('addClassModal')">&times;</span>
+            </div>
+            <form id="addClassForm" class="modal-form">
+                <label>Wybierz Szkołę</label>
+                <select id="class-school-select" class="edit-input" style="border:1px solid #ccc;" required>
+                    <option value="" disabled selected>Ładowanie szkół...</option>
+                </select>
+                
+                <label>Nazwa Klasy</label>
+                <input type="text" id="class-name" class="edit-input" placeholder="np. 1A - Informatyka" required>
+                
+                <button type="submit" class="login-button full-width-btn">Zapisz Klasę</button>
             </form>
         </div>
     </div>
@@ -126,7 +169,7 @@
 
             const userId = session.user.id;
             
-            // 2. Fetch Profile
+            // 2. Fetch Profile & Check Roles
             const { data: profile } = await _supabase
                 .from('users')
                 .select('username, role')
@@ -138,15 +181,30 @@
                 document.getElementById('profile-role-display').textContent = profile.role.toUpperCase();
                 document.getElementById('welcome-message').textContent = `Witaj, ${profile.username}!`;
 
-                // 3. CHECK ROLE - Show Admin Buttons
+                // --- ROLE BASED VISIBILITY ---
+                
+                // ADMIN: Widzi wszystko
                 if (profile.role === 'admin') {
-                    // Show Create Course Button
-                    document.getElementById('admin-create-course-widget').style.display = 'flex';
+                    document.getElementById('widget-create-course').style.display = 'flex';
                     
-                    // Show Add User Button (From previous task)
-                    const adminUserWidget = document.getElementById('admin-widget');
-                    adminUserWidget.style.display = 'flex';
-                    adminUserWidget.addEventListener('click', openModal);
+                    const btnUser = document.getElementById('widget-add-user');
+                    btnUser.style.display = 'flex';
+                    btnUser.onclick = () => openModal('createUserModal');
+
+                    const btnSchool = document.getElementById('widget-add-school');
+                    btnSchool.style.display = 'flex';
+                    btnSchool.onclick = () => openModal('addSchoolModal');
+
+                    const btnClass = document.getElementById('widget-add-class');
+                    btnClass.style.display = 'flex';
+                    btnClass.onclick = () => openClassModal(); // Special function to load schools
+                }
+
+                // MANAGER: Widzi tylko dodawanie klasy
+                if (profile.role === 'manager') {
+                    const btnClass = document.getElementById('widget-add-class');
+                    btnClass.style.display = 'flex';
+                    btnClass.onclick = () => openClassModal();
                 }
             }
 
@@ -159,20 +217,73 @@
             window.addEventListener('click', () => { if (dropdown.classList.contains('show')) dropdown.classList.remove('show'); });
             logoutBtn.addEventListener('click', async () => { await _supabase.auth.signOut(); window.location.href = 'login.html'; });
 
-            // Create User Logic
+            // --- FORM LISTENERS ---
+
+            // 1. Create User
             document.getElementById('createUserForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 await createNewUser();
             });
+
+            // 2. Add School
+            document.getElementById('addSchoolForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const name = document.getElementById('school-name').value;
+                const address = document.getElementById('school-address').value;
+
+                const { error } = await _supabase.from('schools').insert({ name, address });
+                if (error) alert("Błąd: " + error.message);
+                else {
+                    alert("Szkoła dodana!");
+                    closeModal('addSchoolModal');
+                    document.getElementById('addSchoolForm').reset();
+                }
+            });
+
+            // 3. Add Class
+            document.getElementById('addClassForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const schoolId = document.getElementById('class-school-select').value;
+                const name = document.getElementById('class-name').value;
+
+                if (!schoolId) return alert("Wybierz szkołę!");
+
+                const { error } = await _supabase.from('classes').insert({ school_id: schoolId, name });
+                if (error) alert("Błąd: " + error.message);
+                else {
+                    alert("Klasa dodana!");
+                    closeModal('addClassModal');
+                    document.getElementById('addClassForm').reset();
+                }
+            });
         });
 
-        // Modal Logic
-        function openModal() { document.getElementById('createUserModal').classList.add('active'); }
-        function closeModal() { document.getElementById('createUserModal').classList.remove('active'); }
+        // --- HELPER FUNCTIONS ---
+
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+        async function openClassModal() {
+            openModal('addClassModal');
+            const select = document.getElementById('class-school-select');
+            
+            // Only fetch if empty or needs refresh
+            if (select.options.length <= 1) {
+                const { data: schools, error } = await _supabase.from('schools').select('id, name');
+                if (schools) {
+                    select.innerHTML = '<option value="" disabled selected>-- Wybierz Szkołę --</option>';
+                    schools.forEach(s => {
+                        const opt = document.createElement('option');
+                        opt.value = s.id;
+                        opt.textContent = s.name;
+                        select.appendChild(opt);
+                    });
+                }
+            }
+        }
 
         async function createNewUser() {
-            // ... (Your existing create user logic here) ...
-             const btn = document.getElementById('createBtn');
+            const btn = document.getElementById('createBtn');
             const originalText = btn.textContent;
             btn.textContent = "Tworzenie...";
             btn.disabled = true;
@@ -194,7 +305,7 @@
 
                 if (authError) throw authError;
                 alert(`✅ Sukces! Utworzono użytkownika: ${username}`);
-                closeModal();
+                closeModal('createUserModal');
                 document.getElementById('createUserForm').reset();
             } catch (err) { alert("Błąd: " + err.message); } 
             finally { btn.textContent = originalText; btn.disabled = false; }
