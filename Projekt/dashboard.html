@@ -190,7 +190,7 @@
             document.getElementById('createUserModal').classList.remove('active');
         }
 
-        // --- THE MAGIC CREATE USER FUNCTION ---
+        // --- THE MAGIC CREATE USER FUNCTION (UPDATED) ---
         async function createNewUser() {
             const btn = document.getElementById('createBtn');
             const originalText = btn.textContent;
@@ -203,49 +203,45 @@
             const role = document.getElementById('new-role').value;
 
             try {
-                // TRICK: Create a TEMPORARY Supabase client.
-                // Why? Standard .auth.signUp() logs out the current user. 
-                // By creating a new client with persistSession: false, we keep the admin logged in.
+                // 1. Create TEMPORARY client to sign up without logging out admin
                 const tempSupabase = supabase.createClient(supabaseUrl, supabaseKey, {
                     auth: {
-                        persistSession: false, // Don't save this session to browser storage
+                        persistSession: false, 
                         autoRefreshToken: false,
                         detectSessionInUrl: false
                     }
                 });
 
-                // A. Create User in Auth System
+                // 2. SIGN UP WITH METADATA
+                // This 'options.data' object is what your Trigger reads:
+                // new.raw_user_meta_data->>'username'
                 const { data: authData, error: authError } = await tempSupabase.auth.signUp({
                     email: email,
-                    password: password
+                    password: password,
+                    options: {
+                        data: {
+                            username: username,
+                            role: role
+                            // school_id: 1, // Optional: add if you have school logic
+                            // class_id: 1   // Optional
+                        }
+                    }
                 });
 
                 if (authError) throw authError;
                 if (!authData.user) throw new Error("Nie udało się utworzyć użytkownika Auth.");
 
-                const newUserId = authData.user.id;
+                // 3. DONE!
+                // We DO NOT manually insert into 'public.users' anymore.
+                // Your Postgres Trigger 'on_auth_user_created' handles that automatically
+                // using the metadata we just sent.
 
-                // B. Insert Extra Data into public.users table using the MAIN client (Admin permissions)
-                const { error: dbError } = await _supabase
-                    .from('users')
-                    .insert({
-                        id: newUserId,
-                        email: email,
-                        username: username,
-                        role: role
-                    });
-
-                if (dbError) {
-                    // Cleanup if DB insert fails (Optional but good practice)
-                    console.error("DB Error:", dbError);
-                    alert("Użytkownik Auth utworzony, ale wystąpił błąd zapisu profilu: " + dbError.message);
-                } else {
-                    alert(`✅ Sukces! Utworzono użytkownika: ${username} (${role})`);
-                    closeModal();
-                    document.getElementById('createUserForm').reset();
-                }
+                alert(`✅ Sukces! Utworzono użytkownika: ${username} (${role})`);
+                closeModal();
+                document.getElementById('createUserForm').reset();
 
             } catch (err) {
+                console.error(err);
                 alert("Błąd: " + err.message);
             } finally {
                 btn.textContent = originalText;
