@@ -569,3 +569,72 @@ body.login-page {
 .save-mini-btn:hover {
     background-color: #d03a3a;
 }
+/* ... [Previous Code] ... */
+
+/* =========================================
+   10. QUIZ STYLES
+   ========================================= */
+
+.quiz-container {
+    margin-top: 30px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+@media (max-width: 600px) {
+    .quiz-container { grid-template-columns: 1fr; }
+}
+
+.quiz-option {
+    background-color: var(--panel-bg);
+    border: 2px solid var(--border-color);
+    padding: 20px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s;
+    text-align: center;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.quiz-option:hover {
+    border-color: var(--accent-color);
+    background-color: var(--hover-bg);
+}
+
+/* States for Player */
+.quiz-option.correct {
+    background-color: #d4edda;
+    border-color: #28a745;
+    color: #155724;
+}
+
+.quiz-option.wrong {
+    background-color: #f8d7da;
+    border-color: #dc3545;
+    color: #721c24;
+    opacity: 0.7;
+}
+
+.quiz-option.disabled {
+    pointer-events: none;
+}
+
+/* States for Editor */
+.quiz-editor-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.correct-radio {
+    width: 20px; 
+    height: 20px;
+    cursor: pointer;
+    accent-color: #28a745;
+}
