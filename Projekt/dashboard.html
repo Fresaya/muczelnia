@@ -31,10 +31,17 @@
             <!-- STATIC DASHBOARD GRID -->
             <div class="dashboard-grid">
                 
-                <!-- 0. ADMIN TILE (Hidden by default, shown via JS) -->
-                <div id="admin-widget" class="widget-tile" style="display: none; border: 2px dashed var(--accent-color); cursor: pointer;">
-                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23f04a4a%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2%22></path><circle cx=%228.5%22 cy=%227%22 r=%224%22></circle><line x1=%2220%22 y1=%228%22 x2=%2220%22 y2=%2214%22></line><line x1=%2223%22 y1=%2211%22 x2=%2217%22 y2=%2211%22></line></svg>');"></div>
-                    <h3 style="color: var(--accent-color);">Dodaj Użytkownika</h3>
+                <!-- 0. ADMIN TILE - CREATE COURSE (Visible only to Admin) -->
+                <a href="create_course.html" id="admin-create-course-widget" class="widget-tile" style="display: none; border: 2px dashed var(--accent-color);">
+                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23f04a4a%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><rect x=%223%22 y=%223%22 width=%2218%22 height=%2218%22 rx=%222%22 ry=%222%22></rect><line x1=%2212%22 y1=%228%22 x2=%2212%22 y2=%2216%22></line><line x1=%228%22 y1=%2212%22 x2=%2216%22 y2=%2212%22></line></svg>');"></div>
+                    <h3 style="color: var(--accent-color);">Utwórz Kurs</h3>
+                    <p class="course-meta">Panel Administratora</p>
+                </a>
+                
+                <!-- 0b. ADMIN TILE - ADD USER (From previous step) -->
+                <div id="admin-widget" class="widget-tile" style="display: none; border: 2px dashed #888; cursor: pointer;">
+                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2%22></path><circle cx=%228.5%22 cy=%227%22 r=%224%22></circle><line x1=%2220%22 y1=%228%22 x2=%2220%22 y2=%2214%22></line><line x1=%2223%22 y1=%2211%22 x2=%2217%22 y2=%2211%22></line></svg>');"></div>
+                    <h3 style="color: #888;">Dodaj Użytkownika</h3>
                     <p class="course-meta">Panel Administratora</p>
                 </div>
 
@@ -80,41 +87,26 @@
         </aside>
     </div>
 
-    <!-- CREATE USER MODAL -->
+    <!-- CREATE USER MODAL (Previous Code) -->
     <div class="modal-overlay" id="createUserModal">
         <div class="modal-window">
             <div class="modal-header">
                 <h3 class="modal-title">Dodaj nowego użytkownika</h3>
                 <span class="close-modal" onclick="closeModal()">&times;</span>
             </div>
-            
             <form id="createUserForm" class="modal-form">
-                <label>Nazwa (Imię i Nazwisko)</label>
-                <div class="input-wrapper" style="margin-bottom: 15px;">
-                    <input type="text" id="new-username" placeholder="Jan Kowalski" required 
-                           style="width:100%; padding:10px; border-radius:50px; border:1px solid #ccc; background:var(--bg-color); color:var(--text-main);">
-                </div>
-
-                <label>Adres E-mail</label>
-                <div class="input-wrapper" style="margin-bottom: 15px;">
-                    <input type="email" id="new-email" placeholder="student@muczelnia.pl" required
-                           style="width:100%; padding:10px; border-radius:50px; border:1px solid #ccc; background:var(--bg-color); color:var(--text-main);">
-                </div>
-
+                <label>Nazwa</label>
+                <input type="text" id="new-username" class="edit-input" required style="border:1px solid #ccc;">
+                <label>Email</label>
+                <input type="email" id="new-email" class="edit-input" required style="border:1px solid #ccc;">
                 <label>Hasło</label>
-                <div class="input-wrapper" style="margin-bottom: 15px;">
-                    <input type="password" id="new-password" placeholder="Minimum 6 znaków" required
-                           style="width:100%; padding:10px; border-radius:50px; border:1px solid #ccc; background:var(--bg-color); color:var(--text-main);">
-                </div>
-
+                <input type="password" id="new-password" class="edit-input" required style="border:1px solid #ccc;">
                 <label>Rola</label>
-                <select id="new-role">
+                <select id="new-role" style="width:100%; padding:10px; border-radius:50px; border:1px solid #ccc; margin-bottom:15px;">
                     <option value="student">Student</option>
-                    <option value="teacher">Nauczyciel (Teacher)</option>
-                    <option value="manager">Dziekanat (Manager)</option>
+                    <option value="teacher">Nauczyciel</option>
                     <option value="admin">Administrator</option>
                 </select>
-
                 <button type="submit" class="login-button full-width-btn" id="createBtn">Utwórz konto</button>
             </form>
         </div>
@@ -146,53 +138,41 @@
                 document.getElementById('profile-role-display').textContent = profile.role.toUpperCase();
                 document.getElementById('welcome-message').textContent = `Witaj, ${profile.username}!`;
 
-                // 3. CHECK ROLE - Show Admin Button if authorized
-                const allowedRoles = ['admin', 'manager', 'teacher'];
-                if (allowedRoles.includes(profile.role)) {
-                    const adminWidget = document.getElementById('admin-widget');
-                    adminWidget.style.display = 'flex'; // Show it
-                    adminWidget.addEventListener('click', openModal);
+                // 3. CHECK ROLE - Show Admin Buttons
+                if (profile.role === 'admin') {
+                    // Show Create Course Button
+                    document.getElementById('admin-create-course-widget').style.display = 'flex';
+                    
+                    // Show Add User Button (From previous task)
+                    const adminUserWidget = document.getElementById('admin-widget');
+                    adminUserWidget.style.display = 'flex';
+                    adminUserWidget.addEventListener('click', openModal);
                 }
             }
 
-            // --- DROPDOWN LOGIC ---
+            // Dropdown & Logout
             const avatarTrigger = document.getElementById('avatarTrigger');
             const dropdown = document.getElementById('profileDropdown');
             const logoutBtn = document.getElementById('logoutBtn');
 
-            avatarTrigger.addEventListener('click', (e) => {
-                e.stopPropagation();
-                dropdown.classList.toggle('show');
-            });
+            avatarTrigger.addEventListener('click', (e) => { e.stopPropagation(); dropdown.classList.toggle('show'); });
+            window.addEventListener('click', () => { if (dropdown.classList.contains('show')) dropdown.classList.remove('show'); });
+            logoutBtn.addEventListener('click', async () => { await _supabase.auth.signOut(); window.location.href = 'login.html'; });
 
-            window.addEventListener('click', () => {
-                if (dropdown.classList.contains('show')) dropdown.classList.remove('show');
-            });
-
-            logoutBtn.addEventListener('click', async () => {
-                await _supabase.auth.signOut();
-                window.location.href = 'login.html';
-            });
-
-            // --- CREATE USER FORM LOGIC ---
+            // Create User Logic
             document.getElementById('createUserForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 await createNewUser();
             });
         });
 
-        // MODAL FUNCTIONS
-        function openModal() {
-            document.getElementById('createUserModal').classList.add('active');
-        }
+        // Modal Logic
+        function openModal() { document.getElementById('createUserModal').classList.add('active'); }
+        function closeModal() { document.getElementById('createUserModal').classList.remove('active'); }
 
-        function closeModal() {
-            document.getElementById('createUserModal').classList.remove('active');
-        }
-
-        // --- THE MAGIC CREATE USER FUNCTION (UPDATED) ---
         async function createNewUser() {
-            const btn = document.getElementById('createBtn');
+            // ... (Your existing create user logic here) ...
+             const btn = document.getElementById('createBtn');
             const originalText = btn.textContent;
             btn.textContent = "Tworzenie...";
             btn.disabled = true;
@@ -203,50 +183,21 @@
             const role = document.getElementById('new-role').value;
 
             try {
-                // 1. Create TEMPORARY client to sign up without logging out admin
                 const tempSupabase = supabase.createClient(supabaseUrl, supabaseKey, {
-                    auth: {
-                        persistSession: false, 
-                        autoRefreshToken: false,
-                        detectSessionInUrl: false
-                    }
+                    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
                 });
 
-                // 2. SIGN UP WITH METADATA
-                // This 'options.data' object is what your Trigger reads:
-                // new.raw_user_meta_data->>'username'
                 const { data: authData, error: authError } = await tempSupabase.auth.signUp({
-                    email: email,
-                    password: password,
-                    options: {
-                        data: {
-                            username: username,
-                            role: role
-                            // school_id: 1, // Optional: add if you have school logic
-                            // class_id: 1   // Optional
-                        }
-                    }
+                    email: email, password: password,
+                    options: { data: { username: username, role: role } }
                 });
 
                 if (authError) throw authError;
-                if (!authData.user) throw new Error("Nie udało się utworzyć użytkownika Auth.");
-
-                // 3. DONE!
-                // We DO NOT manually insert into 'public.users' anymore.
-                // Your Postgres Trigger 'on_auth_user_created' handles that automatically
-                // using the metadata we just sent.
-
-                alert(`✅ Sukces! Utworzono użytkownika: ${username} (${role})`);
+                alert(`✅ Sukces! Utworzono użytkownika: ${username}`);
                 closeModal();
                 document.getElementById('createUserForm').reset();
-
-            } catch (err) {
-                console.error(err);
-                alert("Błąd: " + err.message);
-            } finally {
-                btn.textContent = originalText;
-                btn.disabled = false;
-            }
+            } catch (err) { alert("Błąd: " + err.message); } 
+            finally { btn.textContent = originalText; btn.disabled = false; }
         }
     </script>
 </body>
