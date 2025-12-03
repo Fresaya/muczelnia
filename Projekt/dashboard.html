@@ -16,6 +16,7 @@
                     <li class="nav-item"><a href="#" class="nav-link active"><span>Pulpit</span></a></li>
                 </ul>
             </div>
+            <div class="logout-btn" id="logoutBtn"><span>Wyloguj</span></div>
         </aside>
 
         <main class="main-content">
@@ -24,96 +25,51 @@
                     <h1 id="welcome-message">Witaj!</h1>
                     <p>Wybierz moduł, aby kontynuować.</p>
                 </div>
-                
-                <!-- ACTION BUTTONS (Hidden by default) -->
-                <div class="header-actions">
-                    <button id="btnAddUser" class="action-btn btn-add-user" onclick="openModal('userModal')" style="display:none;">
-                        + Użytkownik
-                    </button>
-                    <button id="btnAddCourse" class="action-btn btn-add-course" onclick="openModal('courseModal')" style="display:none;">
-                        + Kurs
-                    </button>
-                </div>
             </div>
 
+            <!-- STATIC DASHBOARD GRID -->
             <div class="dashboard-grid">
+                
+                <!-- 1. LINK TO COURSES LIST -->
                 <a href="courses_list.html" class="widget-tile">
                     <div class="widget-icon icon-course-active"></div>
                     <h3>Moje Kursy</h3>
                     <p class="course-meta">Przejdź do listy zajęć</p>
                 </a>
+
+                <!-- 2. QUIZZES (Placeholder) -->
                 <a href="#" class="widget-tile" onclick="alert('Moduł ćwiczeń w budowie!')">
                     <div class="widget-icon icon-notes"></div>
                     <h3>Ćwiczenia</h3>
                     <p class="course-meta">Testy i Quizy</p>
                 </a>
+
+                <!-- 3. OTHER TOOLS -->
                 <a href="#" class="widget-tile">
                     <div class="widget-icon icon-calendar"></div>
                     <h3>Kalendarz</h3>
                 </a>
+
                 <a href="#" class="widget-tile">
                     <div class="widget-icon icon-grades"></div>
                     <h3>Oceny</h3>
                 </a>
+
                 <a href="#" class="widget-tile">
                     <div class="widget-icon icon-notes"></div>
                     <h3>Notatki</h3>
                 </a>
+
             </div>
         </main>
 
         <aside class="sidebar-right">
-            <!-- PROFILE CARD -->
-            <div class="profile-card" onclick="toggleProfileMenu()">
+            <div class="profile-card">
                 <div class="avatar"></div>
                 <h2 class="profile-name" id="profile-name-display">...</h2>
                 <p class="profile-id" id="profile-role-display">...</p>
-                
-                <!-- DROPDOWN MENU -->
-                <div class="profile-dropdown-menu" id="profileMenu">
-                    <button class="dropdown-item" onclick="alert('Profil w budowie')">Edytuj Profil</button>
-                    <button class="dropdown-item danger" id="logoutBtn">Wyloguj się</button>
-                </div>
             </div>
         </aside>
-    </div>
-
-    <!-- MODAL: ADD USER -->
-    <div class="modal-overlay" id="userModal" onclick="if(event.target === this) closeModal('userModal')">
-        <div class="modal">
-            <h2>Dodaj Użytkownika</h2>
-            <form id="addUserForm">
-                <div class="form-group"><label>Imię i Nazwisko</label><input type="text" id="uName" required></div>
-                <div class="form-group"><label>Email</label><input type="email" id="uEmail" required></div>
-                <div class="form-group"><label>Hasło</label><input type="password" id="uPass" value="password123" required></div>
-                <div class="form-group"><label>Rola</label>
-                    <select id="uRole" style="width:100%; padding:10px; border-radius:8px;">
-                        <option value="student">Student</option>
-                        <option value="teacher">Nauczyciel</option>
-                        <option value="manager">Manager</option>
-                    </select>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn-cancel" onclick="closeModal('userModal')">Anuluj</button>
-                    <button type="submit" class="btn-save">Dodaj</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- MODAL: ADD COURSE -->
-    <div class="modal-overlay" id="courseModal" onclick="if(event.target === this) closeModal('courseModal')">
-        <div class="modal">
-            <h2>Nowy Kurs</h2>
-            <form id="addCourseForm">
-                <div class="form-group"><label>Tytuł Kursu</label><input type="text" id="cTitle" required></div>
-                <div class="form-group"><label>Opis</label><input type="text" id="cDesc" required></div>
-                <div class="modal-actions">
-                    <button type="button" class="btn-cancel" onclick="closeModal('courseModal')">Anuluj</button>
-                    <button type="submit" class="btn-save">Utwórz</button>
-                </div>
-            </form>
-        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -123,32 +79,16 @@
         
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        // --- GLOBAL UI FUNCTIONS ---
-        // Attached to window to ensure HTML onclick can see them
-        window.openModal = function(id) { 
-            document.getElementById(id).style.display = 'flex'; 
-        }
-        
-        window.closeModal = function(id) { 
-            document.getElementById(id).style.display = 'none'; 
-        }
-        
-        window.toggleProfileMenu = function() { 
-            console.log("Toggling profile menu...");
-            const menu = document.getElementById('profileMenu');
-            if (menu) menu.classList.toggle('active');
-        }
-
         document.addEventListener('DOMContentLoaded', async () => {
             const { data: { session } } = await _supabase.auth.getSession();
             if (!session) { window.location.href = 'login.html'; return; }
 
             const userId = session.user.id;
             
-            // Fetch Profile
+            // Just fetch profile info
             const { data: profile } = await _supabase
                 .from('users')
-                .select('username, role, school_id')
+                .select('username, role')
                 .eq('id', userId)
                 .single();
 
@@ -156,73 +96,9 @@
                 document.getElementById('profile-name-display').textContent = profile.username;
                 document.getElementById('profile-role-display').textContent = profile.role.toUpperCase();
                 document.getElementById('welcome-message').textContent = `Witaj, ${profile.username}!`;
-
-                // Safe Role Checking (Case Insensitive)
-                const role = profile.role.toLowerCase().trim();
-                console.log("Logged in as role:", role);
-
-                // Show buttons based on role
-                if (['admin', 'manager', 'teacher'].includes(role)) {
-                    document.getElementById('btnAddUser').style.display = 'flex';
-                }
-                if (role === 'admin') {
-                    document.getElementById('btnAddCourse').style.display = 'flex';
-                }
             }
 
-            // --- ADD USER LOGIC ---
-            document.getElementById('addUserForm').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const name = document.getElementById('uName').value.trim();
-                const email = document.getElementById('uEmail').value.trim();
-                const password = document.getElementById('uPass').value.trim();
-                const role = document.getElementById('uRole').value;
-
-                if(!confirm(`Dodać użytkownika: ${name}?`)) return;
-
-                try {
-                    // Create temp client to keep admin logged in
-                    const tempClient = supabase.createClient(supabaseUrl, supabaseKey, {
-                        auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
-                    });
-
-                    const { error } = await tempClient.auth.signUp({
-                        email: email, password: password,
-                        options: { data: { username: name, role: role, school_id: profile.school_id } }
-                    });
-
-                    if (error) throw error;
-
-                    alert("✅ Użytkownik dodany!");
-                    window.closeModal('userModal');
-                    document.getElementById('addUserForm').reset();
-
-                } catch (err) {
-                    alert("Błąd: " + err.message);
-                }
-            });
-
-            // --- ADD COURSE LOGIC ---
-            document.getElementById('addCourseForm').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const title = document.getElementById('cTitle').value;
-                const desc = document.getElementById('cDesc').value;
-
-                const { error } = await _supabase
-                    .from('courses')
-                    .insert({ title: title, description: desc, author_id: userId, school_id: profile.school_id });
-
-                if (error) alert("Błąd: " + error.message);
-                else { 
-                    alert("✅ Kurs utworzony!"); 
-                    window.closeModal('courseModal'); 
-                    document.getElementById('addCourseForm').reset();
-                }
-            });
-
-            // Logout Logic
-            document.getElementById('logoutBtn').addEventListener('click', async (e) => {
-                e.stopPropagation(); // Prevents menu from closing immediately
+            document.getElementById('logoutBtn').addEventListener('click', async () => {
                 await _supabase.auth.signOut();
                 window.location.href = 'login.html';
             });
