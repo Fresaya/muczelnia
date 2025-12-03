@@ -14,7 +14,7 @@
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
         </svg>
-        Lista Lekcji
+        <span id="mobile-menu-label">Lista Lekcji</span>
     </div>
 
     <div class="course-layout">
@@ -25,20 +25,21 @@
                 <span onclick="toggleSidebar()" style="margin-left:auto; cursor:pointer; font-size:24px; display:block; padding:0 10px;">&times;</span>
             </div>
             <ul class="lesson-list" id="lesson-list">
-                </ul>
+            </ul>
         </aside>
 
         <main class="course-content">
             <div class="lesson-card" id="lesson-container">
-                <h1 class="lesson-title">Wybierz lekcję</h1>
-                <p class="lesson-text">Kliknij przycisk "Lista Lekcji" powyżej, aby zobaczyć spis treści.</p>
+                <h1 class="lesson-title" id="placeholder-title">Wybierz lekcję</h1>
+                <p class="lesson-text" id="placeholder-text">Kliknij przycisk "Lista Lekcji" powyżej, aby zobaczyć spis treści.</p>
             </div>
         </main>
     </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg'; // ⚠️ PASTE YOUR KEY AGAIN
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg';
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
         const urlParams = new URLSearchParams(window.location.search);
@@ -47,9 +48,8 @@
         let allLessons = [];
         let currentLessonId = null;
         let userId = null;
-        
-        // GLOBAL SET: Keeps track of which IDs are done { 201, 202, ... }
         let completedSet = new Set(); 
+        let isQuizMode = false; // Flag to check if this is a quiz
 
         function toggleSidebar() {
             document.getElementById('course-sidebar').classList.toggle('active');
@@ -57,30 +57,33 @@
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
-            // 1. Check Auth
             const { data: { session } } = await _supabase.auth.getSession();
-            if (!session) { window.location.href = 'index.html'; return; }
+            if (!session) { window.location.href = 'login.html'; return; }
             userId = session.user.id;
 
-            // Safety Check
-            if (!courseId || courseId === 'undefined') {
-                alert("Błąd: Nieprawidłowy identyfikator kursu.");
-                window.location.href = 'dashboard.html';
-                return;
+            if (!courseId) { alert("Błąd ID"); window.location.href = 'dashboard.html'; return; }
+
+            // 1. Get Course Info & Type
+            const { data: course } = await _supabase.from('courses').select('title, type').eq('id', courseId).single();
+            if (course) {
+                document.getElementById('course-title').innerText = course.title;
+                isQuizMode = (course.type === 'quiz');
+                updateLabels();
             }
 
-            // 2. Fetch Title
-            const { data: course } = await _supabase.from('courses').select('title').eq('id', courseId).single();
-            if (course) document.getElementById('course-title').innerText = course.title;
-
-            // 3. Start Loading
             await loadLessons();
         });
 
+        function updateLabels() {
+            if (isQuizMode) {
+                document.getElementById('mobile-menu-label').innerText = "Lista Pytań";
+                document.getElementById('placeholder-title').innerText = "Wybierz pytanie";
+                document.getElementById('placeholder-text').innerText = "Wybierz pytanie z listy, aby rozpocząć quiz.";
+            }
+        }
+
         async function loadLessons() {
-            // A. Get Lessons
-            const { data: lessons, error } = await _supabase
-                .from('lessons')
+            const { data: lessons, error } = await _supabase.from('lessons')
                 .select('id, title, order_index')
                 .eq('course_id', courseId)
                 .order('order_index', { ascending: true });
@@ -88,34 +91,32 @@
             if (error) { console.error(error); return; }
             allLessons = lessons;
 
-            // B. Get Progress
-            const { data: progress } = await _supabase
-                .from('user_lesson_progress')
-                .select('lesson_id, is_completed')
-                .eq('user_id', userId)
-                .eq('is_completed', true);
+            const { data: progress } = await _supabase.from('user_lesson_progress')
+                .select('lesson_id').eq('user_id', userId).eq('is_completed', true);
             
-            // Update Global Set
             completedSet = new Set(progress.map(p => p.lesson_id));
+            renderSidebar();
+        }
 
-            // C. Render Sidebar List
+        function renderSidebar() {
             const listEl = document.getElementById('lesson-list');
             listEl.innerHTML = '';
-
-            lessons.forEach((lesson, index) => {
+            
+            allLessons.forEach((lesson, index) => {
                 const isCompleted = completedSet.has(lesson.id);
                 const li = document.createElement('li');
-                
-                // Add ID to finding it easily later
                 li.id = `sidebar-item-${lesson.id}`;
                 li.className = `lesson-item ${isCompleted ? 'completed' : ''}`;
-                li.innerHTML = `
-                    <span>${index + 1}. ${lesson.title}</span>
-                    <span class="status-icon">${isCompleted ? '✔' : '○'}</span>
-                `;
+                
+                // Label: "1. Tytuł" for course, "Pytanie 1" for quiz if title is just "Pytanie X" or show title
+                // We'll stick to index + title as it's flexible
+                const prefix = isQuizMode ? `Pytanie ${index + 1}` : `${index + 1}.`;
+                // If title is just "Pytanie X", prevent duplication like "Pytanie 1. Pytanie 1"
+                const displayTitle = lesson.title.startsWith("Pytanie") && isQuizMode ? lesson.title : `${prefix} ${lesson.title}`;
+
+                li.innerHTML = `<span>${displayTitle}</span><span class="status-icon">${isCompleted ? '✔' : '○'}</span>`;
                 li.onclick = () => {
                     loadLessonContent(lesson.id, li);
-                    // Auto-close menu on mobile
                     if (window.innerWidth <= 768) toggleSidebar(); 
                 };
                 listEl.appendChild(li);
@@ -124,119 +125,176 @@
 
         async function loadLessonContent(lessonId, liElement) {
             currentLessonId = lessonId;
-            
-            // UI Sidebar Active State
             document.querySelectorAll('.lesson-item').forEach(el => el.classList.remove('active'));
-            liElement.classList.add('active');
+            if(liElement) liElement.classList.add('active');
             
             const container = document.getElementById('lesson-container');
-            container.innerHTML = '<p>Ładowanie treści...</p>';
+            container.innerHTML = '<p>Ładowanie...</p>';
 
-            // Fetch Content
-            const { data: component, error } = await _supabase
-                .from('lesson_components')
-                .select(`component_type, content_text_blocks ( content )`)
-                .eq('lesson_id', lessonId)
-                .eq('component_type', 'text')
-                .single();
+            // Fetch Text Content
+            const { data: component } = await _supabase.from('lesson_components')
+                .select(`content_text_blocks ( content )`)
+                .eq('lesson_id', lessonId).eq('component_type', 'text').single();
 
-            if (error || !component || !component.content_text_blocks) {
-                container.innerHTML = '<h2>Błąd</h2><p>Nie znaleziono treści dla tej lekcji.</p>';
-                return;
+            // Fetch Quiz Answers
+            const { data: answers } = await _supabase.from('lesson_answers')
+                .select('id, answer_text, is_correct')
+                .eq('lesson_id', lessonId);
+
+            let text = component?.content_text_blocks?.content || "";
+            // HIDE DUMMY TEXT
+            if (text.trim() === "Pytanie quizowe" || text.trim() === "Pytanie") text = "";
+
+            const currentLesson = allLessons.find(l => l.id === lessonId);
+            const isDone = completedSet.has(lessonId);
+            const isQuizLesson = answers && answers.length > 0;
+
+            let html = `<h1 class="lesson-title">${currentLesson.title}</h1>`;
+            if (text) html += `<div class="lesson-text">${text}</div>`;
+
+            if (isQuizLesson && !isDone) {
+                // INTERACTIVE QUIZ
+                html += `<div class="quiz-container" id="quiz-area"></div>`;
+                html += `<div id="quiz-feedback" style="margin-top:20px; font-weight:bold; font-size:18px;"></div>`;
+                html += `<button id="action-btn" class="complete-btn" onclick="nextStep()" style="display:none;">Dalej</button>`;
+            } else if (isQuizLesson && isDone) {
+                // COMPLETED QUIZ QUESTION
+                html += `<div class="quiz-container">`;
+                answers.forEach(a => {
+                    const styleClass = a.is_correct ? 'correct' : 'disabled';
+                    html += `<div class="quiz-option ${styleClass}">${a.answer_text} ${a.is_correct ? '✔' : ''}</div>`;
+                });
+                html += `</div>`;
+                // If it's the last lesson, show Summary button instead of just "Undo"
+                if (isLastLesson(lessonId)) {
+                     html += `<button class="complete-btn is-completed" onclick="showSummary()">Zobacz Wynik Quizu</button>`;
+                } else {
+                     html += `<button class="complete-btn is-completed" onclick="toggleComplete()">✔ Ukończono (Cofnij)</button>`;
+                }
+            } else {
+                // STANDARD LESSON
+                html += `<button id="action-btn" class="complete-btn ${isDone ? 'is-completed' : ''}" onclick="toggleComplete()">
+                    ${isDone ? '✔ Ukończono (Cofnij)' : 'Oznacz jako ukończone'}
+                </button>`;
             }
 
-            const text = component.content_text_blocks.content;
-            const currentLesson = allLessons.find(l => l.id === lessonId);
-            
-            // CHECK STATUS: Is it done?
-            const isDone = completedSet.has(lessonId);
+            container.innerHTML = html;
 
-            container.innerHTML = `
-                <h1 class="lesson-title">${currentLesson.title}</h1>
-                <div class="lesson-text">${text}</div>
-                
-                <button 
-                    id="action-btn"
-                    class="complete-btn ${isDone ? 'is-completed' : ''}" 
-                    onclick="toggleComplete()">
-                    ${isDone ? '✔ Ukończono (Cofnij)' : 'Oznacz jako ukończone'}
-                </button>
-            `;
+            if (isQuizLesson && !isDone) {
+                const quizArea = document.getElementById('quiz-area');
+                answers.forEach(ans => {
+                    const btn = document.createElement('div');
+                    btn.className = 'quiz-option';
+                    btn.innerText = ans.answer_text;
+                    btn.onclick = () => checkAnswer(ans, btn, answers);
+                    quizArea.appendChild(btn);
+                });
+            }
         }
 
-        async function toggleComplete() {
-            if (!currentLessonId) return;
+        function isLastLesson(id) {
+            if (allLessons.length === 0) return false;
+            return allLessons[allLessons.length - 1].id === id;
+        }
 
-            // 1. Calculate New Status (Opposite of current)
-            const oldStatus = completedSet.has(currentLessonId);
-            const newStatus = !oldStatus;
-
-            const btn = document.getElementById('action-btn');
-            btn.textContent = "Zapisywanie...";
-            btn.disabled = true;
-
-            // 2. UPSERT to Database (Updates if exists, Inserts if new)
-            const { error } = await _supabase
-                .from('user_lesson_progress')
-                .upsert({ 
-                    user_id: userId, 
-                    lesson_id: currentLessonId, 
-                    is_completed: newStatus,
-                    completed_at: newStatus ? new Date() : null
-                }, { onConflict: 'user_id, lesson_id' }); // 🔑 Fixes the Duplicate Key Error
-
-            if (error) {
-                alert("Błąd zapisu: " + error.message);
-                btn.disabled = false;
-                return;
-            }
-
-            // 3. Update Global Set
-            if (newStatus) {
-                completedSet.add(currentLessonId);
-            } else {
-                completedSet.delete(currentLessonId);
-            }
-
-            // 4. Update Button UI
-            btn.disabled = false;
-            if (newStatus) {
-                btn.classList.add('is-completed');
-                btn.textContent = "✔ Ukończono (Cofnij)";
-            } else {
-                btn.classList.remove('is-completed');
-                btn.textContent = "Oznacz jako ukończone";
-            }
-
-            // 5. Update Sidebar UI (Checkmark)
-            const sidebarItem = document.getElementById(`sidebar-item-${currentLessonId}`);
-            if (sidebarItem) {
-                const icon = sidebarItem.querySelector('.status-icon');
-                if (newStatus) {
-                    sidebarItem.classList.add('completed');
-                    icon.textContent = '✔';
+        function checkAnswer(selected, btnElement, allAnswers) {
+            const feedback = document.getElementById('quiz-feedback');
+            const completeBtn = document.getElementById('action-btn');
+            const buttons = document.querySelectorAll('.quiz-option');
+            
+            if (selected.is_correct) {
+                btnElement.classList.add('correct');
+                feedback.innerHTML = '<span style="color:green;">Dobrze!</span>';
+                buttons.forEach(b => b.classList.add('disabled'));
+                
+                completeBtn.style.display = 'inline-block';
+                // If last lesson, change button text
+                if (isLastLesson(currentLessonId)) {
+                    completeBtn.innerText = "Zakończ i Zobacz Wynik";
                 } else {
-                    sidebarItem.classList.remove('completed');
-                    icon.textContent = '○';
+                    completeBtn.innerText = "Następne Pytanie";
+                }
+            } else {
+                btnElement.classList.add('wrong');
+                btnElement.classList.add('disabled');
+                feedback.innerHTML = '<span style="color:red;">Źle. Próbuj dalej.</span>';
+            }
+        }
+
+        // Handles the "Next / Finish" button logic
+        async function nextStep() {
+            // 1. Mark as complete
+            await toggleComplete(true); // force true (don't toggle off)
+
+            // 2. Decide where to go
+            if (isLastLesson(currentLessonId)) {
+                showSummary();
+            } else {
+                // Find next lesson
+                const idx = allLessons.findIndex(l => l.id === currentLessonId);
+                if (idx < allLessons.length - 1) {
+                    const nextLesson = allLessons[idx + 1];
+                    const nextLi = document.getElementById(`sidebar-item-${nextLesson.id}`);
+                    loadLessonContent(nextLesson.id, nextLi);
                 }
             }
-
-            // 6. Recalculate Course Percentage
-            await updateCourseProgress();
         }
 
-        async function updateCourseProgress() {
+        async function toggleComplete(forceState = null) {
+            if (!currentLessonId) return;
+            let newStatus;
+            
+            if (forceState !== null) {
+                newStatus = forceState;
+            } else {
+                const oldStatus = completedSet.has(currentLessonId);
+                newStatus = !oldStatus;
+            }
+            
+            const { error } = await _supabase.from('user_lesson_progress')
+                .upsert({ user_id: userId, lesson_id: currentLessonId, is_completed: newStatus, completed_at: newStatus ? new Date() : null }, { onConflict: 'user_id, lesson_id' });
+
+            if (error) { alert("Błąd: " + error.message); return; }
+
+            if (newStatus) completedSet.add(currentLessonId);
+            else completedSet.delete(currentLessonId);
+
+            renderSidebar(); 
+            // Also refresh course progress
             const total = allLessons.length;
-            const completedCount = completedSet.size; // Faster than querying DB again
+            const completedCount = completedSet.size;
+            const percentage = Math.round((completedCount / total) * 100);
+            /* Optional: update DB progress here if needed */
+        }
+
+        function showSummary() {
+            const container = document.getElementById('lesson-container');
+            const total = allLessons.length;
+            const completedCount = completedSet.size;
             const percentage = Math.round((completedCount / total) * 100);
 
-            await _supabase
-                .from('user_courses')
-                .update({ progress_percentage: percentage })
-                .eq('user_id', userId)
-                .eq('course_id', courseId);
+            let msg = "";
+            let color = "";
             
-            console.log(`Progress updated: ${percentage}%`);
+            if (percentage === 100) {
+                msg = "Gratulacje! Wszystko zaliczone.";
+                color = "#4CAF50"; // Green
+            } else {
+                msg = "Jeszcze trochę brakuje.";
+                color = "#FF9800"; // Orange
+            }
+
+            container.innerHTML = `
+                <div style="text-align:center; padding: 40px;">
+                    <div style="font-size: 60px;">🏆</div>
+                    <h1 style="margin-bottom: 10px;">Podsumowanie Quizu</h1>
+                    <h2 style="font-size: 48px; color: ${color}; margin: 20px 0;">${percentage}%</h2>
+                    <p style="font-size: 18px; color: #555;">${msg}</p>
+                    <p>Ukończono ${completedCount} z ${total} pytań.</p>
+                    
+                    <a href="courses_list.html" class="complete-btn" style="display:inline-block; text-decoration:none; margin-top:30px;">Wróć do listy kursów</a>
+                </div>
+            `;
         }
     </script>
 </body>
