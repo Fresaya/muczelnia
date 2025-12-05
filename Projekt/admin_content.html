@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mUczelnia - Baza Treści</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="layout-wrapper">
+        <aside class="sidebar-left">
+            <div class="top-section">
+                <div class="brand-area"><a href="dashboard.html" class="logo-text"><span>m</span>Uczelnia</a></div>
+                <ul class="nav-menu">
+                    <li class="nav-item"><a href="dashboard.html" class="nav-link"><span>Pulpit</span></a></li>
+                    <!-- Active state -->
+                    <li class="nav-item"><a href="#" class="nav-link active"><span>Baza Treści</span></a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="welcome-header">
+                <div>
+                    <a href="dashboard.html" style="text-decoration:none; color:#888; font-size:14px;">← Wróć do pulpitu</a>
+                    <h1>Baza Treści</h1>
+                    <p>Przeglądaj, edytuj i zarządzaj wszystkimi materiałami.</p>
+                </div>
+            </div>
+
+            <!-- SEARCH & FILTER -->
+            <div class="search-bar-container">
+                <input type="text" id="searchInput" class="search-input" placeholder="Szukaj po nazwie kursu lub pakietu...">
+                <button class="filter-btn active" onclick="setFilter('all')">Wszystko</button>
+                <button class="filter-btn" onclick="setFilter('course')">Kursy</button>
+                <button class="filter-btn" onclick="setFilter('quiz')">Quizy</button>
+            </div>
+
+            <!-- GRID -->
+            <div class="dashboard-grid" id="content-grid">
+                <div style="grid-column: 1/-1; text-align:center; color:#888;">Ładowanie bazy danych...</div>
+            </div>
+        </main>
+
+        <aside class="sidebar-right">
+            <div class="profile-card">
+                <div class="avatar" id="avatarTrigger" title="Opcje"></div>
+                <div class="dropdown-menu" id="profileDropdown">
+                    <div class="dropdown-item" id="logoutBtn">
+                        <div class="icon-logout"></div>
+                        Wyloguj się
+                    </div>
+                </div>
+                <h2 class="profile-name" id="profile-name-display">...</h2>
+                <p class="profile-id" id="profile-role-display">ADMINISTRATOR</p>
+            </div>
+        </aside>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg';
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        let allContent = []; // Cache for searching
+        let currentFilter = 'all';
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (!session) { window.location.href = 'login.html'; return; }
+
+            const userId = session.user.id;
+            const { data: profile } = await _supabase.from('users').select('username, role').eq('id', userId).single();
+            
+            // SECURITY CHECK
+            if (!profile || profile.role !== 'admin') {
+                alert("Brak uprawnień!");
+                window.location.href = 'dashboard.html';
+                return;
+            }
+
+            document.getElementById('profile-name-display').textContent = profile.username;
+
+            // 1. FETCH EVERYTHING
+            const { data: courses } = await _supabase
+                .from('courses')
+                .select('id, title, description, type, packages(title)')
+                .order('created_at', { ascending: false });
+
+            if (courses) {
+                allContent = courses;
+                renderContent(allContent);
+            }
+
+            // Search Listener
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                filterContent(e.target.value);
+            });
+
+            // Logout Logic
+            const avatarTrigger = document.getElementById('avatarTrigger');
+            const dropdown = document.getElementById('profileDropdown');
+            const logoutBtn = document.getElementById('logoutBtn');
+            avatarTrigger.addEventListener('click', (e) => { e.stopPropagation(); dropdown.classList.toggle('show'); });
+            window.addEventListener('click', () => { if (dropdown.classList.contains('show')) dropdown.classList.remove('show'); });
+            logoutBtn.addEventListener('click', async () => { await _supabase.auth.signOut(); window.location.href = 'login.html'; });
+        });
+
+        // --- FILTERING LOGIC ---
+        window.setFilter = function(type) {
+            currentFilter = type;
+            // Update buttons UI
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            // Find button by text roughly or add IDs to buttons. Simple way:
+            const btns = document.querySelectorAll('.filter-btn');
+            if(type==='all') btns[0].classList.add('active');
+            if(type==='course') btns[1].classList.add('active');
+            if(type==='quiz') btns[2].classList.add('active');
+
+            // Re-run search/filter
+            const term = document.getElementById('searchInput').value;
+            filterContent(term);
+        }
+
+        function filterContent(searchTerm) {
+            const lowerTerm = searchTerm.toLowerCase();
+            
+            const filtered = allContent.filter(item => {
+                // 1. Check Type
+                if (currentFilter !== 'all' && item.type !== currentFilter) return false;
+
+                // 2. Check Search Text (Title or Package Name)
+                const titleMatch = item.title.toLowerCase().includes(lowerTerm);
+                const pkgMatch = item.packages && item.packages.title.toLowerCase().includes(lowerTerm);
+                
+                return titleMatch || pkgMatch;
+            });
+
+            renderContent(filtered);
+        }
+
+        function renderContent(items) {
+            const grid = document.getElementById('content-grid');
+            grid.innerHTML = '';
+
+            if (items.length === 0) {
+                grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:40px; color:#888;">Nic nie znaleziono.</div>`;
+                return;
+            }
+
+            items.forEach(course => {
+                const isQuiz = course.type === 'quiz';
+                const editPage = isQuiz ? 'create_quiz.html' : 'create_course.html';
+                const iconHtml = isQuiz 
+                    ? `<div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%239C27B0%22 stroke-width=%221.5%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z%22></path><polyline points=%2214 2 14 8 20 8%22></polyline><line x=%229%22 y1=%2215%22 x2=%2215%22 y2=%2215%22></line><line x=%229%22 y1=%2211%22 x2=%2215%22 y2=%2211%22></line></svg>');"></div>`
+                    : `<div class="widget-icon icon-course-active"></div>`;
+                
+                const typeColor = isQuiz ? '#9C27B0' : '#888';
+                const typeLabel = isQuiz ? 'QUIZ' : 'KURS';
+                const pkgLabel = course.packages ? `<span style="font-size:11px; color:#555;">📦 ${course.packages.title}</span>` : '';
+
+                const tile = document.createElement('div');
+                tile.className = 'widget-tile';
+                tile.style.position = 'relative';
+                
+                // Edit Icon
+                const editBtn = `
+                    <div onclick="window.location.href='${editPage}?id=${course.id}'; event.stopPropagation();" 
+                         style="position:absolute; top:15px; right:15px; background:#eee; padding:6px 10px; border-radius:50%; cursor:pointer;" 
+                         title="Edytuj">
+                        ✏️
+                    </div>`;
+
+                tile.innerHTML = `
+                    ${editBtn}
+                    ${iconHtml}
+                    ${pkgLabel}
+                    <h3 style="color:${typeColor}">${course.title}</h3>
+                    <div class="course-meta" style="margin-top:10px; text-transform:uppercase; font-size:10px; letter-spacing:1px;">${typeLabel}</div>
+                `;
+                
+                // Clicking tile (not edit btn) goes to player preview
+                tile.onclick = () => window.location.href = `course.html?id=${course.id}`;
+
+                grid.appendChild(tile);
+            });
+        }
+    </script>
+</body>
+</html>
