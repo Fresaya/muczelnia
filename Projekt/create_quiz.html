@@ -8,24 +8,31 @@
 </head>
 <body>
 
+    <div class="mobile-top-bar">
+        <div class="mobile-hamburger" onclick="toggleSidebar()">☰</div>
+        <div class="logo-text">Edytor Quizu</div>
+    </div>
+
     <div class="course-layout">
-        <aside class="course-sidebar">
+        <aside class="course-sidebar" id="course-sidebar">
             <div class="sidebar-header">
-                <a href="dashboard.html" class="back-btn">← Anuluj</a>
-                <h3 style="margin:0; font-size:16px; margin-left: 10px;">Kreator Quizu</h3>
+                <a href="quizzes_list.html" class="back-btn">← Anuluj</a>
+                <h3 style="margin:0; font-size:16px; margin-left: 10px;">Pytania</h3>
+                <span class="mobile-only-close" style="margin-left:auto; font-size:24px; cursor:pointer;" onclick="toggleSidebar()">✕</span>
             </div>
+            
             <ul class="lesson-list" id="editor-question-list"></ul>
+
             <div class="add-lesson-btn" onclick="addNewQuestion()">+ Nowe Pytanie</div>
         </aside>
 
         <main class="course-content">
             <div class="lesson-card">
-                <!-- QUIZ SETTINGS -->
+                <!-- SETTINGS -->
                 <div style="border-bottom: 2px solid #eee; margin-bottom: 30px; padding-bottom: 20px;">
                     <label style="font-size: 12px; color: #888; text-transform: uppercase; font-weight: bold;">Nazwa Quizu</label>
                     <input type="text" id="quiz-title-input" class="edit-input title-input" placeholder="Np. Sprawdzian z Historii" oninput="updateQuizState()">
-                    <label style="font-size: 12px; color: #888; text-transform: uppercase; font-weight: bold;">Opis</label>
-                    <textarea id="quiz-desc-input" class="edit-input" style="min-height: 60px;" placeholder="Czego dotyczy ten test?" oninput="updateQuizState()"></textarea>
+                    <textarea id="quiz-desc-input" class="edit-input" style="min-height: 60px; margin-top:10px;" placeholder="Opis..." oninput="updateQuizState()"></textarea>
                 </div>
 
                 <!-- QUESTION EDITOR -->
@@ -33,148 +40,121 @@
                     <h2 style="color: var(--accent-color);">Edycja Pytania</h2>
                     <label style="font-size: 12px; color: #888; text-transform: uppercase; font-weight: bold;">Treść Pytania</label>
                     <input type="text" id="question-text-input" class="edit-input title-input" style="font-size:18px;" placeholder="Treść..." oninput="updateQuestionState()">
+                    
                     <div style="margin-top: 20px; background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #eee;">
                         <h3 style="margin-top:0; font-size:16px;">Odpowiedzi</h3>
                         <div id="answers-container"></div>
                     </div>
                 </div>
-                <div id="no-selection-msg" style="text-align: center; color: #888; padding: 50px;">Kliknij <b>+ Nowe Pytanie</b></div>
+                <div id="no-selection-msg" style="text-align: center; color: #888; padding: 50px;">
+                    <span id="loading-msg">Ładowanie...</span>
+                </div>
             </div>
         </main>
     </div>
 
-    <!-- SAVE BUTTON -->
-    <button class="save-course-fab" onclick="openPackageModal()" id="preSaveBtn" style="background-color: #9C27B0;">
-        <span>💾 Zapisz Quiz</span>
+    <button class="save-course-fab" onclick="handleSaveClick()" id="preSaveBtn" style="background-color: #9C27B0;">
+        <span>💾 Zapisz Zmiany</span>
     </button>
 
-    <!-- PACKAGE MODAL -->
-    <div class="modal-overlay" id="packageModal">
-        <div class="modal-window">
-            <div class="modal-header"><h3 class="modal-title">Zapisz jako część pakietu</h3><span class="close-modal" onclick="closeModal()">&times;</span></div>
-            <div style="margin-bottom: 20px;">
-                <label style="display:block; margin-bottom:10px;"><input type="radio" name="pkgOption" value="new" checked onchange="togglePkgInputs()"> Utwórz <b>Nowy Pakiet</b></label>
-                
-                <div id="new-pkg-inputs" style="padding-left: 20px;">
-                    <input type="text" id="new-pkg-name" class="edit-input" placeholder="Nazwa pakietu" style="margin-bottom:10px; border:1px solid #ccc;">
-                    <!-- LEVEL SELECT -->
-                    <label style="font-size: 12px; color: #888; text-transform: uppercase; font-weight: bold;">Poziom nauczania</label>
-                    <select id="new-pkg-level" class="edit-input" style="border:1px solid #ccc;">
-                        <option value="1">Szkoła Podstawowa</option>
-                        <option value="2">Szkoła Średnia</option>
-                        <option value="3">Szkoła Wyższa</option>
-                    </select>
-                </div>
-
-                <label style="display:block; margin-top:15px; margin-bottom:10px;"><input type="radio" name="pkgOption" value="existing" onchange="togglePkgInputs()"> Dodaj do <b>Istniejącego</b></label>
-                <div id="existing-pkg-inputs" style="padding-left: 20px; display:none;"><select id="existing-pkg-select" class="edit-input" style="border:1px solid #ccc;"><option value="" disabled selected>Ładowanie...</option></select></div>
-            </div>
-            <button class="login-button full-width-btn" onclick="saveQuizToDB()" id="finalSaveBtn">Zapisz wszystko</button>
-        </div>
-    </div>
+    <!-- PACKAGE MODAL (Only for NEW) -->
+    <div class="modal-overlay" id="packageModal"><div class="modal-window"><div class="modal-header"><h3 class="modal-title">Zapisz</h3><span class="close-modal" onclick="closeModal()">&times;</span></div><div style="margin-bottom: 20px;"><label style="display:block; margin-bottom:10px;"><input type="radio" name="pkgOption" value="new" checked onchange="togglePkgInputs()"> Nowy Pakiet</label><div id="new-pkg-inputs" style="padding-left: 20px;"><input type="text" id="new-pkg-name" class="edit-input" placeholder="Nazwa"><select id="new-pkg-level" class="edit-input"><option value="1">Podstawowa</option><option value="2">Średnia</option><option value="3">Wyższa</option></select></div><label style="display:block; margin-top:15px;"><input type="radio" name="pkgOption" value="existing" onchange="togglePkgInputs()"> Istniejący</label><div id="existing-pkg-inputs" style="padding-left: 20px; display:none;"><select id="existing-pkg-select" class="edit-input"></select></div></div><button class="login-button full-width-btn" onclick="saveQuizToDB(true)" id="finalSaveBtn">Zapisz</button></div></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+        function toggleSidebar() { document.getElementById('course-sidebar').classList.toggle('active'); }
         const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg'; 
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
+        const urlParams = new URLSearchParams(window.location.search);
+        const editId = urlParams.get('id');
+
         let quizData = { title: "", description: "", author_id: null };
         let questions = []; 
         let activeQuestionId = null;
+        let deletedQuestionIds = [];
 
         document.addEventListener('DOMContentLoaded', async () => {
             const { data: { session } } = await _supabase.auth.getSession();
             if (!session) { window.location.href = 'login.html'; return; }
             quizData.author_id = session.user.id;
+            
             const { data: profile } = await _supabase.from('users').select('role').eq('id', session.user.id).single();
-            if(profile.role !== 'admin') { window.location.href='dashboard.html'; }
+            if(profile.role !== 'admin') { alert("Tylko admin."); window.location.href='dashboard.html'; return; }
+
+            if (editId) {
+                document.querySelector('.logo-text').textContent = "Edycja Quizu";
+                await loadQuizData(editId);
+            } else {
+                document.getElementById('no-selection-msg').innerHTML = "Kliknij <b>+ Nowe Pytanie</b>.";
+            }
         });
 
-        async function openPackageModal() {
-            if (!quizData.title) return alert("Podaj nazwę quizu!");
-            if (questions.length === 0) return alert("Dodaj pytania!");
-            document.getElementById('packageModal').classList.add('active');
-            document.getElementById('new-pkg-name').value = quizData.title + " (Pakiet)";
+        // --- LOAD DATA ---
+        async function loadQuizData(id) {
+            const { data: course } = await _supabase.from('courses').select('*').eq('id', id).single();
+            quizData.title = course.title;
+            quizData.description = course.description;
+            document.getElementById('quiz-title-input').value = course.title;
+            document.getElementById('quiz-desc-input').value = course.description || "";
+
+            const { data: lessons } = await _supabase.from('lessons').select('id, title, order_index').eq('course_id', id).order('order_index');
             
-            const select = document.getElementById('existing-pkg-select');
-            select.innerHTML = '<option value="" disabled selected>Ładowanie...</option>';
-            const { data: pkgs } = await _supabase.from('packages').select('id, title, level').order('created_at', { ascending: false });
-            if(pkgs) {
-                select.innerHTML = '<option value="" disabled selected>-- Wybierz Pakiet --</option>';
-                const lvlMap = {1: 'Podst.', 2: 'Średnia', 3: 'Wyższa'};
-                pkgs.forEach(p => {
-                    const opt = new Option(`[${lvlMap[p.level]||'?'}] ${p.title}`, p.id);
-                    select.appendChild(opt);
-                });
-            }
-        }
-        function closeModal() { document.getElementById('packageModal').classList.remove('active'); }
-        function togglePkgInputs() {
-            const isNew = document.querySelector('input[name="pkgOption"]:checked').value === 'new';
-            document.getElementById('new-pkg-inputs').style.display = isNew ? 'block' : 'none';
-            document.getElementById('existing-pkg-inputs').style.display = isNew ? 'none' : 'block';
-        }
-
-        async function saveQuizToDB() {
-            const btn = document.getElementById('finalSaveBtn');
-            btn.disabled = true; btn.innerHTML = "⏳ Zapisywanie...";
-
-            try {
-                let packageId = null;
-                const pkgOption = document.querySelector('input[name="pkgOption"]:checked').value;
-                if (pkgOption === 'new') {
-                    const pkgTitle = document.getElementById('new-pkg-name').value;
-                    const pkgLevel = document.getElementById('new-pkg-level').value; // Get Level
-                    const { data: newPkg, error: pkgErr } = await _supabase
-                        .from('packages')
-                        .insert({ title: pkgTitle, level: parseInt(pkgLevel) })
-                        .select().single();
-                    if(pkgErr) throw pkgErr;
-                    packageId = newPkg.id;
-                } else {
-                    packageId = document.getElementById('existing-pkg-select').value;
-                }
-
-                const { data: course, error: cErr } = await _supabase.from('courses')
-                    .insert({ title: quizData.title, description: quizData.description, author_id: quizData.author_id, type: 'quiz', package_id: packageId })
-                    .select().single();
-                if (cErr) throw cErr;
-
-                for (let i = 0; i < questions.length; i++) {
-                    const q = questions[i];
-                    const { data: savedLesson, error: lErr } = await _supabase.from('lessons').insert({ course_id: course.id, title: q.title, order_index: i + 1 }).select().single();
-                    if (lErr) throw lErr;
+            if (lessons) {
+                for (let l of lessons) {
+                    // Fetch answers for each question
+                    const { data: ans } = await _supabase.from('lesson_answers').select('*').eq('lesson_id', l.id);
                     
-                    const { data: content, error: ctErr } = await _supabase.from('content_text_blocks').insert({ content: "Pytanie" }).select().single();
-                    await _supabase.from('lesson_components').insert({ lesson_id: savedLesson.id, order_index: 1, component_type: 'text', content_text_block_id: content.id });
+                    const formattedAnswers = [
+                        { text: "", isCorrect: false }, { text: "", isCorrect: false },
+                        { text: "", isCorrect: false }, { text: "", isCorrect: false }
+                    ];
+                    
+                    if (ans) {
+                        ans.forEach((a, i) => {
+                            if (i < 4) formattedAnswers[i] = { text: a.answer_text, isCorrect: a.is_correct };
+                        });
+                    }
 
-                    const answersPayload = q.answers.map(a => ({ lesson_id: savedLesson.id, answer_text: a.text, is_correct: a.isCorrect }));
-                    await _supabase.from('lesson_answers').insert(answersPayload);
+                    questions.push({
+                        id: l.id,
+                        title: l.title,
+                        answers: formattedAnswers
+                    });
                 }
+            }
+            renderSidebar();
+            document.getElementById('no-selection-msg').innerHTML = "Wybierz pytanie do edycji.";
+        }
 
-                alert("✅ Quiz zapisany!");
-                window.location.href = 'dashboard.html';
-            } catch (err) { alert("Błąd: " + err.message); btn.disabled = false; }
-        }
-        // --- EDITOR LOGIC (Abbreviated) ---
+        // --- UI LOGIC ---
         function addNewQuestion() {
-            const newId = Date.now();
-            questions.push({ id: newId, title: "Pytanie " + (questions.length + 1), answers: [{text:"",isCorrect:true},{text:"",isCorrect:false},{text:"",isCorrect:false},{text:"",isCorrect:false}] });
-            renderSidebar(); selectQuestion(newId);
+            const id = 'new-' + Date.now();
+            questions.push({ id, title: "Pytanie " + (questions.length + 1), answers: [{text:"",isCorrect:true},{text:"",isCorrect:false},{text:"",isCorrect:false},{text:"",isCorrect:false}] });
+            renderSidebar(); selectQuestion(id);
         }
+
         function renderSidebar() {
             const list = document.getElementById('editor-question-list'); list.innerHTML = '';
             questions.forEach((q, index) => {
-                const li = document.createElement('li'); li.className = `lesson-item ${q.id === activeQuestionId ? 'active' : ''}`;
-                li.innerHTML = `<span>${index+1}. ${q.title}</span>`; li.onclick = () => selectQuestion(q.id); list.appendChild(li);
+                const li = document.createElement('li');
+                li.className = `lesson-item ${q.id === activeQuestionId ? 'active' : ''}`;
+                li.innerHTML = `<span>${index + 1}. ${q.title}</span> <span style="color:red;" onclick="removeQuestion(event, '${q.id}')">&times;</span>`;
+                li.onclick = () => selectQuestion(q.id);
+                list.appendChild(li);
             });
         }
+
         function selectQuestion(id) {
-            activeQuestionId = id; document.getElementById('no-selection-msg').style.display = 'none'; document.getElementById('active-question-editor').style.display = 'block';
-            const q = questions.find(item => item.id === id); document.getElementById('question-text-input').value = q.title;
+            activeQuestionId = id;
+            document.getElementById('no-selection-msg').style.display = 'none';
+            document.getElementById('active-question-editor').style.display = 'block';
+            const q = questions.find(item => item.id === id);
+            document.getElementById('question-text-input').value = q.title;
             renderAnswerInputs(q); renderSidebar();
         }
+
         function renderAnswerInputs(q) {
             const c = document.getElementById('answers-container'); c.innerHTML = '';
             q.answers.forEach((ans, idx) => {
@@ -186,8 +166,95 @@
                 div.appendChild(rad); div.appendChild(inp); c.appendChild(div);
             });
         }
+
+        function removeQuestion(e, id) {
+            e.stopPropagation();
+            if(!confirm("Usunąć?")) return;
+            if (typeof id === 'number' || !id.startsWith('new-')) deletedQuestionIds.push(id);
+            questions = questions.filter(q => q.id != id);
+            if (activeQuestionId == id) { activeQuestionId = null; document.getElementById('active-question-editor').style.display = 'none'; document.getElementById('no-selection-msg').style.display = 'block'; }
+            renderSidebar();
+        }
+
         function updateQuizState() { quizData.title = document.getElementById('quiz-title-input').value; quizData.description = document.getElementById('quiz-desc-input').value; }
         function updateQuestionState() { if(activeQuestionId) { questions.find(q=>q.id===activeQuestionId).title = document.getElementById('question-text-input').value; renderSidebar(); } }
+
+        function handleSaveClick() {
+            if (!quizData.title) return alert("Podaj nazwę!");
+            if (questions.length === 0) return alert("Dodaj pytania!");
+            if (editId) saveQuizToDB(false);
+            else { document.getElementById('packageModal').classList.add('active'); openPackageModal(); }
+        }
+
+        async function openPackageModal() { /* Same package logic as create_course */ document.getElementById('new-pkg-name').value = quizData.title + " (Pakiet)"; const s = document.getElementById('existing-pkg-select'); s.innerHTML='<option>Ładowanie...</option>'; const {data}=await _supabase.from('packages').select('*').order('created_at',{ascending:false}); s.innerHTML='<option value="" disabled selected>-- Wybierz --</option>'; data.forEach(p=>s.add(new Option(p.title,p.id))); }
+        function closeModal() { document.getElementById('packageModal').classList.remove('active'); }
+        function togglePkgInputs() { const n=document.querySelector('input[name="pkgOption"]:checked').value==='new'; document.getElementById('new-pkg-inputs').style.display=n?'block':'none'; document.getElementById('existing-pkg-inputs').style.display=n?'none':'block'; }
+
+        async function saveQuizToDB(isNew) {
+            const btn = isNew ? document.getElementById('finalSaveBtn') : document.getElementById('preSaveBtn');
+            btn.disabled = true; btn.innerHTML = "⏳ Zapisywanie...";
+
+            try {
+                let courseId = editId;
+
+                // 1. Course Logic
+                if (isNew) {
+                    let packageId = null;
+                    const pkgOpt = document.querySelector('input[name="pkgOption"]:checked').value;
+                    if (pkgOpt === 'new') {
+                        const { data: pkg } = await _supabase.from('packages').insert({ title: document.getElementById('new-pkg-name').value, level: document.getElementById('new-pkg-level').value }).select().single();
+                        packageId = pkg.id;
+                    } else { packageId = document.getElementById('existing-pkg-select').value; }
+
+                    const { data: newC, error } = await _supabase.from('courses').insert({ title: quizData.title, description: quizData.description, author_id: quizData.author_id, type: 'quiz', package_id: packageId }).select().single();
+                    if(error) throw error;
+                    courseId = newC.id;
+                } else {
+                    await _supabase.from('courses').update({ title: quizData.title, description: quizData.description }).eq('id', courseId);
+                }
+
+                // 2. Deletions
+                if (deletedQuestionIds.length > 0) {
+                    await _supabase.from('lessons').delete().in('id', deletedQuestionIds);
+                }
+
+                // 3. Upsert Questions & Answers
+                for (let i = 0; i < questions.length; i++) {
+                    const q = questions[i];
+                    let lessonId = q.id;
+                    const isTemp = String(q.id).startsWith('new-');
+
+                    if (isTemp) {
+                        // Insert
+                        const { data: savedLesson } = await _supabase.from('lessons').insert({ course_id: courseId, title: q.title, order_index: i + 1 }).select().single();
+                        lessonId = savedLesson.id;
+                        // Dummy content
+                        const { data: content } = await _supabase.from('content_text_blocks').insert({ content: "Pytanie" }).select().single();
+                        await _supabase.from('lesson_components').insert({ lesson_id: lessonId, order_index: 1, component_type: 'text', content_text_block_id: content.id });
+                    } else {
+                        // Update
+                        await _supabase.from('lessons').update({ title: q.title, order_index: i + 1 }).eq('id', lessonId);
+                        // Clean old answers to replace with new set (easiest way to handle answer changes)
+                        await _supabase.from('lesson_answers').delete().eq('lesson_id', lessonId);
+                    }
+
+                    // Insert Answers (Always fresh insert for existing questions to avoid complex ID mapping)
+                    const answersPayload = q.answers.filter(a => a.text).map(a => ({
+                        lesson_id: lessonId,
+                        answer_text: a.text,
+                        is_correct: a.isCorrect
+                    }));
+                    if (answersPayload.length > 0) {
+                        await _supabase.from('lesson_answers').insert(answersPayload);
+                    }
+                }
+
+                alert("✅ Zapisano pomyślnie!");
+                window.location.href = 'quizzes_list.html';
+
+            } catch (err) { alert("Błąd: " + err.message); } 
+            finally { btn.disabled = false; btn.innerHTML = isNew ? "Zapisz" : "💾 Zapisz Zmiany"; }
+        }
     </script>
 </body>
 </html>
