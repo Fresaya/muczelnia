@@ -106,31 +106,56 @@
 
         renderCourses(rawData);
 
-        function renderCourses(courses) {
+        function renderCourses(data) {
             const gridContainer = document.getElementById('courses-grid');
             gridContainer.innerHTML = ''; 
 
-            if (courses && courses.length > 0) {
-                courses.forEach(course => {
-                    // Filter out quizzes just in case
-                    if(course.type === 'quiz') return;
+            // Check if user is admin to show Edit button
+            // Assumes 'profile' variable is available in the parent scope
+            const isAdmin = (profile.role === 'admin');
 
-                    const tile = document.createElement('a');
-                    tile.href = `course.html?id=${course.id}`; 
-                    tile.className = 'widget-tile';
+            // FILTER: Exclude quizzes
+            const courses = data.filter(item => item.courses && item.courses.type !== 'quiz');
+
+            if (courses.length > 0) {
+                courses.forEach(item => {
+                    const course = item.courses;
                     
+                    // Create container div
+                    const tile = document.createElement('div');
+                    tile.className = 'widget-tile';
+                    tile.style.position = 'relative'; // For positioning edit button
+                    
+                    // Edit Button (Absolute Positioned) - Admin Only
+                    let editBtnHtml = '';
+                    if (isAdmin) {
+                        editBtnHtml = `
+                            <div onclick="window.location.href='create_course.html?id=${course.id}'; event.stopPropagation();" 
+                                 style="position:absolute; top:10px; right:10px; background:#eee; padding:5px 10px; border-radius:50%; font-size:16px; cursor:pointer; z-index:10;" 
+                                 title="Edytuj">
+                                ✏️
+                            </div>`;
+                    }
+
+                    // Package Label
                     const pkgName = course.packages ? `<div style="font-size:11px; color:#9C27B0; margin-bottom:5px;">📦 ${course.packages.title}</div>` : '';
 
                     tile.innerHTML = `
+                        ${editBtnHtml}
                         <div class="widget-icon icon-course-active"></div>
                         ${pkgName}
                         <h3>${course.title}</h3>
                         <div class="course-meta" style="margin-top:15px;">Przejdź do kursu →</div>
                     `;
+                    
+                    // Click on tile goes to course player
+                    tile.onclick = () => { window.location.href = `course.html?id=${course.id}`; };
+                    tile.style.cursor = "pointer";
+
                     gridContainer.appendChild(tile);
                 });
             } else {
-                 gridContainer.innerHTML += `<div class="widget-tile" style="grid-column:1/-1;"><h3>Brak kursów</h3><p style="color:#888;">Brak przypisanych pakietów.</p></div>`;
+                 gridContainer.innerHTML += `<div class="widget-tile" style="grid-column:1/-1; text-align:center; padding:50px;"><h3>Brak kursów</h3><p style="color:#888;">Brak przypisanych materiałów.</p></div>`;
             }
         }
 
