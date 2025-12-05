@@ -48,15 +48,26 @@
         <span>💾 Zapisz Quiz</span>
     </button>
 
-    <!-- PACKAGE MODAL (SAME AS COURSE) -->
+    <!-- PACKAGE MODAL -->
     <div class="modal-overlay" id="packageModal">
         <div class="modal-window">
             <div class="modal-header"><h3 class="modal-title">Zapisz jako część pakietu</h3><span class="close-modal" onclick="closeModal()">&times;</span></div>
             <div style="margin-bottom: 20px;">
                 <label style="display:block; margin-bottom:10px;"><input type="radio" name="pkgOption" value="new" checked onchange="togglePkgInputs()"> Utwórz <b>Nowy Pakiet</b></label>
-                <div id="new-pkg-inputs" style="padding-left: 20px;"><input type="text" id="new-pkg-name" class="edit-input" placeholder="Nazwa pakietu"></div>
+                
+                <div id="new-pkg-inputs" style="padding-left: 20px;">
+                    <input type="text" id="new-pkg-name" class="edit-input" placeholder="Nazwa pakietu" style="margin-bottom:10px; border:1px solid #ccc;">
+                    <!-- LEVEL SELECT -->
+                    <label style="font-size: 12px; color: #888; text-transform: uppercase; font-weight: bold;">Poziom nauczania</label>
+                    <select id="new-pkg-level" class="edit-input" style="border:1px solid #ccc;">
+                        <option value="1">Szkoła Podstawowa</option>
+                        <option value="2">Szkoła Średnia</option>
+                        <option value="3">Szkoła Wyższa</option>
+                    </select>
+                </div>
+
                 <label style="display:block; margin-top:15px; margin-bottom:10px;"><input type="radio" name="pkgOption" value="existing" onchange="togglePkgInputs()"> Dodaj do <b>Istniejącego</b></label>
-                <div id="existing-pkg-inputs" style="padding-left: 20px; display:none;"><select id="existing-pkg-select" class="edit-input"><option value="" disabled selected>Ładowanie...</option></select></div>
+                <div id="existing-pkg-inputs" style="padding-left: 20px; display:none;"><select id="existing-pkg-select" class="edit-input" style="border:1px solid #ccc;"><option value="" disabled selected>Ładowanie...</option></select></div>
             </div>
             <button class="login-button full-width-btn" onclick="saveQuizToDB()" id="finalSaveBtn">Zapisz wszystko</button>
         </div>
@@ -80,7 +91,6 @@
             if(profile.role !== 'admin') { window.location.href='dashboard.html'; }
         });
 
-        // --- PACKAGE MODAL ---
         async function openPackageModal() {
             if (!quizData.title) return alert("Podaj nazwę quizu!");
             if (questions.length === 0) return alert("Dodaj pytania!");
@@ -89,10 +99,14 @@
             
             const select = document.getElementById('existing-pkg-select');
             select.innerHTML = '<option value="" disabled selected>Ładowanie...</option>';
-            const { data: pkgs } = await _supabase.from('packages').select('id, title').order('created_at', { ascending: false });
+            const { data: pkgs } = await _supabase.from('packages').select('id, title, level').order('created_at', { ascending: false });
             if(pkgs) {
                 select.innerHTML = '<option value="" disabled selected>-- Wybierz Pakiet --</option>';
-                pkgs.forEach(p => select.appendChild(new Option(p.title, p.id)));
+                const lvlMap = {1: 'Podst.', 2: 'Średnia', 3: 'Wyższa'};
+                pkgs.forEach(p => {
+                    const opt = new Option(`[${lvlMap[p.level]||'?'}] ${p.title}`, p.id);
+                    select.appendChild(opt);
+                });
             }
         }
         function closeModal() { document.getElementById('packageModal').classList.remove('active'); }
@@ -102,7 +116,6 @@
             document.getElementById('existing-pkg-inputs').style.display = isNew ? 'none' : 'block';
         }
 
-        // --- SAVE LOGIC ---
         async function saveQuizToDB() {
             const btn = document.getElementById('finalSaveBtn');
             btn.disabled = true; btn.innerHTML = "⏳ Zapisywanie...";
@@ -112,20 +125,22 @@
                 const pkgOption = document.querySelector('input[name="pkgOption"]:checked').value;
                 if (pkgOption === 'new') {
                     const pkgTitle = document.getElementById('new-pkg-name').value;
-                    const { data: newPkg, error: pkgErr } = await _supabase.from('packages').insert({ title: pkgTitle }).select().single();
+                    const pkgLevel = document.getElementById('new-pkg-level').value; // Get Level
+                    const { data: newPkg, error: pkgErr } = await _supabase
+                        .from('packages')
+                        .insert({ title: pkgTitle, level: parseInt(pkgLevel) })
+                        .select().single();
                     if(pkgErr) throw pkgErr;
                     packageId = newPkg.id;
                 } else {
                     packageId = document.getElementById('existing-pkg-select').value;
                 }
 
-                // Create Course (Quiz Type)
                 const { data: course, error: cErr } = await _supabase.from('courses')
                     .insert({ title: quizData.title, description: quizData.description, author_id: quizData.author_id, type: 'quiz', package_id: packageId })
                     .select().single();
                 if (cErr) throw cErr;
 
-                // Save Questions
                 for (let i = 0; i < questions.length; i++) {
                     const q = questions[i];
                     const { data: savedLesson, error: lErr } = await _supabase.from('lessons').insert({ course_id: course.id, title: q.title, order_index: i + 1 }).select().single();
@@ -138,11 +153,10 @@
                     await _supabase.from('lesson_answers').insert(answersPayload);
                 }
 
-                alert("✅ Quiz zapisany w pakiecie!");
+                alert("✅ Quiz zapisany!");
                 window.location.href = 'dashboard.html';
             } catch (err) { alert("Błąd: " + err.message); btn.disabled = false; }
         }
-
         // --- EDITOR LOGIC (Abbreviated) ---
         function addNewQuestion() {
             const newId = Date.now();
