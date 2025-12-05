@@ -215,7 +215,7 @@
         </div>
     </div>
 
-    <!-- 5. ASSIGN COURSE MODAL (Corrected) -->
+    <!-- 5. ASSIGN COURSE MODAL (UPDATED with Level Filter) -->
     <div class="modal-overlay" id="assignCourseModal">
         <div class="modal-window">
             <div class="modal-header">
@@ -223,6 +223,18 @@
                 <span class="close-modal" onclick="closeModal('assignCourseModal')">&times;</span>
             </div>
             <form id="assignCourseForm" class="modal-form">
+                
+                <!-- NEW FILTER DROPDOWN -->
+                <div style="margin-bottom: 10px;">
+                    <label style="font-size:12px; color:#555; font-weight:bold;">Filtruj wg poziomu:</label>
+                    <select id="assign-filter-level" class="edit-input" style="border:1px solid #ccc; margin-top:5px; padding:8px;">
+                        <option value="all" selected>Wszystkie</option>
+                        <option value="1">Szkoła Podstawowa</option>
+                        <option value="2">Szkoła Średnia</option>
+                        <option value="3">Szkoła Wyższa</option>
+                    </select>
+                </div>
+
                 <label>Wybierz Pakiet</label>
                 <select id="assign-package-select" class="edit-input" style="border:1px solid #ccc; margin-bottom:15px;" required>
                     <option value="" disabled selected>Ładowanie pakietów...</option>
@@ -246,6 +258,7 @@
 
         let currentUserRole = null;
         let currentUserSchoolId = null;
+        let allPackagesCache = []; // Store packages locally for filtering
 
         document.addEventListener('DOMContentLoaded', async () => {
             const { data: { session } } = await _supabase.auth.getSession();
@@ -261,8 +274,6 @@
                 document.getElementById('profile-role-display').textContent = profile.role.toUpperCase();
                 document.getElementById('welcome-message').textContent = `Witaj, ${profile.username}!`;
 
-                // --- ROLE VISIBILITY ---
-                
                 if (['admin', 'manager', 'teacher'].includes(currentUserRole)) {
                     document.getElementById('widget-assign-course').style.display = 'flex';
                     document.getElementById('widget-assign-course').onclick = () => openAssignCourseModal();
@@ -275,7 +286,6 @@
                     show('widget-add-school');
                     show('widget-add-class');
                     show('widget-manage-students');
-                    
                     document.getElementById('widget-add-user').onclick = () => openCreateUserModal();
                     document.getElementById('widget-add-school').onclick = () => openModal('addSchoolModal');
                     document.getElementById('widget-add-class').onclick = () => openClassModal();
@@ -292,7 +302,6 @@
                 }
             }
 
-            // Dropdown/Logout
             const avatarTrigger = document.getElementById('avatarTrigger');
             const dropdown = document.getElementById('profileDropdown');
             const logoutBtn = document.getElementById('logoutBtn');
@@ -300,13 +309,11 @@
             window.addEventListener('click', () => { if (dropdown.classList.contains('show')) dropdown.classList.remove('show'); });
             logoutBtn.addEventListener('click', async () => { await _supabase.auth.signOut(); window.location.href = 'login.html'; });
 
-            // Form Listeners
             document.getElementById('createUserForm').addEventListener('submit', createNewUser);
             document.getElementById('addSchoolForm').addEventListener('submit', addSchool);
             document.getElementById('addClassForm').addEventListener('submit', addClass);
             document.getElementById('assignCourseForm').addEventListener('submit', assignCourseToClass);
             
-            // Dynamic UI
             document.getElementById('new-role').addEventListener('change', function() {
                 const role = this.value;
                 const schoolContainer = document.getElementById('school-select-container');
@@ -314,36 +321,31 @@
             });
             document.getElementById('manage-school-select').addEventListener('change', function() { loadStudentsForSchool(this.value); });
             document.getElementById('filter-class-select').addEventListener('change', filterStudentsTable);
+            
+            // Assign Modal Level Filter
+            document.getElementById('assign-filter-level').addEventListener('change', filterAssignPackages);
         });
 
-        // --- FUNCTIONS (Standard) ---
         function show(id) { document.getElementById(id).style.display = 'flex'; }
         function openModal(id) { document.getElementById(id).classList.add('active'); }
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
-        // --- ASSIGN MODAL (UPDATED WITH ERROR HANDLING) ---
+        // --- ASSIGN MODAL (UPDATED) ---
         async function openAssignCourseModal() {
             openModal('assignCourseModal');
             const pkgSelect = document.getElementById('assign-package-select');
             const classSelect = document.getElementById('assign-class-select');
             
-            // 1. Load Packages
+            // 1. Load Packages with Level
             pkgSelect.innerHTML = '<option value="" disabled selected>Ładowanie...</option>';
-            const { data: pkgs, error: pkgErr } = await _supabase.from('packages').select('id, title');
+            const { data: pkgs, error: pkgErr } = await _supabase.from('packages').select('id, title, level');
             
             if (pkgErr) {
-                alert("Błąd ładowania pakietów: " + pkgErr.message);
-                pkgSelect.innerHTML = '<option value="" disabled>Błąd pobierania</option>';
-            } else if (pkgs && pkgs.length > 0) {
-                pkgSelect.innerHTML = '<option value="" selected>-- Wybierz Pakiet --</option>';
-                pkgs.forEach(p => {
-                    const opt = document.createElement('option');
-                    opt.value = p.id;
-                    opt.textContent = `📦 ${p.title}`;
-                    pkgSelect.appendChild(opt);
-                });
-            } else {
-                pkgSelect.innerHTML = '<option value="" disabled>Brak dostępnych pakietów</option>';
+                alert("Błąd: " + pkgErr.message);
+                pkgSelect.innerHTML = '<option value="" disabled>Błąd</option>';
+            } else if (pkgs) {
+                allPackagesCache = pkgs; // Store for filtering
+                renderPackageOptions(); // Render all initially
             }
 
             // 2. Load Classes
@@ -352,13 +354,8 @@
             if ((currentUserRole === 'teacher' || currentUserRole === 'manager') && currentUserSchoolId) {
                 query = query.eq('school_id', currentUserSchoolId);
             }
-            
             const { data: classes, error: clsErr } = await query;
-            
-            if (clsErr) {
-                alert("Błąd ładowania klas: " + clsErr.message);
-                classSelect.innerHTML = '<option value="" disabled>Błąd pobierania</option>';
-            } else if (classes && classes.length > 0) {
+            if (classes && classes.length > 0) {
                 classSelect.innerHTML = '<option value="" selected>-- Wybierz Klasę --</option>';
                 classes.forEach(c => {
                     const opt = document.createElement('option');
@@ -371,21 +368,43 @@
             }
         }
 
+        function filterAssignPackages() {
+            renderPackageOptions();
+        }
+
+        function renderPackageOptions() {
+            const pkgSelect = document.getElementById('assign-package-select');
+            const filterLevel = document.getElementById('assign-filter-level').value;
+            
+            pkgSelect.innerHTML = '<option value="" selected>-- Wybierz Pakiet --</option>';
+            
+            // Filter
+            const filtered = (filterLevel === 'all') 
+                ? allPackagesCache 
+                : allPackagesCache.filter(p => p.level == filterLevel); // loose equality for string/int
+
+            if (filtered.length > 0) {
+                const lvlMap = {1: 'Podst.', 2: 'Średnia', 3: 'Wyższa'};
+                filtered.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.id;
+                    const lvlLabel = lvlMap[p.level] || '';
+                    opt.textContent = `[${lvlLabel}] ${p.title}`;
+                    pkgSelect.appendChild(opt);
+                });
+            } else {
+                pkgSelect.innerHTML = '<option value="" disabled>Brak pakietów dla tego poziomu</option>';
+            }
+        }
+
         async function assignCourseToClass(e) {
             e.preventDefault();
             const packageId = document.getElementById('assign-package-select').value;
             const classId = document.getElementById('assign-class-select').value;
             if(!packageId || !classId) return alert("Wybierz pakiet i klasę!");
-            
             const { error } = await _supabase.from('package_classes').insert({ package_id: packageId, class_id: classId });
-            
-            if(error) { 
-                if(error.code === '23505') alert("Ten pakiet jest już przypisany!"); 
-                else alert("Błąd: " + error.message); 
-            } else { 
-                alert("✅ Pakiet przypisany!"); 
-                closeModal('assignCourseModal'); 
-            }
+            if(error) { if(error.code === '23505') alert("Już przypisano!"); else alert("Błąd: " + error.message); } 
+            else { alert("✅ Pakiet przypisany!"); closeModal('assignCourseModal'); }
         }
         // --- EXISTING FUNCTIONS (Add School, Class, User, etc) ---
         async function addSchool(e) {
@@ -663,6 +682,7 @@
     </script>
 </body>
 </html>
+
 
 
 
