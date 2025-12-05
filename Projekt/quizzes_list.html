@@ -80,55 +80,55 @@
             // 2. FETCH QUIZZES
             let rawData = [];
 
-            if (profile.role === 'admin' || profile.role === 'manager') {
-                 // Admin sees all
-                 const { data: allCourses } = await _supabase.from('courses').select('id, title, description, type');
-                 rawData = allCourses ? allCourses.map(c => ({ courses: c })) : [];
+        if (profile.role === 'admin' || profile.role === 'manager') {
+             const { data } = await _supabase.from('courses').select('id, title, description, type, packages(title)').eq('type', 'quiz');
+             rawData = data;
+        } else {
+            if (!profile.class_id) { renderQuizzes([]); return; }
+            
+            const { data: pkgLinks } = await _supabase.from('package_classes').select('package_id').eq('class_id', profile.class_id);
+            const pkgIds = pkgLinks.map(p => p.package_id);
+
+            if (pkgIds.length > 0) {
+                const { data: quizzes } = await _supabase
+                    .from('courses')
+                    .select('id, title, description, type, packages(title)')
+                    .in('package_id', pkgIds)
+                    .eq('type', 'quiz'); // Only quizzes
+                
+                rawData = quizzes || [];
+            }
+        }
+
+        renderQuizzes(rawData);
+
+        function renderQuizzes(quizzes) {
+            const gridContainer = document.getElementById('quizzes-grid');
+            gridContainer.innerHTML = ''; 
+
+            if (quizzes && quizzes.length > 0) {
+                quizzes.forEach(quiz => {
+                    const tile = document.createElement('a');
+                    tile.href = `course.html?id=${quiz.id}`; 
+                    tile.className = 'widget-tile';
+                    
+                    const pkgName = quiz.packages ? `<div style="font-size:11px; color:#9C27B0; margin-bottom:5px;">📦 ${quiz.packages.title}</div>` : '';
+                    
+                    // Quiz Icon
+                    const iconHtml = `<div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%239C27B0%22 stroke-width=%221.5%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z%22></path><polyline points=%2214 2 14 8 20 8%22></polyline><line x=%229%22 y1=%2215%22 x2=%2215%22 y2=%2215%22></line><line x=%229%22 y1=%2211%22 x2=%2215%22 y2=%2211%22></line></svg>');"></div>`;
+
+                    tile.innerHTML = `
+                        ${iconHtml}
+                        ${pkgName}
+                        <h3 style="color: #9C27B0;">${quiz.title}</h3>
+                        <div class="course-meta" style="margin-top:15px;">Rozpocznij test →</div>
+                    `;
+                    gridContainer.appendChild(tile);
+                });
             } else {
-                // Students see assigned
-                if (profile.class_id) {
-                    const { data: linkedCourses } = await _supabase
-                        .from('course_classes')
-                        .select('course_id, courses ( id, title, description, type )')
-                        .eq('class_id', profile.class_id);
-                    rawData = linkedCourses || [];
-                }
+                 gridContainer.innerHTML += `<div class="widget-tile" style="grid-column:1/-1;"><h3>Brak quizów</h3><p style="color:#888;">Brak przypisanych testów.</p></div>`;
             }
-
-            renderQuizzes(rawData);
-
-            function renderQuizzes(data) {
-                const gridContainer = document.getElementById('quizzes-grid');
-                gridContainer.innerHTML = ''; 
-
-                // FILTER: Only type === 'quiz'
-                const quizzes = data.filter(item => item.courses && item.courses.type === 'quiz');
-
-                if (quizzes.length > 0) {
-                    quizzes.forEach(item => {
-                        const course = item.courses;
-                        const tile = document.createElement('a');
-                        tile.href = `course.html?id=${course.id}`; 
-                        tile.className = 'widget-tile';
-                        
-                        // Quiz Icon
-                        const iconHtml = `<div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%239C27B0%22 stroke-width=%221.5%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z%22></path><polyline points=%2214 2 14 8 20 8%22></polyline><line x1=%229%22 y1=%2215%22 x2=%2215%22 y2=%2215%22></line><line x1=%229%22 y1=%2211%22 x2=%2215%22 y2=%2211%22></line></svg>');"></div>`;
-
-                        tile.innerHTML = `
-                            ${iconHtml}
-                            <h3 style="color: #9C27B0;">${course.title}</h3>
-                            <div class="course-meta" style="margin-top:15px;">Rozpocznij test →</div>
-                        `;
-                        gridContainer.appendChild(tile);
-                    });
-                } else {
-                     gridContainer.innerHTML += `
-                        <div class="widget-tile" style="grid-column:1/-1; text-align:center; padding:50px;">
-                            <h3>Brak quizów</h3>
-                            <p style="color:#888;">Nie masz przypisanych żadnych testów.</p>
-                        </div>`;
-                }
-            }
+        }
 
             // Dropdown & Logout Logic
             const avatarTrigger = document.getElementById('avatarTrigger');
