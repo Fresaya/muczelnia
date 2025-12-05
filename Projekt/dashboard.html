@@ -250,15 +250,14 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
+<script>
         const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg'; 
-        
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
         let currentUserRole = null;
         let currentUserSchoolId = null;
-        let allPackagesCache = []; // Store packages locally for filtering
+        let allPackagesCache = [];
 
         document.addEventListener('DOMContentLoaded', async () => {
             const { data: { session } } = await _supabase.auth.getSession();
@@ -274,18 +273,29 @@
                 document.getElementById('profile-role-display').textContent = profile.role.toUpperCase();
                 document.getElementById('welcome-message').textContent = `Witaj, ${profile.username}!`;
 
+                // --- ROLE VISIBILITY ---
+                
                 if (['admin', 'manager', 'teacher'].includes(currentUserRole)) {
                     document.getElementById('widget-assign-course').style.display = 'flex';
                     document.getElementById('widget-assign-course').onclick = () => openAssignCourseModal();
                 }
 
                 if (currentUserRole === 'admin') {
+                    // SHOW Admin Tools
+                    show('widget-admin-content'); // NEW
                     show('widget-create-course');
                     show('widget-create-quiz');
                     show('widget-add-user');
                     show('widget-add-school');
                     show('widget-add-class');
                     show('widget-manage-students');
+                    
+                    // HIDE Student Tools
+                    hide('widget-student-courses');
+                    hide('widget-student-quizzes');
+                    hide('widget-student-grades');
+
+                    // Bindings
                     document.getElementById('widget-add-user').onclick = () => openCreateUserModal();
                     document.getElementById('widget-add-school').onclick = () => openModal('addSchoolModal');
                     document.getElementById('widget-add-class').onclick = () => openClassModal();
@@ -296,6 +306,10 @@
                     show('widget-add-user');
                     show('widget-add-class');
                     show('widget-manage-students');
+                    
+                    // Managers usually don't do courses, but if they are students too, keep them?
+                    // For now, let's keep student widgets visible for managers as fallback
+                    
                     document.getElementById('widget-add-user').onclick = () => openCreateUserModal();
                     document.getElementById('widget-add-class').onclick = () => openClassModal();
                     document.getElementById('widget-manage-students').onclick = () => openManageStudentsModal();
@@ -309,11 +323,11 @@
             window.addEventListener('click', () => { if (dropdown.classList.contains('show')) dropdown.classList.remove('show'); });
             logoutBtn.addEventListener('click', async () => { await _supabase.auth.signOut(); window.location.href = 'login.html'; });
 
+            // Form Listeners
             document.getElementById('createUserForm').addEventListener('submit', createNewUser);
             document.getElementById('addSchoolForm').addEventListener('submit', addSchool);
             document.getElementById('addClassForm').addEventListener('submit', addClass);
             document.getElementById('assignCourseForm').addEventListener('submit', assignCourseToClass);
-            
             document.getElementById('new-role').addEventListener('change', function() {
                 const role = this.value;
                 const schoolContainer = document.getElementById('school-select-container');
@@ -321,12 +335,12 @@
             });
             document.getElementById('manage-school-select').addEventListener('change', function() { loadStudentsForSchool(this.value); });
             document.getElementById('filter-class-select').addEventListener('change', filterStudentsTable);
-            
-            // Assign Modal Level Filter
             document.getElementById('assign-filter-level').addEventListener('change', filterAssignPackages);
         });
 
+        // --- FUNCTIONS ---
         function show(id) { document.getElementById(id).style.display = 'flex'; }
+        function hide(id) { document.getElementById(id).style.display = 'none'; }
         function openModal(id) { document.getElementById(id).classList.add('active'); }
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
@@ -682,6 +696,7 @@
     </script>
 </body>
 </html>
+
 
 
 
