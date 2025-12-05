@@ -253,6 +253,7 @@
 <script>
         const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg'; 
+        
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
         let currentUserRole = null;
@@ -282,7 +283,7 @@
 
                 if (currentUserRole === 'admin') {
                     // SHOW Admin Tools
-                    show('widget-admin-content'); // NEW
+                    show('widget-admin-content'); 
                     show('widget-create-course');
                     show('widget-create-quiz');
                     show('widget-add-user');
@@ -306,10 +307,6 @@
                     show('widget-add-user');
                     show('widget-add-class');
                     show('widget-manage-students');
-                    
-                    // Managers usually don't do courses, but if they are students too, keep them?
-                    // For now, let's keep student widgets visible for managers as fallback
-                    
                     document.getElementById('widget-add-user').onclick = () => openCreateUserModal();
                     document.getElementById('widget-add-class').onclick = () => openClassModal();
                     document.getElementById('widget-manage-students').onclick = () => openManageStudentsModal();
@@ -338,9 +335,17 @@
             document.getElementById('assign-filter-level').addEventListener('change', filterAssignPackages);
         });
 
-        // --- FUNCTIONS ---
-        function show(id) { document.getElementById(id).style.display = 'flex'; }
-        function hide(id) { document.getElementById(id).style.display = 'none'; }
+        // --- FUNCTIONS (SAFE VERSIONS) ---
+        function show(id) { 
+            const el = document.getElementById(id); 
+            if(el) el.style.display = 'flex'; 
+            else console.warn("Missing element to show:", id);
+        }
+        function hide(id) { 
+            const el = document.getElementById(id); 
+            if(el) el.style.display = 'none'; 
+            else console.warn("Missing element to hide:", id);
+        }
         function openModal(id) { document.getElementById(id).classList.add('active'); }
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
@@ -696,6 +701,7 @@
     </script>
 </body>
 </html>
+
 
 
 
