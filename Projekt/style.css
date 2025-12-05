@@ -638,3 +638,50 @@ body.login-page {
     cursor: pointer;
     accent-color: #28a745;
 }
+
+/* =========================================
+   11. ADMIN SEARCH BAR
+   ========================================= */
+.search-bar-container {
+    margin-bottom: 30px;
+    display: flex;
+    gap: 10px;
+}
+
+.search-input {
+    flex-grow: 1;
+    padding: 12px 20px;
+    border-radius: 50px;
+    border: 1px solid var(--border-color);
+    background-color: var(--panel-bg);
+    font-size: 16px;
+    box-shadow: var(--shadow);
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.search-input:focus {
+    border-color: var(--accent-color);
+}
+
+.filter-btn {
+    padding: 0 25px;
+    border-radius: 50px;
+    border: 1px solid var(--border-color);
+    background-color: var(--panel-bg);
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text-muted);
+    transition: all 0.2s;
+}
+
+.filter-btn:hover {
+    background-color: var(--hover-bg);
+    color: var(--text-main);
+}
+
+.filter-btn.active {
+    background-color: var(--accent-color);
+    color: white;
+    border-color: var(--accent-color);
+}
