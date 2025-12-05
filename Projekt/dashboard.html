@@ -27,70 +27,80 @@
             </div>
 
             <div class="dashboard-grid">
-                <!-- 1. ADMIN: UTWÓRZ KURS -->
+                
+                <!-- === ADMIN WIDGETS (Domyślnie ukryte style="display: none") === -->
+
+                <!-- 1. BAZA TREŚCI (Panel Admina) - To jest ten kafelek, którego brakowało -->
+                <a href="admin_content.html" id="widget-admin-content" class="widget-tile" style="display: none; border: 2px solid #333;">
+                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23333%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z%22></path><polyline points=%2214 2 14 8 20 8%22></polyline><line x1=%2216%22 y1=%2213%22 x2=%228%22 y2=%2213%22></line><line x1=%2216%22 y1=%2217%22 x2=%228%22 y2=%2217%22></line><polyline points=%2210 9 9 9 8 9%22></polyline></svg>');"></div>
+                    <h3>Baza Treści</h3>
+                    <p class="course-meta">Przeglądaj i Edytuj</p>
+                </a>
+
+                <!-- 2. CREATE COURSE -->
                 <a href="create_course.html" id="widget-create-course" class="widget-tile" style="display: none; border: 2px dashed var(--accent-color);">
                     <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23f04a4a%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><rect x=%223%22 y=%223%22 width=%2218%22 height=%2218%22 rx=%222%22 ry=%222%22></rect><line x1=%2212%22 y1=%228%22 x2=%2212%22 y2=%2216%22></line><line x1=%228%22 y1=%2212%22 x2=%2216%22 y2=%2212%22></line></svg>');"></div>
                     <h3 style="color: var(--accent-color);">Utwórz Kurs</h3>
                     <p class="course-meta">Administrator</p>
                 </a>
 
-                <!-- 1b. ADMIN: UTWÓRZ QUIZ -->
+                <!-- 3. CREATE QUIZ -->
                 <a href="create_quiz.html" id="widget-create-quiz" class="widget-tile" style="display: none; border: 2px dashed #9C27B0;">
                     <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%239C27B0%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z%22></path><polyline points=%2214 2 14 8 20 8%22></polyline><line x1=%2212%22 y1=%2218%22 x2=%2212%22 y2=%2218%22></line><line x1=%2212%22 y1=%2214%22 x2=%2212%22 y2=%2212%22></line></svg>');"></div>
                     <h3 style="color: #9C27B0;">Utwórz Quiz</h3>
                     <p class="course-meta">Administrator</p>
                 </a>
                 
-                <!-- 2. ADMIN & MANAGER: DODAJ UŻYTKOWNIKA -->
+                <!-- 4. ADD USER -->
                 <div id="widget-add-user" class="widget-tile" style="display: none; border: 2px dashed #555; cursor: pointer;">
                     <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23555%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2%22></path><circle cx=%228.5%22 cy=%227%22 r=%224%22></circle><line x1=%2220%22 y1=%228%22 x2=%2220%22 y2=%2214%22></line><line x1=%2223%22 y1=%2211%22 x2=%2217%22 y2=%2211%22></line></svg>');"></div>
                     <h3 style="color: #555;">Dodaj Użytkownika</h3>
                     <p class="course-meta">Admin & Manager</p>
                 </div>
 
-                <!-- 3. ADMIN ONLY: DODAJ SZKOŁĘ -->
+                <!-- 5. ADD SCHOOL -->
                 <div id="widget-add-school" class="widget-tile" style="display: none; border: 2px dashed #2196F3; cursor: pointer;">
                     <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%232196F3%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M3 21h18M5 21V7l8-4 8 4v14M8 21v-4h8v4%22></path></svg>');"></div>
                     <h3 style="color: #2196F3;">Dodaj Szkołę</h3>
                     <p class="course-meta">Administrator</p>
                 </div>
 
-                <!-- 4. ADMIN & MANAGER: DODAJ KLASĘ -->
+                <!-- 6. ADD CLASS -->
                 <div id="widget-add-class" class="widget-tile" style="display: none; border: 2px dashed #4CAF50; cursor: pointer;">
                     <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%234CAF50%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2%22></path><circle cx=%229%22 cy=%227%22 r=%224%22></circle><path d=%22M23 21v-2a4 4 0 0 0-3-3.87%22></path><path d=%22M16 3.13a4 4 0 0 1 0 7.75%22></path></svg>');"></div>
                     <h3 style="color: #4CAF50;">Dodaj Klasę</h3>
                     <p class="course-meta">Admin & Manager</p>
                 </div>
 
-                <!-- 5. ADMIN & MANAGER: ZARZĄDZAJ UCZNIAMI -->
+                <!-- 7. MANAGE STUDENTS -->
                 <div id="widget-manage-students" class="widget-tile" style="display: none; border: 2px dashed #FF9800; cursor: pointer;">
                     <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23FF9800%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2%22></path><circle cx=%229%22 cy=%227%22 r=%224%22></circle><path d=%22M23 21v-2a4 4 0 0 0-3-3.87%22></path><path d=%22M16 3.13a4 4 0 0 1 0 7.75%22></path></svg>');"></div>
                     <h3 style="color: #FF9800;">Uczniowie</h3>
                     <p class="course-meta">Przypisz klasy</p>
                 </div>
 
-                <!-- 6. ASSIGN COURSE -->
+                <!-- 8. ASSIGN COURSE -->
                 <div id="widget-assign-course" class="widget-tile" style="display: none; border: 2px dashed #9C27B0; cursor: pointer;">
                     <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%239C27B0%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M4 19.5A2.5 2.5 0 0 1 6.5 17H20%22></path><path d=%22M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z%22></path><path d=%22M12 11h5%22></path><path d=%22M12 8h5%22></path></svg>');"></div>
                     <h3 style="color: #9C27B0;">Przypisz Materiał</h3>
                     <p class="course-meta">Kurs lub Quiz</p>
                 </div>
 
-                <!-- LINK TO COURSES LIST -->
-                <a href="courses_list.html" class="widget-tile">
+                <!-- === STUDENT WIDGETS (Widoczne domyślnie, ukrywane JSem dla Admina) === -->
+                
+                <a href="courses_list.html" id="widget-student-courses" class="widget-tile">
                     <div class="widget-icon icon-course-active"></div>
                     <h3>Moje Kursy</h3>
                     <p class="course-meta">Przejdź do listy zajęć</p>
                 </a>
 
-                <!-- LINK TO QUIZZES LIST -->
-                <a href="quizzes_list.html" class="widget-tile">
+                <a href="quizzes_list.html" id="widget-student-quizzes" class="widget-tile">
                     <div class="widget-icon icon-notes"></div>
                     <h3>Ćwiczenia</h3>
                     <p class="course-meta">Testy i Quizy</p>
                 </a>
 
-                <a href="#" class="widget-tile" onclick="alert('Moduł w budowie!')">
+                <a href="#" id="widget-student-grades" class="widget-tile" onclick="alert('Moduł w budowie!')">
                     <div class="widget-icon icon-grades"></div>
                     <h3>Oceny</h3>
                 </a>
@@ -277,13 +287,13 @@
                 // --- ROLE VISIBILITY ---
                 
                 if (['admin', 'manager', 'teacher'].includes(currentUserRole)) {
-                    document.getElementById('widget-assign-course').style.display = 'flex';
+                    show('widget-assign-course');
                     document.getElementById('widget-assign-course').onclick = () => openAssignCourseModal();
                 }
 
                 if (currentUserRole === 'admin') {
-                    // SHOW Admin Tools
-                    show('widget-admin-content'); 
+                    // SHOW ADMIN TOOLS
+                    show('widget-admin-content'); // NOWY KAFELEK
                     show('widget-create-course');
                     show('widget-create-quiz');
                     show('widget-add-user');
@@ -291,12 +301,12 @@
                     show('widget-add-class');
                     show('widget-manage-students');
                     
-                    // HIDE Student Tools
+                    // HIDE STUDENT TOOLS
                     hide('widget-student-courses');
                     hide('widget-student-quizzes');
                     hide('widget-student-grades');
 
-                    // Bindings
+                    // Bind Actions
                     document.getElementById('widget-add-user').onclick = () => openCreateUserModal();
                     document.getElementById('widget-add-school').onclick = () => openModal('addSchoolModal');
                     document.getElementById('widget-add-class').onclick = () => openClassModal();
@@ -313,6 +323,7 @@
                 }
             }
 
+            // Dropdown & Logout
             const avatarTrigger = document.getElementById('avatarTrigger');
             const dropdown = document.getElementById('profileDropdown');
             const logoutBtn = document.getElementById('logoutBtn');
@@ -335,19 +346,20 @@
             document.getElementById('assign-filter-level').addEventListener('change', filterAssignPackages);
         });
 
-        // --- FUNCTIONS (SAFE VERSIONS) ---
+        // --- FUNCTIONS ---
         function show(id) { 
             const el = document.getElementById(id); 
             if(el) el.style.display = 'flex'; 
-            else console.warn("Missing element to show:", id);
+            else console.warn("Element not found to show:", id);
         }
         function hide(id) { 
             const el = document.getElementById(id); 
             if(el) el.style.display = 'none'; 
-            else console.warn("Missing element to hide:", id);
+            else console.warn("Element not found to hide:", id);
         }
         function openModal(id) { document.getElementById(id).classList.add('active'); }
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
 
         // --- ASSIGN MODAL (UPDATED) ---
         async function openAssignCourseModal() {
@@ -701,6 +713,7 @@
     </script>
 </body>
 </html>
+
 
 
 
