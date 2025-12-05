@@ -224,30 +224,30 @@
 
     <!-- 5. ASSIGN COURSE MODAL (NEW) -->
     <div class="modal-overlay" id="assignCourseModal">
-        <div class="modal-window">
-            <div class="modal-header">
-                <h3 class="modal-title">Przypisz Kurs do Klasy</h3>
-                <span class="close-modal" onclick="closeModal('assignCourseModal')">&times;</span>
-            </div>
-            <form id="assignCourseForm" class="modal-form">
-                <label>Wybierz Kurs</label>
-                <select id="assign-course-select" class="edit-input" style="border:1px solid #ccc; margin-bottom:15px;" required>
-                    <option value="" disabled selected>Ładowanie kursów...</option>
-                </select>
-
-                <label>Wybierz Klasę</label>
-                <select id="assign-class-select" class="edit-input" style="border:1px solid #ccc;" required>
-                    <option value="" disabled selected>Ładowanie klas...</option>
-                </select>
-                
-                <p style="font-size:12px; color:#666; margin-top:10px;">
-                    Kurs zostanie udostępniony wszystkim uczniom w wybranej klasie.
-                </p>
-
-                <button type="submit" class="login-button full-width-btn">Przypisz</button>
-            </form>
+    <div class="modal-window">
+        <div class="modal-header">
+            <h3 class="modal-title">Przypisz Pakiet do Klasy</h3>
+            <span class="close-modal" onclick="closeModal('assignCourseModal')">&times;</span>
         </div>
+        <form id="assignCourseForm" class="modal-form">
+            <label>Wybierz Pakiet</label>
+            <select id="assign-package-select" class="edit-input" style="border:1px solid #ccc; margin-bottom:15px;" required>
+                <option value="" disabled selected>Ładowanie pakietów...</option>
+            </select>
+
+            <label>Wybierz Klasę</label>
+            <select id="assign-class-select" class="edit-input" style="border:1px solid #ccc;" required>
+                <option value="" disabled selected>Ładowanie klas...</option>
+            </select>
+            
+            <p style="font-size:12px; color:#666; margin-top:10px;">
+                Wszystkie kursy i quizy w tym pakiecie zostaną przypisane.
+            </p>
+
+            <button type="submit" class="login-button full-width-btn">Przypisz Pakiet</button>
+        </form>
     </div>
+</div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
@@ -653,5 +653,6 @@
     </script>
 </body>
 </html>
+
 
 
