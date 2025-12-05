@@ -3,18 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>mUczelnia - Kreator Kursu</title>
+    <title>mUczelnia - Edytor Kursu</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+    <div class="mobile-top-bar">
+        <div class="mobile-hamburger" onclick="toggleSidebar()">☰</div>
+        <div class="logo-text">Edytor Kursu</div>
+    </div>
+
     <div class="course-layout">
-        <aside class="course-sidebar">
+        <aside class="course-sidebar" id="course-sidebar">
             <div class="sidebar-header">
-                <a href="dashboard.html" class="back-btn">← Anuluj</a>
-                <h3 style="margin:0; font-size:16px; margin-left: 10px;">Edytor Kursu</h3>
+                <a href="courses_list.html" class="back-btn">← Anuluj</a>
+                <h3 style="margin:0; font-size:16px; margin-left: 10px;">Lekcje</h3>
+                <span class="mobile-only-close" style="margin-left:auto; font-size:24px; cursor:pointer;" onclick="toggleSidebar()">✕</span>
             </div>
+            
             <ul class="lesson-list" id="editor-lesson-list"></ul>
+
             <div class="add-lesson-btn" onclick="addNewLesson()">+ Nowa Lekcja</div>
         </aside>
 
@@ -24,234 +32,262 @@
                 <div style="border-bottom: 2px solid #eee; margin-bottom: 30px; padding-bottom: 20px;">
                     <label style="font-size: 12px; color: #888; text-transform: uppercase; font-weight: bold;">Tytuł całego kursu</label>
                     <input type="text" id="course-title-input" class="edit-input title-input" placeholder="Wpisz nazwę kursu..." oninput="updateCourseState()">
-                    <label style="font-size: 12px; color: #888; text-transform: uppercase; font-weight: bold;">Opis kursu</label>
-                    <textarea id="course-desc-input" class="edit-input" style="min-height: 80px;" placeholder="O czym jest ten kurs?" oninput="updateCourseState()"></textarea>
+                    <textarea id="course-desc-input" class="edit-input" style="min-height: 80px; margin-top:10px;" placeholder="O czym jest ten kurs?" oninput="updateCourseState()"></textarea>
                 </div>
 
                 <!-- LESSON EDITOR -->
                 <div id="active-lesson-editor" style="display: none;">
                     <h2 style="color: var(--accent-color);">Edycja Lekcji</h2>
-                    <label style="font-size: 12px; color: #888; text-transform: uppercase; font-weight: bold;">Tytuł lekcji</label>
-                    <input type="text" id="lesson-title-input" class="edit-input title-input" placeholder="Np. Wstęp do zagadnienia" oninput="updateLessonState()">
-                    <label style="font-size: 12px; color: #888; text-transform: uppercase; font-weight: bold;">Treść lekcji (HTML dozwolony)</label>
-                    <textarea id="lesson-content-input" class="edit-area" placeholder="Wpisz treść lekcji tutaj..." oninput="updateLessonState()"></textarea>
+                    <input type="text" id="lesson-title-input" class="edit-input title-input" placeholder="Tytuł lekcji" oninput="updateLessonState()">
+                    <textarea id="lesson-content-input" class="edit-area" placeholder="Treść lekcji (HTML dozwolony)..." oninput="updateLessonState()"></textarea>
                 </div>
 
                 <div id="no-selection-msg" style="text-align: center; color: #888; padding: 50px;">
-                    Kliknij <b>+ Nowa Lekcja</b> po lewej stronie.
+                    <span id="loading-msg">Ładowanie...</span>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- Floating Save Button triggers Package Modal -->
-    <button class="save-course-fab" onclick="openPackageModal()" id="preSaveBtn">
-        <span>💾 Zapisz Kurs</span>
+    <button class="save-course-fab" onclick="handleSaveClick()" id="preSaveBtn">
+        <span>💾 Zapisz Zmiany</span>
     </button>
 
-    <!-- PACKAGE SELECTION MODAL -->
-    <div class="modal-overlay" id="packageModal">
-        <div class="modal-window">
-            <div class="modal-header">
-                <h3 class="modal-title">Zapisz jako część pakietu</h3>
-                <span class="close-modal" onclick="closeModal()">&times;</span>
-            </div>
-            
-            <div style="margin-bottom: 20px;">
-                <label style="display:block; margin-bottom:10px;">
-                    <input type="radio" name="pkgOption" value="new" checked onchange="togglePkgInputs()"> 
-                    Utwórz <b>Nowy Pakiet</b>
-                </label>
-                
-                <!-- NEW PACKAGE INPUTS -->
-                <div id="new-pkg-inputs" style="padding-left: 20px;">
-                    <input type="text" id="new-pkg-name" class="edit-input" placeholder="Nazwa pakietu (np. Historia Starożytna)" style="border:1px solid #ccc; margin-bottom:10px;">
-                    
-                    <!-- LEVEL SELECTOR -->
-                    <label style="font-size: 12px; color: #888; text-transform: uppercase; font-weight: bold;">Poziom nauczania</label>
-                    <select id="new-pkg-level" class="edit-input" style="border:1px solid #ccc;">
-                        <option value="1">Szkoła Podstawowa</option>
-                        <option value="2">Szkoła Średnia</option>
-                        <option value="3">Szkoła Wyższa</option>
-                    </select>
-                </div>
-
-                <label style="display:block; margin-top:15px; margin-bottom:10px;">
-                    <input type="radio" name="pkgOption" value="existing" onchange="togglePkgInputs()"> 
-                    Dodaj do <b>Istniejącego Pakietu</b>
-                </label>
-                <div id="existing-pkg-inputs" style="padding-left: 20px; display:none;">
-                    <select id="existing-pkg-select" class="edit-input" style="border:1px solid #ccc;">
-                        <option value="" disabled selected>Ładowanie pakietów...</option>
-                    </select>
-                </div>
-            </div>
-
-            <button class="login-button full-width-btn" onclick="saveCourseToDB()" id="finalSaveBtn">Zapisz wszystko</button>
-        </div>
-    </div>
+    <!-- PACKAGE MODAL (Only needed for NEW courses, hidden on Edit usually, but kept for logic consistency) -->
+    <div class="modal-overlay" id="packageModal"><div class="modal-window"><div class="modal-header"><h3 class="modal-title">Zapisz</h3><span class="close-modal" onclick="closeModal()">&times;</span></div><div style="margin-bottom: 20px;"><label style="display:block; margin-bottom:10px;"><input type="radio" name="pkgOption" value="new" checked onchange="togglePkgInputs()"> Nowy Pakiet</label><div id="new-pkg-inputs" style="padding-left: 20px;"><input type="text" id="new-pkg-name" class="edit-input" placeholder="Nazwa"><select id="new-pkg-level" class="edit-input"><option value="1">Podstawowa</option><option value="2">Średnia</option><option value="3">Wyższa</option></select></div><label style="display:block; margin-top:15px;"><input type="radio" name="pkgOption" value="existing" onchange="togglePkgInputs()"> Istniejący</label><div id="existing-pkg-inputs" style="padding-left: 20px; display:none;"><select id="existing-pkg-select" class="edit-input"></select></div></div><button class="login-button full-width-btn" onclick="saveCourseToDB(true)" id="finalSaveBtn">Zapisz</button></div></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+        function toggleSidebar() { document.getElementById('course-sidebar').classList.toggle('active'); }
+
         const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg'; 
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
+        const urlParams = new URLSearchParams(window.location.search);
+        const editId = urlParams.get('id'); // If present, we are editing
+
         let courseData = { title: "", description: "", author_id: null };
         let lessons = []; 
         let activeLessonId = null;
+        let deletedLessonIds = []; // Track IDs to delete from DB
 
         document.addEventListener('DOMContentLoaded', async () => {
             const { data: { session } } = await _supabase.auth.getSession();
             if (!session) { window.location.href = 'login.html'; return; }
             courseData.author_id = session.user.id;
+
             const { data: profile } = await _supabase.from('users').select('role').eq('id', session.user.id).single();
-            if (!profile || profile.role !== 'admin') { alert("Brak uprawnień."); window.location.href = 'dashboard.html'; }
+            if (!profile || profile.role !== 'admin') { alert("Brak uprawnień."); window.location.href = 'dashboard.html'; return; }
+
+            if (editId) {
+                document.title = "Edycja Kursu";
+                document.querySelector('.logo-text').textContent = "Edycja Kursu";
+                await loadCourseData(editId);
+            } else {
+                document.getElementById('no-selection-msg').innerHTML = "Kliknij <b>+ Nowa Lekcja</b> po lewej stronie.";
+            }
         });
 
-        async function openPackageModal() {
-            if (!courseData.title) return alert("Najpierw podaj tytuł kursu!");
-            if (lessons.length === 0) return alert("Kurs musi mieć lekcje!");
+        // --- LOAD DATA ---
+        async function loadCourseData(id) {
+            // 1. Fetch Course
+            const { data: course, error } = await _supabase.from('courses').select('*').eq('id', id).single();
+            if (error) { alert("Błąd pobierania kursu: " + error.message); return; }
             
-            document.getElementById('packageModal').classList.add('active');
-            document.getElementById('new-pkg-name').value = courseData.title;
-
-            // Load existing packages
-            const select = document.getElementById('existing-pkg-select');
-            select.innerHTML = '<option value="" disabled selected>Ładowanie...</option>';
-            const { data: pkgs } = await _supabase.from('packages').select('id, title, level').order('created_at', { ascending: false });
+            courseData.title = course.title;
+            courseData.description = course.description;
             
-            if(pkgs && pkgs.length > 0) {
-                select.innerHTML = '<option value="" disabled selected>-- Wybierz Pakiet --</option>';
-                pkgs.forEach(p => {
-                    const opt = document.createElement('option');
-                    opt.value = p.id;
-                    // Show level in dropdown
-                    const lvlMap = {1: 'Podst.', 2: 'Średnia', 3: 'Wyższa'};
-                    opt.textContent = `[${lvlMap[p.level] || 'Inne'}] ${p.title}`;
-                    select.appendChild(opt);
-                });
-            } else {
-                select.innerHTML = '<option value="" disabled>Brak pakietów</option>';
+            document.getElementById('course-title-input').value = course.title;
+            document.getElementById('course-desc-input').value = course.description || "";
+
+            // 2. Fetch Lessons
+            const { data: dbLessons } = await _supabase.from('lessons')
+                .select('id, title, order_index, lesson_components(content_text_blocks(content))')
+                .eq('course_id', id)
+                .order('order_index', { ascending: true });
+
+            if (dbLessons) {
+                lessons = dbLessons.map(l => ({
+                    id: l.id, // Real DB ID
+                    title: l.title,
+                    content: l.lesson_components?.[0]?.content_text_blocks?.content || ""
+                }));
             }
+            
+            renderSidebar();
+            document.getElementById('no-selection-msg').innerHTML = "Wybierz lekcję do edycji lub dodaj nową.";
         }
 
-        function closeModal() { document.getElementById('packageModal').classList.remove('active'); }
-
-        function togglePkgInputs() {
-            const isNew = document.querySelector('input[name="pkgOption"]:checked').value === 'new';
-            document.getElementById('new-pkg-inputs').style.display = isNew ? 'block' : 'none';
-            document.getElementById('existing-pkg-inputs').style.display = isNew ? 'none' : 'block';
-        }
-
-        async function saveCourseToDB() {
-            const btn = document.getElementById('finalSaveBtn');
-            btn.disabled = true; btn.innerHTML = "⏳ Zapisywanie...";
-
-            try {
-                let packageId = null;
-                const pkgOption = document.querySelector('input[name="pkgOption"]:checked').value;
-
-                if (pkgOption === 'new') {
-                    const pkgTitle = document.getElementById('new-pkg-name').value;
-                    const pkgLevel = document.getElementById('new-pkg-level').value; // Get Level
-                    
-                    if(!pkgTitle) throw new Error("Podaj nazwę nowego pakietu!");
-                    
-                    // Insert with Level
-                    const { data: newPkg, error: pkgErr } = await _supabase
-                        .from('packages')
-                        .insert({ title: pkgTitle, level: parseInt(pkgLevel) })
-                        .select().single();
-                    if(pkgErr) throw pkgErr;
-                    packageId = newPkg.id;
-                } else {
-                    packageId = document.getElementById('existing-pkg-select').value;
-                    if(!packageId) throw new Error("Wybierz istniejący pakiet!");
-                }
-
-                // Create Course
-                const { data: course, error: cErr } = await _supabase
-                    .from('courses')
-                    .insert({
-                        title: courseData.title,
-                        description: courseData.description,
-                        author_id: courseData.author_id,
-                        type: 'course',
-                        package_id: packageId
-                    })
-                    .select().single();
-
-                if (cErr) throw cErr;
-
-                // Save Lessons
-                for (let i = 0; i < lessons.length; i++) {
-                    const l = lessons[i];
-                    const { data: savedLesson, error: lErr } = await _supabase
-                        .from('lessons').insert({ course_id: course.id, title: l.title, order_index: i + 1 }).select().single();
-                    if (lErr) throw lErr;
-
-                    const { data: content, error: ctErr } = await _supabase
-                        .from('content_text_blocks').insert({ content: l.content }).select().single();
-                    
-                    await _supabase.from('lesson_components').insert({
-                        lesson_id: savedLesson.id, order_index: 1, component_type: 'text', content_text_block_id: content.id
-                    });
-                }
-
-                alert("✅ Kurs zapisany!");
-                window.location.href = 'dashboard.html';
-
-            } catch (err) {
-                console.error(err);
-                alert("Błąd: " + err.message);
-                btn.disabled = false; btn.innerHTML = "Zapisz wszystko";
-            }
-        }
-
-        // --- EDITOR UI FUNCTIONS ---
+        // --- UI LOGIC ---
         function addNewLesson() {
-            const newId = Date.now();
-            lessons.push({ id: newId, title: "Nowa lekcja", content: "<p>...</p>" });
-            renderSidebar(); selectLesson(newId);
+            // Use timestamp as temporary ID (string or large num) to distinguish from DB IDs
+            const tempId = 'new-' + Date.now(); 
+            lessons.push({ id: tempId, title: "Nowa lekcja", content: "<p>...</p>" });
+            renderSidebar(); selectLesson(tempId);
         }
+
         function renderSidebar() {
-            const list = document.getElementById('editor-lesson-list'); list.innerHTML = '';
+            const list = document.getElementById('editor-lesson-list');
+            list.innerHTML = '';
             lessons.forEach((l, index) => {
                 const li = document.createElement('li');
                 li.className = `lesson-item ${l.id === activeLessonId ? 'active' : ''}`;
-                li.innerHTML = `<span>${index + 1}. ${l.title}</span> <span style="color:red;" onclick="removeLesson(event, ${l.id})">&times;</span>`;
+                li.innerHTML = `<span>${index + 1}. ${l.title}</span> <span style="color:red; cursor:pointer;" onclick="removeLesson(event, '${l.id}')">&times;</span>`;
                 li.onclick = () => selectLesson(l.id);
                 list.appendChild(li);
             });
         }
+
         function selectLesson(id) {
             activeLessonId = id;
             document.getElementById('no-selection-msg').style.display = 'none';
             document.getElementById('active-lesson-editor').style.display = 'block';
-            const lesson = lessons.find(l => l.id === id);
-            document.getElementById('lesson-title-input').value = lesson.title;
-            document.getElementById('lesson-content-input').value = lesson.content;
+            const l = lessons.find(x => x.id === id);
+            document.getElementById('lesson-title-input').value = l.title;
+            document.getElementById('lesson-content-input').value = l.content;
             renderSidebar();
         }
+
         function removeLesson(e, id) {
             e.stopPropagation();
-            if(confirm("Usunąć?")) {
-                lessons = lessons.filter(l => l.id !== id);
-                if (activeLessonId === id) { activeLessonId = null; document.getElementById('active-lesson-editor').style.display = 'none'; }
-                renderSidebar();
+            if(!confirm("Usunąć lekcję?")) return;
+            
+            // If it's a real ID (number), add to delete queue
+            if (typeof id === 'number' || (typeof id === 'string' && !id.startsWith('new-'))) {
+                deletedLessonIds.push(id);
             }
+
+            lessons = lessons.filter(l => l.id != id); // loose comparison for ID types
+            if (activeLessonId == id) { 
+                activeLessonId = null; 
+                document.getElementById('active-lesson-editor').style.display = 'none'; 
+                document.getElementById('no-selection-msg').style.display = 'block'; 
+            }
+            renderSidebar();
         }
+
         function updateCourseState() {
             courseData.title = document.getElementById('course-title-input').value;
             courseData.description = document.getElementById('course-desc-input').value;
         }
+
         function updateLessonState() {
             if (!activeLessonId) return;
-            const lesson = lessons.find(l => l.id === activeLessonId);
-            lesson.title = document.getElementById('lesson-title-input').value;
-            lesson.content = document.getElementById('lesson-content-input').value;
+            const l = lessons.find(x => x.id === activeLessonId);
+            l.title = document.getElementById('lesson-title-input').value;
+            l.content = document.getElementById('lesson-content-input').value;
             renderSidebar();
+        }
+
+        // --- SAVE LOGIC ---
+        function handleSaveClick() {
+            if (!courseData.title) return alert("Podaj tytuł!");
+            if (lessons.length === 0) return alert("Dodaj lekcje!");
+
+            if (editId) {
+                // If editing, save directly (no package modal needed as it's already assigned)
+                saveCourseToDB(false); 
+            } else {
+                // If new, show package modal
+                openPackageModal();
+            }
+        }
+
+        async function openPackageModal() {
+            document.getElementById('packageModal').classList.add('active');
+            document.getElementById('new-pkg-name').value = courseData.title;
+            const s = document.getElementById('existing-pkg-select'); s.innerHTML = '<option>Ładowanie...</option>';
+            const { data } = await _supabase.from('packages').select('*').order('created_at', { ascending: false });
+            s.innerHTML = '<option value="" disabled selected>-- Wybierz --</option>';
+            data.forEach(p => s.add(new Option(p.title, p.id)));
+        }
+        function closeModal() { document.getElementById('packageModal').classList.remove('active'); }
+        function togglePkgInputs() { 
+            const n = document.querySelector('input[name="pkgOption"]:checked').value === 'new';
+            document.getElementById('new-pkg-inputs').style.display = n ? 'block' : 'none';
+            document.getElementById('existing-pkg-inputs').style.display = n ? 'none' : 'block';
+        }
+
+        async function saveCourseToDB(isNew) {
+            const btn = isNew ? document.getElementById('finalSaveBtn') : document.getElementById('preSaveBtn');
+            const originalText = btn.innerHTML;
+            btn.disabled = true; btn.innerHTML = "⏳ Zapisywanie...";
+
+            try {
+                let courseId = editId;
+
+                // 1. CREATE or UPDATE Course
+                if (isNew) {
+                    let packageId = null;
+                    const pkgOpt = document.querySelector('input[name="pkgOption"]:checked').value;
+                    if (pkgOpt === 'new') {
+                        const { data: pkg } = await _supabase.from('packages').insert({ 
+                            title: document.getElementById('new-pkg-name').value, 
+                            level: document.getElementById('new-pkg-level').value 
+                        }).select().single();
+                        packageId = pkg.id;
+                    } else {
+                        packageId = document.getElementById('existing-pkg-select').value;
+                    }
+
+                    const { data: newC, error } = await _supabase.from('courses').insert({
+                        title: courseData.title, description: courseData.description, author_id: courseData.author_id, type: 'course', package_id: packageId
+                    }).select().single();
+                    if(error) throw error;
+                    courseId = newC.id;
+                } else {
+                    // Update existing
+                    await _supabase.from('courses').update({
+                        title: courseData.title, description: courseData.description
+                    }).eq('id', courseId);
+                }
+
+                // 2. Handle Deletions (Only for Edit mode)
+                if (deletedLessonIds.length > 0) {
+                    await _supabase.from('lessons').delete().in('id', deletedLessonIds);
+                }
+
+                // 3. Upsert Lessons
+                for (let i = 0; i < lessons.length; i++) {
+                    const l = lessons[i];
+                    let lessonId = l.id;
+
+                    // Check if it's a temporary ID (starts with 'new-')
+                    const isTemp = String(l.id).startsWith('new-');
+
+                    if (isTemp) {
+                        // INSERT NEW LESSON
+                        const { data: insL } = await _supabase.from('lessons').insert({
+                            course_id: courseId, title: l.title, order_index: i + 1
+                        }).select().single();
+                        lessonId = insL.id;
+
+                        const { data: content } = await _supabase.from('content_text_blocks').insert({ content: l.content }).select().single();
+                        await _supabase.from('lesson_components').insert({
+                            lesson_id: lessonId, order_index: 1, component_type: 'text', content_text_block_id: content.id
+                        });
+                    } else {
+                        // UPDATE EXISTING LESSON
+                        await _supabase.from('lessons').update({ title: l.title, order_index: i + 1 }).eq('id', lessonId);
+                        
+                        // Find content block ID
+                        const { data: comp } = await _supabase.from('lesson_components').select('content_text_block_id').eq('lesson_id', lessonId).single();
+                        if (comp) {
+                            await _supabase.from('content_text_blocks').update({ content: l.content }).eq('id', comp.content_text_block_id);
+                        }
+                    }
+                }
+
+                alert("✅ Zapisano pomyślnie!");
+                window.location.href = 'courses_list.html';
+
+            } catch (err) {
+                console.error(err);
+                alert("Błąd: " + err.message);
+            } finally {
+                btn.disabled = false; btn.innerHTML = originalText;
+            }
         }
     </script>
 </body>
