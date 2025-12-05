@@ -14,20 +14,16 @@
                 <a href="dashboard.html" class="back-btn">← Anuluj</a>
                 <h3 style="margin:0; font-size:16px; margin-left: 10px;">Edytor Kursu</h3>
             </div>
-            
             <ul class="lesson-list" id="editor-lesson-list"></ul>
-
             <div class="add-lesson-btn" onclick="addNewLesson()">+ Nowa Lekcja</div>
         </aside>
 
         <main class="course-content">
             <div class="lesson-card">
-                
                 <!-- SETTINGS -->
                 <div style="border-bottom: 2px solid #eee; margin-bottom: 30px; padding-bottom: 20px;">
                     <label style="font-size: 12px; color: #888; text-transform: uppercase; font-weight: bold;">Tytuł całego kursu</label>
                     <input type="text" id="course-title-input" class="edit-input title-input" placeholder="Wpisz nazwę kursu..." oninput="updateCourseState()">
-                    
                     <label style="font-size: 12px; color: #888; text-transform: uppercase; font-weight: bold;">Opis kursu</label>
                     <textarea id="course-desc-input" class="edit-input" style="min-height: 80px;" placeholder="O czym jest ten kurs?" oninput="updateCourseState()"></textarea>
                 </div>
@@ -66,8 +62,18 @@
                     <input type="radio" name="pkgOption" value="new" checked onchange="togglePkgInputs()"> 
                     Utwórz <b>Nowy Pakiet</b>
                 </label>
+                
+                <!-- NEW PACKAGE INPUTS -->
                 <div id="new-pkg-inputs" style="padding-left: 20px;">
-                    <input type="text" id="new-pkg-name" class="edit-input" placeholder="Nazwa pakietu (np. Historia Starożytna)" style="border:1px solid #ccc;">
+                    <input type="text" id="new-pkg-name" class="edit-input" placeholder="Nazwa pakietu (np. Historia Starożytna)" style="border:1px solid #ccc; margin-bottom:10px;">
+                    
+                    <!-- LEVEL SELECTOR -->
+                    <label style="font-size: 12px; color: #888; text-transform: uppercase; font-weight: bold;">Poziom nauczania</label>
+                    <select id="new-pkg-level" class="edit-input" style="border:1px solid #ccc;">
+                        <option value="1">Szkoła Podstawowa</option>
+                        <option value="2">Szkoła Średnia</option>
+                        <option value="3">Szkoła Wyższa</option>
+                    </select>
                 </div>
 
                 <label style="display:block; margin-top:15px; margin-bottom:10px;">
@@ -103,27 +109,26 @@
             if (!profile || profile.role !== 'admin') { alert("Brak uprawnień."); window.location.href = 'dashboard.html'; }
         });
 
-        // --- PACKAGE MODAL LOGIC ---
         async function openPackageModal() {
             if (!courseData.title) return alert("Najpierw podaj tytuł kursu!");
             if (lessons.length === 0) return alert("Kurs musi mieć lekcje!");
             
             document.getElementById('packageModal').classList.add('active');
-            
-            // Prefill course title as package name suggestion
             document.getElementById('new-pkg-name').value = courseData.title;
 
             // Load existing packages
             const select = document.getElementById('existing-pkg-select');
             select.innerHTML = '<option value="" disabled selected>Ładowanie...</option>';
-            const { data: pkgs } = await _supabase.from('packages').select('id, title').order('created_at', { ascending: false });
+            const { data: pkgs } = await _supabase.from('packages').select('id, title, level').order('created_at', { ascending: false });
             
             if(pkgs && pkgs.length > 0) {
                 select.innerHTML = '<option value="" disabled selected>-- Wybierz Pakiet --</option>';
                 pkgs.forEach(p => {
                     const opt = document.createElement('option');
                     opt.value = p.id;
-                    opt.textContent = p.title;
+                    // Show level in dropdown
+                    const lvlMap = {1: 'Podst.', 2: 'Średnia', 3: 'Wyższa'};
+                    opt.textContent = `[${lvlMap[p.level] || 'Inne'}] ${p.title}`;
                     select.appendChild(opt);
                 });
             } else {
@@ -139,23 +144,25 @@
             document.getElementById('existing-pkg-inputs').style.display = isNew ? 'none' : 'block';
         }
 
-        // --- CORE SAVE LOGIC ---
         async function saveCourseToDB() {
             const btn = document.getElementById('finalSaveBtn');
-            btn.disabled = true;
-            btn.innerHTML = "⏳ Zapisywanie...";
+            btn.disabled = true; btn.innerHTML = "⏳ Zapisywanie...";
 
             try {
-                // 1. Handle Package
                 let packageId = null;
                 const pkgOption = document.querySelector('input[name="pkgOption"]:checked').value;
 
                 if (pkgOption === 'new') {
                     const pkgTitle = document.getElementById('new-pkg-name').value;
+                    const pkgLevel = document.getElementById('new-pkg-level').value; // Get Level
+                    
                     if(!pkgTitle) throw new Error("Podaj nazwę nowego pakietu!");
                     
+                    // Insert with Level
                     const { data: newPkg, error: pkgErr } = await _supabase
-                        .from('packages').insert({ title: pkgTitle }).select().single();
+                        .from('packages')
+                        .insert({ title: pkgTitle, level: parseInt(pkgLevel) })
+                        .select().single();
                     if(pkgErr) throw pkgErr;
                     packageId = newPkg.id;
                 } else {
@@ -163,7 +170,7 @@
                     if(!packageId) throw new Error("Wybierz istniejący pakiet!");
                 }
 
-                // 2. Create Course (Linked to Package)
+                // Create Course
                 const { data: course, error: cErr } = await _supabase
                     .from('courses')
                     .insert({
@@ -171,14 +178,13 @@
                         description: courseData.description,
                         author_id: courseData.author_id,
                         type: 'course',
-                        package_id: packageId // LINKING HERE
+                        package_id: packageId
                     })
-                    .select()
-                    .single();
+                    .select().single();
 
                 if (cErr) throw cErr;
 
-                // 3. Lessons Loop
+                // Save Lessons
                 for (let i = 0; i < lessons.length; i++) {
                     const l = lessons[i];
                     const { data: savedLesson, error: lErr } = await _supabase
@@ -193,27 +199,24 @@
                     });
                 }
 
-                alert("✅ Kurs zapisany w pakiecie!");
+                alert("✅ Kurs zapisany!");
                 window.location.href = 'dashboard.html';
 
             } catch (err) {
                 console.error(err);
                 alert("Błąd: " + err.message);
-                btn.disabled = false;
-                btn.innerHTML = "Zapisz wszystko";
+                btn.disabled = false; btn.innerHTML = "Zapisz wszystko";
             }
         }
 
-        // --- EDITOR UI FUNCTIONS (Same as before) ---
+        // --- EDITOR UI FUNCTIONS ---
         function addNewLesson() {
             const newId = Date.now();
             lessons.push({ id: newId, title: "Nowa lekcja", content: "<p>...</p>" });
-            renderSidebar();
-            selectLesson(newId);
+            renderSidebar(); selectLesson(newId);
         }
         function renderSidebar() {
-            const list = document.getElementById('editor-lesson-list');
-            list.innerHTML = '';
+            const list = document.getElementById('editor-lesson-list'); list.innerHTML = '';
             lessons.forEach((l, index) => {
                 const li = document.createElement('li');
                 li.className = `lesson-item ${l.id === activeLessonId ? 'active' : ''}`;
