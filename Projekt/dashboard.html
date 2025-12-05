@@ -26,9 +26,7 @@
                 </div>
             </div>
 
-            <!-- DASHBOARD GRID -->
             <div class="dashboard-grid">
-                
                 <!-- 1. ADMIN: UTWÓRZ KURS -->
                 <a href="create_course.html" id="widget-create-course" class="widget-tile" style="display: none; border: 2px dashed var(--accent-color);">
                     <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23f04a4a%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><rect x=%223%22 y=%223%22 width=%2218%22 height=%2218%22 rx=%222%22 ry=%222%22></rect><line x1=%2212%22 y1=%228%22 x2=%2212%22 y2=%2216%22></line><line x1=%228%22 y1=%2212%22 x2=%2216%22 y2=%2212%22></line></svg>');"></div>
@@ -85,7 +83,7 @@
                     <p class="course-meta">Przejdź do listy zajęć</p>
                 </a>
 
-                <!-- LINK TO QUIZZES LIST (UPDATED) -->
+                <!-- LINK TO QUIZZES LIST -->
                 <a href="quizzes_list.html" class="widget-tile">
                     <div class="widget-icon icon-notes"></div>
                     <h3>Ćwiczenia</h3>
@@ -113,8 +111,9 @@
             </div>
         </aside>
     </div>
-    <!-- ================= MODALS ================= -->
 
+    <!-- MODALS -->
+    
     <!-- 1. CREATE USER MODAL -->
     <div class="modal-overlay" id="createUserModal">
         <div class="modal-window">
@@ -183,34 +182,28 @@
         </div>
     </div>
 
-    <!-- 4. MANAGE STUDENTS MODAL (With Filters) -->
+    <!-- 4. MANAGE STUDENTS MODAL -->
     <div class="modal-overlay" id="manageStudentsModal">
         <div class="modal-window" style="max-width: 800px;">
             <div class="modal-header">
                 <h3 class="modal-title">Zarządzanie Uczniami</h3>
                 <span class="close-modal" onclick="closeModal('manageStudentsModal')">&times;</span>
             </div>
-            
-            <!-- FILTERS ROW -->
             <div style="display: flex; gap: 20px; margin-bottom: 20px; align-items: flex-end;">
-                <!-- School Selection -->
                 <div id="manage-school-wrapper" style="flex: 1;">
                     <label style="font-size: 14px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 8px;">Szkoła:</label>
                     <select id="manage-school-select" class="edit-input" style="border:1px solid #ccc; margin:0;">
                         <option value="" disabled selected>Wybierz...</option>
                     </select>
                 </div>
-                <!-- Class Filter -->
                 <div id="manage-class-filter-wrapper" style="flex: 1; display: none;">
                     <label style="font-size: 14px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 8px;">Filtruj widok:</label>
                     <select id="filter-class-select" class="edit-input" style="border:1px solid #ccc; margin:0;">
                         <option value="all" selected>Wszyscy uczniowie</option>
                         <option value="none" style="font-weight:bold;">⚠️ Tylko nieprzypisani</option>
-                        <!-- Classes will be injected here -->
                     </select>
                 </div>
             </div>
-
             <div id="students-loading" style="display:none; text-align:center;">Ładowanie listy...</div>
             <div id="students-table-container" style="max-height: 400px; overflow-y: auto; display: none;">
                 <table class="student-table">
@@ -222,32 +215,27 @@
         </div>
     </div>
 
-    <!-- 5. ASSIGN COURSE MODAL (NEW) -->
+    <!-- 5. ASSIGN COURSE MODAL (Corrected) -->
     <div class="modal-overlay" id="assignCourseModal">
-    <div class="modal-window">
-        <div class="modal-header">
-            <h3 class="modal-title">Przypisz Pakiet do Klasy</h3>
-            <span class="close-modal" onclick="closeModal('assignCourseModal')">&times;</span>
+        <div class="modal-window">
+            <div class="modal-header">
+                <h3 class="modal-title">Przypisz Pakiet do Klasy</h3>
+                <span class="close-modal" onclick="closeModal('assignCourseModal')">&times;</span>
+            </div>
+            <form id="assignCourseForm" class="modal-form">
+                <label>Wybierz Pakiet</label>
+                <select id="assign-package-select" class="edit-input" style="border:1px solid #ccc; margin-bottom:15px;" required>
+                    <option value="" disabled selected>Ładowanie pakietów...</option>
+                </select>
+
+                <label>Wybierz Klasę</label>
+                <select id="assign-class-select" class="edit-input" style="border:1px solid #ccc;" required>
+                    <option value="" disabled selected>Ładowanie klas...</option>
+                </select>
+                <button type="submit" class="login-button full-width-btn">Przypisz Pakiet</button>
+            </form>
         </div>
-        <form id="assignCourseForm" class="modal-form">
-            <label>Wybierz Pakiet</label>
-            <select id="assign-package-select" class="edit-input" style="border:1px solid #ccc; margin-bottom:15px;" required>
-                <option value="" disabled selected>Ładowanie pakietów...</option>
-            </select>
-
-            <label>Wybierz Klasę</label>
-            <select id="assign-class-select" class="edit-input" style="border:1px solid #ccc;" required>
-                <option value="" disabled selected>Ładowanie klas...</option>
-            </select>
-            
-            <p style="font-size:12px; color:#666; margin-top:10px;">
-                Wszystkie kursy i quizy w tym pakiecie zostaną przypisane.
-            </p>
-
-            <button type="submit" class="login-button full-width-btn">Przypisz Pakiet</button>
-        </form>
     </div>
-</div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
@@ -333,31 +321,44 @@
         function openModal(id) { document.getElementById(id).classList.add('active'); }
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
+        // --- ASSIGN MODAL (UPDATED WITH ERROR HANDLING) ---
         async function openAssignCourseModal() {
             openModal('assignCourseModal');
-            const courseSelect = document.getElementById('assign-course-select');
+            const pkgSelect = document.getElementById('assign-package-select');
             const classSelect = document.getElementById('assign-class-select');
             
-            courseSelect.innerHTML = '<option value="" disabled selected>Ładowanie...</option>';
-            const { data: courses } = await _supabase.from('courses').select('id, title, type');
-            if(courses) {
-                courseSelect.innerHTML = '<option value="" selected>-- Wybierz Materiał --</option>';
-                courses.forEach(c => {
+            // 1. Load Packages
+            pkgSelect.innerHTML = '<option value="" disabled selected>Ładowanie...</option>';
+            const { data: pkgs, error: pkgErr } = await _supabase.from('packages').select('id, title');
+            
+            if (pkgErr) {
+                alert("Błąd ładowania pakietów: " + pkgErr.message);
+                pkgSelect.innerHTML = '<option value="" disabled>Błąd pobierania</option>';
+            } else if (pkgs && pkgs.length > 0) {
+                pkgSelect.innerHTML = '<option value="" selected>-- Wybierz Pakiet --</option>';
+                pkgs.forEach(p => {
                     const opt = document.createElement('option');
-                    opt.value = c.id;
-                    const typeLabel = c.type === 'quiz' ? '[QUIZ]' : '[KURS]';
-                    opt.textContent = `${typeLabel} ${c.title}`;
-                    courseSelect.appendChild(opt);
+                    opt.value = p.id;
+                    opt.textContent = `📦 ${p.title}`;
+                    pkgSelect.appendChild(opt);
                 });
+            } else {
+                pkgSelect.innerHTML = '<option value="" disabled>Brak dostępnych pakietów</option>';
             }
 
+            // 2. Load Classes
             classSelect.innerHTML = '<option value="" disabled selected>Ładowanie...</option>';
             let query = _supabase.from('classes').select('id, name');
             if ((currentUserRole === 'teacher' || currentUserRole === 'manager') && currentUserSchoolId) {
                 query = query.eq('school_id', currentUserSchoolId);
             }
-            const { data: classes } = await query;
-            if(classes) {
+            
+            const { data: classes, error: clsErr } = await query;
+            
+            if (clsErr) {
+                alert("Błąd ładowania klas: " + clsErr.message);
+                classSelect.innerHTML = '<option value="" disabled>Błąd pobierania</option>';
+            } else if (classes && classes.length > 0) {
                 classSelect.innerHTML = '<option value="" selected>-- Wybierz Klasę --</option>';
                 classes.forEach(c => {
                     const opt = document.createElement('option');
@@ -365,17 +366,26 @@
                     opt.textContent = c.name;
                     classSelect.appendChild(opt);
                 });
-            } else { classSelect.innerHTML = '<option value="" disabled>Brak klas</option>'; }
+            } else {
+                classSelect.innerHTML = '<option value="" disabled>Brak klas</option>';
+            }
         }
 
         async function assignCourseToClass(e) {
             e.preventDefault();
-            const courseId = document.getElementById('assign-course-select').value;
+            const packageId = document.getElementById('assign-package-select').value;
             const classId = document.getElementById('assign-class-select').value;
-            if(!courseId || !classId) return alert("Wybierz kurs i klasę!");
-            const { error } = await _supabase.from('course_classes').insert({ course_id: courseId, class_id: classId });
-            if(error) { if(error.code === '23505') alert("Już przypisano!"); else alert("Błąd: " + error.message); } 
-            else { alert("✅ Przypisano!"); closeModal('assignCourseModal'); }
+            if(!packageId || !classId) return alert("Wybierz pakiet i klasę!");
+            
+            const { error } = await _supabase.from('package_classes').insert({ package_id: packageId, class_id: classId });
+            
+            if(error) { 
+                if(error.code === '23505') alert("Ten pakiet jest już przypisany!"); 
+                else alert("Błąd: " + error.message); 
+            } else { 
+                alert("✅ Pakiet przypisany!"); 
+                closeModal('assignCourseModal'); 
+            }
         }
         // --- EXISTING FUNCTIONS (Add School, Class, User, etc) ---
         async function addSchool(e) {
@@ -653,6 +663,7 @@
     </script>
 </body>
 </html>
+
 
 
 
