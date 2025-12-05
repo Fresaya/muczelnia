@@ -8,14 +8,12 @@
 </head>
 <body>
 
-
-
     <div class="course-layout">
         <aside class="course-sidebar" id="course-sidebar">
             <div class="sidebar-header">
-                <a href="quizzes_list.html" class="back-btn">← Anuluj</a>
+                <!-- FIX: Powrót do panelu admina -->
+                <a href="admin_content.html" class="back-btn">← Anuluj</a>
                 <h3 style="margin:0; font-size:16px; margin-left: 10px;">Pytania</h3>
-                <span class="mobile-only-close" style="margin-left:auto; font-size:24px; cursor:pointer;" onclick="toggleSidebar()">✕</span>
             </div>
             
             <ul class="lesson-list" id="editor-question-list"></ul>
@@ -54,12 +52,11 @@
         <span>💾 Zapisz Zmiany</span>
     </button>
 
-    <!-- PACKAGE MODAL (Only for NEW) -->
+    <!-- PACKAGE MODAL -->
     <div class="modal-overlay" id="packageModal"><div class="modal-window"><div class="modal-header"><h3 class="modal-title">Zapisz</h3><span class="close-modal" onclick="closeModal()">&times;</span></div><div style="margin-bottom: 20px;"><label style="display:block; margin-bottom:10px;"><input type="radio" name="pkgOption" value="new" checked onchange="togglePkgInputs()"> Nowy Pakiet</label><div id="new-pkg-inputs" style="padding-left: 20px;"><input type="text" id="new-pkg-name" class="edit-input" placeholder="Nazwa"><select id="new-pkg-level" class="edit-input"><option value="1">Podstawowa</option><option value="2">Średnia</option><option value="3">Wyższa</option></select></div><label style="display:block; margin-top:15px;"><input type="radio" name="pkgOption" value="existing" onchange="togglePkgInputs()"> Istniejący</label><div id="existing-pkg-inputs" style="padding-left: 20px; display:none;"><select id="existing-pkg-select" class="edit-input"></select></div></div><button class="login-button full-width-btn" onclick="saveQuizToDB(true)" id="finalSaveBtn">Zapisz</button></div></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        function toggleSidebar() { document.getElementById('course-sidebar').classList.toggle('active'); }
         const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg'; 
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
@@ -81,7 +78,7 @@
             if(profile.role !== 'admin') { alert("Tylko admin."); window.location.href='dashboard.html'; return; }
 
             if (editId) {
-                document.querySelector('.logo-text').textContent = "Edycja Quizu";
+                document.title = "Edycja Quizu";
                 await loadQuizData(editId);
             } else {
                 document.getElementById('no-selection-msg').innerHTML = "Kliknij <b>+ Nowe Pytanie</b>.";
@@ -99,9 +96,12 @@
             const { data: lessons } = await _supabase.from('lessons').select('id, title, order_index').eq('course_id', id).order('order_index');
             
             if (lessons) {
-                for (let l of lessons) {
-                    // Fetch answers for each question
-                    const { data: ans } = await _supabase.from('lesson_answers').select('*').eq('lesson_id', l.id);
+                // Fetch answers for ALL lessons in parallel for efficiency
+                const lessonIds = lessons.map(l => l.id);
+                const { data: allAnswers } = await _supabase.from('lesson_answers').select('*').in('lesson_id', lessonIds);
+
+                lessons.forEach(l => {
+                    const ans = allAnswers.filter(a => a.lesson_id === l.id);
                     
                     const formattedAnswers = [
                         { text: "", isCorrect: false }, { text: "", isCorrect: false },
@@ -109,9 +109,7 @@
                     ];
                     
                     if (ans) {
-                        ans.forEach((a, i) => {
-                            if (i < 4) formattedAnswers[i] = { text: a.answer_text, isCorrect: a.is_correct };
-                        });
+                        ans.forEach((a, i) => { if (i < 4) formattedAnswers[i] = { text: a.answer_text, isCorrect: a.is_correct }; });
                     }
 
                     questions.push({
@@ -119,10 +117,13 @@
                         title: l.title,
                         answers: formattedAnswers
                     });
-                }
+                });
+                
+                renderSidebar();
+                selectQuestion(questions[0].id); // Auto-select first
+            } else {
+                document.getElementById('no-selection-msg').innerHTML = "Ten quiz jest pusty.";
             }
-            renderSidebar();
-            document.getElementById('no-selection-msg').innerHTML = "Wybierz pytanie do edycji.";
         }
 
         // --- UI LOGIC ---
@@ -137,7 +138,7 @@
             questions.forEach((q, index) => {
                 const li = document.createElement('li');
                 li.className = `lesson-item ${q.id === activeQuestionId ? 'active' : ''}`;
-                li.innerHTML = `<span>${index + 1}. ${q.title}</span> <span style="color:red;" onclick="removeQuestion(event, '${q.id}')">&times;</span>`;
+                li.innerHTML = `<span>${index + 1}. ${q.title}</span> <span style="color:red; cursor:pointer;" onclick="removeQuestion(event, '${q.id}')">&times;</span>`;
                 li.onclick = () => selectQuestion(q.id);
                 list.appendChild(li);
             });
@@ -167,7 +168,9 @@
         function removeQuestion(e, id) {
             e.stopPropagation();
             if(!confirm("Usunąć?")) return;
-            if (typeof id === 'number' || !id.startsWith('new-')) deletedQuestionIds.push(id);
+            if (typeof id === 'number' || (typeof id === 'string' && !id.startsWith('new-'))) {
+                deletedQuestionIds.push(id);
+            }
             questions = questions.filter(q => q.id != id);
             if (activeQuestionId == id) { activeQuestionId = null; document.getElementById('active-question-editor').style.display = 'none'; document.getElementById('no-selection-msg').style.display = 'block'; }
             renderSidebar();
@@ -183,7 +186,7 @@
             else { document.getElementById('packageModal').classList.add('active'); openPackageModal(); }
         }
 
-        async function openPackageModal() { /* Same package logic as create_course */ document.getElementById('new-pkg-name').value = quizData.title + " (Pakiet)"; const s = document.getElementById('existing-pkg-select'); s.innerHTML='<option>Ładowanie...</option>'; const {data}=await _supabase.from('packages').select('*').order('created_at',{ascending:false}); s.innerHTML='<option value="" disabled selected>-- Wybierz --</option>'; data.forEach(p=>s.add(new Option(p.title,p.id))); }
+        async function openPackageModal() { document.getElementById('packageModal').classList.add('active'); document.getElementById('new-pkg-name').value = quizData.title + " (Pakiet)"; const s = document.getElementById('existing-pkg-select'); s.innerHTML='<option>Ładowanie...</option>'; const {data}=await _supabase.from('packages').select('*').order('created_at',{ascending:false}); s.innerHTML='<option value="" disabled selected>-- Wybierz --</option>'; data.forEach(p=>s.add(new Option(p.title,p.id))); }
         function closeModal() { document.getElementById('packageModal').classList.remove('active'); }
         function togglePkgInputs() { const n=document.querySelector('input[name="pkgOption"]:checked').value==='new'; document.getElementById('new-pkg-inputs').style.display=n?'block':'none'; document.getElementById('existing-pkg-inputs').style.display=n?'none':'block'; }
 
@@ -194,13 +197,12 @@
             try {
                 let courseId = editId;
 
-                // 1. Course Logic
                 if (isNew) {
                     let packageId = null;
                     const pkgOpt = document.querySelector('input[name="pkgOption"]:checked').value;
                     if (pkgOpt === 'new') {
-                        const { data: pkg } = await _supabase.from('packages').insert({ title: document.getElementById('new-pkg-name').value, level: document.getElementById('new-pkg-level').value }).select().single();
-                        packageId = pkg.id;
+                        const { data: newPkg } = await _supabase.from('packages').insert({ title: document.getElementById('new-pkg-name').value, level: document.getElementById('new-pkg-level').value }).select().single();
+                        packageId = newPkg.id;
                     } else { packageId = document.getElementById('existing-pkg-select').value; }
 
                     const { data: newC, error } = await _supabase.from('courses').insert({ title: quizData.title, description: quizData.description, author_id: quizData.author_id, type: 'quiz', package_id: packageId }).select().single();
@@ -210,44 +212,31 @@
                     await _supabase.from('courses').update({ title: quizData.title, description: quizData.description }).eq('id', courseId);
                 }
 
-                // 2. Deletions
                 if (deletedQuestionIds.length > 0) {
                     await _supabase.from('lessons').delete().in('id', deletedQuestionIds);
                 }
 
-                // 3. Upsert Questions & Answers
                 for (let i = 0; i < questions.length; i++) {
                     const q = questions[i];
                     let lessonId = q.id;
                     const isTemp = String(q.id).startsWith('new-');
 
                     if (isTemp) {
-                        // Insert
                         const { data: savedLesson } = await _supabase.from('lessons').insert({ course_id: courseId, title: q.title, order_index: i + 1 }).select().single();
                         lessonId = savedLesson.id;
-                        // Dummy content
                         const { data: content } = await _supabase.from('content_text_blocks').insert({ content: "Pytanie" }).select().single();
                         await _supabase.from('lesson_components').insert({ lesson_id: lessonId, order_index: 1, component_type: 'text', content_text_block_id: content.id });
                     } else {
-                        // Update
                         await _supabase.from('lessons').update({ title: q.title, order_index: i + 1 }).eq('id', lessonId);
-                        // Clean old answers to replace with new set (easiest way to handle answer changes)
                         await _supabase.from('lesson_answers').delete().eq('lesson_id', lessonId);
                     }
 
-                    // Insert Answers (Always fresh insert for existing questions to avoid complex ID mapping)
-                    const answersPayload = q.answers.filter(a => a.text).map(a => ({
-                        lesson_id: lessonId,
-                        answer_text: a.text,
-                        is_correct: a.isCorrect
-                    }));
-                    if (answersPayload.length > 0) {
-                        await _supabase.from('lesson_answers').insert(answersPayload);
-                    }
+                    const answersPayload = q.answers.filter(a => a.text).map(a => ({ lesson_id: lessonId, answer_text: a.text, is_correct: a.isCorrect }));
+                    if (answersPayload.length > 0) await _supabase.from('lesson_answers').insert(answersPayload);
                 }
 
                 alert("✅ Zapisano pomyślnie!");
-                window.location.href = 'quizzes_list.html';
+                window.location.href = 'admin_content.html';
 
             } catch (err) { alert("Błąd: " + err.message); } 
             finally { btn.disabled = false; btn.innerHTML = isNew ? "Zapisz" : "💾 Zapisz Zmiany"; }
