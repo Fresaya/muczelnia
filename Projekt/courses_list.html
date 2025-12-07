@@ -64,10 +64,20 @@
             if (!session) { window.location.href = 'login.html'; return; }
 
             const userId = session.user.id;
-            const { data: profile } = await _supabase.from('users').select('username, role, class_id').eq('id', userId).single();
+            const { data: profile } = await _supabase
+                .from('users')
+                .select('username, role, class_id, schools(name), classes(name)') // Dodano relacje
+                .eq('id', userId)
+                .single();
             
             document.getElementById('profile-name-display').textContent = profile.username;
             document.getElementById('profile-role-display').textContent = profile.role.toUpperCase();
+            
+            // --- NOWY KOD ---
+            let schoolInfo = "";
+            if (profile.schools) schoolInfo = profile.schools.name;
+            if (profile.classes) schoolInfo += `<br><span style="color:#f04a4a;">${profile.classes.name}</span>`;
+            document.getElementById('profile-school-display').innerHTML = schoolInfo;
 
             // POBIERANIE DANYCH
             let rawData = [];
