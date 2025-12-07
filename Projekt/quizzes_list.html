@@ -38,15 +38,18 @@
                 <div style="grid-column: 1/-1; text-align:center; color:#888;">Ładowanie quizów...</div>
             </div>
         </main>
-
-        <aside class="sidebar-right">
+       <aside class="sidebar-right">
             <div class="profile-card">
-                <div class="avatar" id="avatarTrigger" title="Opcje"></div>
+                <div class="avatar" id="avatarTrigger" title="Kliknij, aby otworzyć opcje"></div>
                 <div class="dropdown-menu" id="profileDropdown">
-                    <div class="dropdown-item" id="logoutBtn">Wyloguj</div>
+                    <div class="dropdown-item" id="logoutBtn">
+                        <div class="icon-logout"></div>
+                        Wyloguj się
+                    </div>
                 </div>
                 <h2 class="profile-name" id="profile-name-display">...</h2>
                 <p class="profile-id" id="profile-role-display">...</p>
+                <p style="font-size: 13px; color: #888; margin-top: 5px; max-width: 200px; line-height: 1.4;" id="profile-school-display"></p>
             </div>
         </aside>
     </div>
