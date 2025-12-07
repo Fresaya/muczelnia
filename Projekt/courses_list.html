@@ -110,9 +110,12 @@
             renderCourses(rawData);
 
             // Wylogowanie
-            document.getElementById('avatarTrigger').addEventListener('click', (e) => { e.stopPropagation(); document.getElementById('profileDropdown').classList.toggle('show'); });
-            window.addEventListener('click', () => document.getElementById('profileDropdown').classList.remove('show'));
-            document.getElementById('logoutBtn').addEventListener('click', async () => { await _supabase.auth.signOut(); window.location.href = 'login.html'; });
+             const avatarTrigger = document.getElementById('avatarTrigger');
+            const dropdown = document.getElementById('profileDropdown');
+            const logoutBtn = document.getElementById('logoutBtn');
+            avatarTrigger.addEventListener('click', (e) => { e.stopPropagation(); dropdown.classList.toggle('show'); });
+            window.addEventListener('click', () => { if (dropdown.classList.contains('show')) dropdown.classList.remove('show'); });
+            logoutBtn.addEventListener('click', async () => { await _supabase.auth.signOut(); window.location.href = 'login.html'; });
         });
 
         function renderCourses(data) {
