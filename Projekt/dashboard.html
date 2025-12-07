@@ -372,7 +372,15 @@
             // Jeśli to nie admin, wyślij wygenerowany member_code
             const codeToSend = (role !== 'admin') ? generatedMemberCode : null;
 
-            const { data, error } = await _supabase.auth.signUp({
+            const tempSupabase = supabase.createClient(supabaseUrl, supabaseKey, {
+                auth: {
+                    persistSession: false, // WAŻNE: Nie zapisuj sesji!
+                    autoRefreshToken: false,
+                    detectSessionInUrl: false
+                }
+            });
+
+            const { data, error } = await tempSupabase.auth.signUp({
                 email: email,
                 password: password,
                 options: {
@@ -417,3 +425,4 @@
     </script>
 </body>
 </html>
+
