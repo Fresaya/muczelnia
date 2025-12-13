@@ -28,6 +28,40 @@
                     <label style="font-size: 12px; color: #888; text-transform: uppercase; font-weight: bold;">Nazwa Quizu</label>
                     <input type="text" id="quiz-title-input" class="edit-input title-input" placeholder="Np. Sprawdzian z Historii" oninput="updateQuizState()">
                     <textarea id="quiz-desc-input" class="edit-input" style="min-height: 60px; margin-top:10px;" placeholder="Opis..." oninput="updateQuizState()"></textarea>
+
+                    <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px solid #e0e0e0;">
+                        <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #555;">Ustawienia Egzaminu</h4>
+                        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                            
+                            <div>
+                                <label style="font-size: 12px; font-weight: bold; display: block;">Limit czasu na pytanie</label>
+                                <select id="quiz-time-limit" class="edit-input" style="width: 150px; background: #fff;">
+                                    <option value="0">Brak limitu</option>
+                                    <option value="1" selected>1 minuta</option>
+                                    <option value="2">2 minuty</option>
+                                    <option value="5">5 minut</option>
+                                    <option value="10">10 minut</option>
+                                </select>
+                            </div>
+                    
+                            <div>
+                                <label style="font-size: 12px; font-weight: bold; display: block;">Limit podejść</label>
+                                <select id="quiz-attempt-limit" class="edit-input" style="width: 150px; background: #fff;">
+                                    <option value="0">Bez limitu</option>
+                                    <option value="1" selected>1 raz</option>
+                                    <option value="2">2 razy</option>
+                                    <option value="3">3 razy</option>
+                                    <option value="5">5 razy</option>
+                                </select>
+                            </div>
+                    
+                            <div style="display: flex; align-items: center; margin-top: 15px;">
+                                <input type="checkbox" id="quiz-randomize" style="width: 18px; height: 18px; margin-right: 8px;" checked>
+                                <label for="quiz-randomize" style="font-size: 14px; cursor: pointer;">Losuj kolejność odpowiedzi</label>
+                            </div>
+                        </div>
+                    </div>
+                    
                 </div>
 
                 <!-- QUESTION EDITOR -->
@@ -92,6 +126,9 @@
             quizData.description = course.description;
             document.getElementById('quiz-title-input').value = course.title;
             document.getElementById('quiz-desc-input').value = course.description || "";
+            document.getElementById('quiz-time-limit').value = course.time_limit || 1;
+            document.getElementById('quiz-attempt-limit').value = course.attempt_limit || 1;
+            document.getElementById('quiz-randomize').checked = course.randomize_answers ?? true; // domyślnie true
 
             const { data: lessons } = await _supabase.from('lessons').select('id, title, order_index').eq('course_id', id).order('order_index');
             
@@ -205,11 +242,28 @@
                         packageId = newPkg.id;
                     } else { packageId = document.getElementById('existing-pkg-select').value; }
 
-                    const { data: newC, error } = await _supabase.from('courses').insert({ title: quizData.title, description: quizData.description, author_id: quizData.author_id, type: 'quiz', package_id: packageId }).select().single();
+                    const { data: newC, error } = await _supabase.from('courses').insert({ 
+                        title: quizData.title, 
+                        description: quizData.description, 
+                        author_id: quizData.author_id, 
+                        type: 'quiz', 
+                        package_id: packageId,
+                        // NOWE POLA
+                        time_limit: document.getElementById('quiz-time-limit').value,
+                        attempt_limit: document.getElementById('quiz-attempt-limit').value,
+                        randomize_answers: document.getElementById('quiz-randomize').checked
+                    }).select().single();
                     if(error) throw error;
                     courseId = newC.id;
                 } else {
-                    await _supabase.from('courses').update({ title: quizData.title, description: quizData.description }).eq('id', courseId);
+                    await _supabase.from('courses').update({ 
+                        title: quizData.title, 
+                        description: quizData.description,
+                        // NOWE POLA
+                        time_limit: document.getElementById('quiz-time-limit').value,
+                        attempt_limit: document.getElementById('quiz-attempt-limit').value,
+                        randomize_answers: document.getElementById('quiz-randomize').checked
+                    }).eq('id', courseId);
                 }
 
                 if (deletedQuestionIds.length > 0) {
