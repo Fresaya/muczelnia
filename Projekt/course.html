@@ -117,11 +117,24 @@
 
             if (!courseId) { alert("Błąd ID"); window.location.href = 'dashboard.html'; return; }
 
-            const { data: course } = await _supabase.from('courses').select('title, type').eq('id', courseId).single();
+            const { data: course } = await _supabase.from('courses').select('title, type, package_id').eq('id', courseId).single();
+            
             if (course) {
                 document.getElementById('course-title').innerText = course.title;
                 isQuizMode = (course.type === 'quiz');
                 updateLabels();
+
+                // --- NOWY FRAGMENT: Ustawienie przycisku Wstecz ---
+                const backBtn = document.querySelector('.back-btn');
+                if (course.package_id) {
+                    // Jeśli to część pakietu -> wracamy do widoku przedmiotu (subject.html)
+                    backBtn.href = `subject.html?id=${course.package_id}`;
+                    backBtn.innerHTML = "← Wróć do przedmiotu";
+                } else {
+                    // Jeśli nie ma pakietu (stare dane) -> lista kursów
+                    backBtn.href = "courses_list.html";
+                }
+                // --------------------------------------------------
             }
 
             await loadLessons();
