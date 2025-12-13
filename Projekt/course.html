@@ -6,52 +6,47 @@
     <title>mUczelnia - Kurs</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* DODATKOWE STYLE DLA TRYBU EGZAMINACYJNEGO */
-        
-        /* Zwykły stan odpowiedzi */
+        /* Style dla Quizu */
         .quiz-option {
             background-color: #fff;
-            border: 2px solid #e0e0e0;
-            color: #333;
+            border: 2px solid var(--border-color);
+            color: var(--text-main);
             font-weight: 500;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            box-shadow: var(--shadow);
+            padding: 15px; margin-bottom: 10px; border-radius: 10px; cursor: pointer; transition: 0.2s;
         }
-
-        /* Stan zaznaczenia (Niebieski - "Mój wybór") */
         .quiz-option.selected {
-            border-color: #2196F3;
-            background-color: #E3F2FD;
-            color: #0d47a1;
+            border-color: var(--accent-color);
+            background-color: rgba(240, 74, 74, 0.05);
+            color: var(--accent-color);
             font-weight: bold;
-            box-shadow: 0 4px 8px rgba(33, 150, 243, 0.2);
+        }
+        .quiz-option:hover { transform: translateX(5px); }
+
+        /* Timer */
+        .timer-bar {
+            width: 100%; height: 6px; background: #eee; border-radius: 3px; margin-bottom: 20px; overflow: hidden;
+            display: none; /* Domyślnie ukryty */
+        }
+        .timer-fill {
+            height: 100%; background: var(--accent-color); width: 100%; transition: width 1s linear;
+        }
+        .timer-text {
+            text-align: right; font-size: 14px; color: #888; margin-bottom: 5px; font-weight: bold;
         }
 
-        /* Raport końcowy - style */
-        .summary-card {
-            background: #fff;
-            border: 1px solid #eee;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 15px;
-            text-align: left;
-            border-left: 5px solid #ccc;
-        }
+        /* Raport końcowy */
+        .summary-card { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 20px; margin-bottom: 15px; text-align: left; border-left: 5px solid #ccc; }
         .summary-card.correct { border-left-color: #4CAF50; background: #f9fff9; }
         .summary-card.wrong { border-left-color: #F44336; background: #fff5f5; }
-
-        .summary-q-title { font-weight: bold; margin-bottom: 10px; display: block; font-size: 16px; }
-        .summary-ans { font-size: 14px; margin: 4px 0; }
-        .ans-user { color: #555; }
-        .ans-correct { color: #2e7d32; font-weight: bold; }
+        .score-circle { width: 120px; height: 120px; border-radius: 50%; background: #f4f4f4; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: bold; margin: 0 auto 20px; border: 5px solid #ccc; }
         
-        .score-circle {
-            width: 120px; height: 120px;
-            border-radius: 50%;
-            background: #f4f4f4;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 32px; font-weight: bold;
-            margin: 0 auto 20px;
-            border: 5px solid #ccc;
+        @media (prefers-color-scheme: dark) {
+            .quiz-option { background-color: var(--panel-bg); color: #eee; border-color: #444; }
+            .quiz-option:hover { background-color: #333; }
+            .summary-card { background: #1e1e1e; border-color: #333; }
+            .summary-card.correct { background: rgba(76, 175, 80, 0.1); }
+            .summary-card.wrong { background: rgba(244, 67, 54, 0.1); }
         }
     </style>
 </head>
@@ -69,18 +64,17 @@
     <div class="course-layout">
         <aside class="course-sidebar" id="course-sidebar">
             <div class="sidebar-header">
-                <a href="dashboard.html" class="back-btn">← Wróć</a>
+                <a href="#" class="back-btn">← Wróć</a>
                 <h3 style="margin:0; font-size:16px;" id="course-title">Ładowanie...</h3>
                 <span onclick="toggleSidebar()" style="margin-left:auto; cursor:pointer; font-size:24px; display:block; padding:0 10px;">&times;</span>
             </div>
-            <ul class="lesson-list" id="lesson-list">
-            </ul>
+            <ul class="lesson-list" id="lesson-list"></ul>
         </aside>
 
         <main class="course-content">
             <div class="lesson-card" id="lesson-container">
                 <h1 class="lesson-title" id="placeholder-title">Wybierz lekcję</h1>
-                <p class="lesson-text" id="placeholder-text">Kliknij przycisk "Lista Lekcji" powyżej, aby zobaczyć spis treści.</p>
+                <p class="lesson-text" id="placeholder-text">Wybierz element z listy po lewej.</p>
             </div>
         </main>
     </div>
@@ -98,12 +92,13 @@
         let currentLessonId = null;
         let userId = null;
         let completedSet = new Set(); 
+        
+        // Quiz Logic Variables
         let isQuizMode = false;
-
-        // --- QUIZ STATE ---
-        // Stores user answers: { questionId: { title, userAnsText, correctAnsText, isCorrect } }
+        let quizSettings = { time_limit: 0, attempt_limit: 0, randomize: false };
         let quizResults = []; 
-        let currentSelection = null; // Currently selected answer object (before clicking next)
+        let currentSelection = null;
+        let timerInterval = null;
 
         function toggleSidebar() {
             document.getElementById('course-sidebar').classList.toggle('active');
@@ -115,52 +110,81 @@
             if (!session) { window.location.href = 'login.html'; return; }
             userId = session.user.id;
 
-            if (!courseId) { alert("Błąd ID"); window.location.href = 'dashboard.html'; return; }
+            if (!courseId) { window.location.href = 'dashboard.html'; return; }
 
-            const { data: course } = await _supabase.from('courses').select('title, type, package_id').eq('id', courseId).single();
+            // 1. Pobierz dane kursu i ustawienia
+            const { data: course } = await _supabase.from('courses')
+                .select('title, type, package_id, time_limit, attempt_limit, randomize_answers')
+                .eq('id', courseId).single();
             
             if (course) {
                 document.getElementById('course-title').innerText = course.title;
                 isQuizMode = (course.type === 'quiz');
-                updateLabels();
+                
+                // Zapisz ustawienia
+                quizSettings.time_limit = course.time_limit || 0;
+                quizSettings.attempt_limit = course.attempt_limit || 0;
+                quizSettings.randomize = course.randomize_answers;
 
-                // --- NOWY FRAGMENT: Ustawienie przycisku Wstecz ---
+                if(isQuizMode) {
+                    document.getElementById('mobile-menu-label').innerText = "Pytania";
+                    document.getElementById('placeholder-title').innerText = "Witaj w Quizie";
+                    
+                    // --- SPRAWDZANIE LIMITU PODEJŚĆ ---
+                    const allowed = await checkAttempts();
+                    if(!allowed) return; // Zablokuj resztę
+                }
+
+                // Przycisk Wstecz
                 const backBtn = document.querySelector('.back-btn');
                 if (course.package_id) {
-                    // Jeśli to część pakietu -> wracamy do widoku przedmiotu (subject.html)
                     backBtn.href = `subject.html?id=${course.package_id}`;
                     backBtn.innerHTML = "← Wróć do przedmiotu";
                 } else {
-                    // Jeśli nie ma pakietu (stare dane) -> lista kursów
                     backBtn.href = "courses_list.html";
                 }
-                // --------------------------------------------------
             }
 
             await loadLessons();
         });
 
-        function updateLabels() {
-            if (isQuizMode) {
-                document.getElementById('mobile-menu-label').innerText = "Lista Pytań";
-                document.getElementById('placeholder-title').innerText = "Rozpocznij Quiz";
-                document.getElementById('placeholder-text').innerText = "Wybierz pierwsze pytanie z listy, aby rozpocząć.";
+        async function checkAttempts() {
+            if(quizSettings.attempt_limit > 0) {
+                const { count } = await _supabase.from('quiz_attempts')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('user_id', userId).eq('course_id', courseId);
+                
+                if (count >= quizSettings.attempt_limit) {
+                    document.getElementById('lesson-container').innerHTML = `
+                        <div style="text-align:center; padding: 40px;">
+                            <h1 style="color:red;">Limit podejść wyczerpany</h1>
+                            <p>Wykonałeś ten test ${count} z ${quizSettings.attempt_limit} razy.</p>
+                            <a href="${document.querySelector('.back-btn').href}" class="complete-btn">Wróć</a>
+                        </div>
+                    `;
+                    document.getElementById('lesson-list').style.display = 'none'; // Ukryj listę
+                    return false;
+                }
+                document.getElementById('placeholder-text').innerText = `Masz ${quizSettings.time_limit > 0 ? quizSettings.time_limit + ' min na pytanie.' : 'brak limitu czasu.'} Dostępne podejścia: ${quizSettings.attempt_limit}.`;
             }
+            return true;
         }
 
         async function loadLessons() {
-            const { data: lessons, error } = await _supabase.from('lessons')
+            const { data: lessons } = await _supabase.from('lessons')
                 .select('id, title, order_index')
                 .eq('course_id', courseId)
                 .order('order_index', { ascending: true });
 
-            if (error) { console.error(error); return; }
-            allLessons = lessons;
+            allLessons = lessons || [];
 
-            const { data: progress } = await _supabase.from('user_lesson_progress')
-                .select('lesson_id').eq('user_id', userId).eq('is_completed', true);
+            // Dla kursów (nie quizów) pobierz postęp
+            if(!isQuizMode) {
+                const { data: progress } = await _supabase.from('user_lesson_progress')
+                    .select('lesson_id').eq('user_id', userId).eq('is_completed', true);
+                completedSet = new Set(progress.map(p => p.lesson_id));
+            }
             
-            completedSet = new Set(progress.map(p => p.lesson_id));
             renderSidebar();
         }
 
@@ -174,16 +198,16 @@
                 li.id = `sidebar-item-${lesson.id}`;
                 li.className = `lesson-item ${isCompleted ? 'completed' : ''}`;
                 
-                // Hide "Question 1" prefix if the title already says "Pytanie..."
-                const prefix = isQuizMode ? `Pytanie ${index + 1}` : `${index + 1}.`;
-                const displayTitle = (isQuizMode && lesson.title.toLowerCase().startsWith("pytanie")) 
-                    ? lesson.title 
-                    : `${prefix} ${lesson.title}`;
+                let title = lesson.title;
+                if(isQuizMode && !title.toLowerCase().startsWith('pytanie')) title = `Pytanie ${index+1}`;
+                else if(!isQuizMode) title = `${index+1}. ${title}`;
 
-                // In Quiz Mode, we hide the checkmarks until the very end ideally, 
-                // but keeping them simple for now is fine.
-                li.innerHTML = `<span>${displayTitle}</span><span class="status-icon">${isCompleted ? '✔' : '○'}</span>`;
+                // W trybie Quizu blokujemy klikanie w sidebarze, żeby wymusić kolejność (opcjonalne, ale zalecane przy timerze)
+                li.innerHTML = `<span>${title}</span><span class="status-icon">${isCompleted ? '✔' : '○'}</span>`;
+                
                 li.onclick = () => {
+                    // W Quizie można nawigować, ale Timer resetuje się per pytanie (prosta wersja). 
+                    // W idealnym świecie przy limicie czasu blokujemy nawigację wstecz. Tu pozwalamy klikać.
                     loadLessonContent(lesson.id, li);
                     if (window.innerWidth <= 768) toggleSidebar(); 
                 };
@@ -191,92 +215,133 @@
             });
         }
 
+        // Helper do losowania
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
         async function loadLessonContent(lessonId, liElement) {
+            // Reset Timer
+            clearInterval(timerInterval);
+            
             currentLessonId = lessonId;
-            currentSelection = null; // Reset selection for new question
+            currentSelection = null; 
 
             document.querySelectorAll('.lesson-item').forEach(el => el.classList.remove('active'));
             if(liElement) liElement.classList.add('active');
             
             const container = document.getElementById('lesson-container');
-            container.innerHTML = '<p style="text-align:center; padding:40px;">Ładowanie pytania...</p>';
+            container.innerHTML = '<p style="text-align:center; padding:40px;">Ładowanie...</p>';
 
-            // Fetch Content
+            // Fetch Data
             const { data: component } = await _supabase.from('lesson_components')
                 .select(`content_text_blocks ( content )`)
                 .eq('lesson_id', lessonId).eq('component_type', 'text').single();
 
-            // Fetch Answers
             const { data: answers } = await _supabase.from('lesson_answers')
                 .select('id, answer_text, is_correct')
                 .eq('lesson_id', lessonId);
 
             let text = component?.content_text_blocks?.content || "";
-            if (text.trim() === "Pytanie quizowe" || text.trim() === "Pytanie") text = "";
+            if (text.trim() === "Pytanie" || text.trim() === "Pytanie quizowe") text = ""; // Cleanup placeholderów
 
             const currentLesson = allLessons.find(l => l.id === lessonId);
-            const isDone = completedSet.has(lessonId);
-            const isQuizLesson = answers && answers.length > 0;
+            const isQuizQuestion = answers && answers.length > 0;
 
-            let html = `<h1 class="lesson-title">${currentLesson.title}</h1>`;
+            // --- BUDOWANIE HTML ---
+            let html = ``;
+
+            // Timer Display
+            if(isQuizMode && quizSettings.time_limit > 0) {
+                html += `
+                    <div class="timer-text" id="timer-text">${quizSettings.time_limit}:00</div>
+                    <div class="timer-bar"><div class="timer-fill" id="timer-fill"></div></div>
+                `;
+            }
+
+            html += `<h1 class="lesson-title">${currentLesson.title}</h1>`;
             if (text) html += `<div class="lesson-text">${text}</div>`;
 
-            if (isQuizLesson) {
-                // RENDER INTERACTIVE QUIZ
+            if (isQuizQuestion) {
                 html += `<div class="quiz-container" id="quiz-area"></div>`;
-                // Info message (hidden by default)
-                html += `<div id="quiz-feedback" style="margin-top:20px; color:#666;">Wybierz odpowiedź i kliknij Dalej.</div>`;
-                
-                // Button Text Logic
                 const btnText = isLastLesson(lessonId) ? "Zakończ Quiz" : "Następne Pytanie";
-                // Button is DISABLED initially
-                html += `<button id="action-btn" class="complete-btn" onclick="saveAndNext()" style="margin-top:20px; opacity:0.5; cursor:not-allowed;" disabled>${btnText}</button>`;
+                html += `<button id="action-btn" class="complete-btn" onclick="saveAndNext()" disabled style="opacity:0.5; margin-top:20px;">${btnText}</button>`;
             } else {
-                // STANDARD LESSON (Not a quiz question)
+                const isDone = completedSet.has(lessonId);
                 html += `<button id="action-btn" class="complete-btn ${isDone ? 'is-completed' : ''}" onclick="toggleComplete()">
-                    ${isDone ? '✔ Ukończono (Cofnij)' : 'Oznacz jako ukończone'}
+                    ${isDone ? '✔ Ukończono' : 'Oznacz jako ukończone'}
                 </button>`;
             }
 
             container.innerHTML = html;
 
-            if (isQuizLesson) {
+            if (isQuizQuestion) {
                 const quizArea = document.getElementById('quiz-area');
-                answers.forEach(ans => {
+                
+                // MIESZANIE ODPOWIEDZI
+                let displayAnswers = [...answers];
+                if (quizSettings.randomize) {
+                    displayAnswers = shuffleArray(displayAnswers);
+                }
+
+                displayAnswers.forEach(ans => {
                     const btn = document.createElement('div');
                     btn.className = 'quiz-option';
                     btn.innerText = ans.answer_text;
-                    // Pass the correct answer info needed for summary later
-                    const correctAnswer = answers.find(a => a.is_correct)?.answer_text || "Brak danych";
-                    
-                    btn.onclick = () => selectAnswer(ans, btn, correctAnswer, currentLesson.title);
+                    const correctText = answers.find(a => a.is_correct)?.answer_text || "Brak danych";
+                    btn.onclick = () => selectAnswer(ans, btn, correctText, currentLesson.title);
                     quizArea.appendChild(btn);
                 });
-                
-                // If user already answered this in this session, restore selection (optional feature, 
-                // for simplicity we reset on reload unless we store in DB/localstorage. 
-                // Here we keep it fresh per session).
+
+                // START TIMER
+                if(quizSettings.time_limit > 0) startTimer(quizSettings.time_limit);
             }
         }
 
-        function isLastLesson(id) {
-            if (allLessons.length === 0) return false;
-            return allLessons[allLessons.length - 1].id === id;
+        function startTimer(minutes) {
+            const totalSeconds = minutes * 60;
+            let remaining = totalSeconds;
+            const fillEl = document.getElementById('timer-fill');
+            const textEl = document.getElementById('timer-text');
+            document.querySelector('.timer-bar').style.display = 'block';
+
+            timerInterval = setInterval(() => {
+                remaining--;
+                
+                // Update UI
+                const m = Math.floor(remaining / 60);
+                const s = remaining % 60;
+                textEl.innerText = `${m}:${s < 10 ? '0'+s : s}`;
+                fillEl.style.width = `${(remaining / totalSeconds) * 100}%`;
+
+                // Color warning
+                if(remaining < 10) fillEl.style.background = '#F44336';
+                
+                // Time's up
+                if(remaining <= 0) {
+                    clearInterval(timerInterval);
+                    handleTimeOut();
+                }
+            }, 1000);
         }
 
-        // --- NEW LOGIC: JUST SELECT, DON'T VALIDATE YET ---
+        function handleTimeOut() {
+            // Auto-submit (nawet puste)
+            saveAndNext(true); // true = force submit
+        }
+
         function selectAnswer(answerObj, btnElement, correctText, questionTitle) {
-            // 1. Visual update
             document.querySelectorAll('.quiz-option').forEach(b => b.classList.remove('selected'));
             btnElement.classList.add('selected');
 
-            // 2. Enable Next Button
             const nextBtn = document.getElementById('action-btn');
             nextBtn.disabled = false;
             nextBtn.style.opacity = "1";
-            nextBtn.style.cursor = "pointer";
 
-            // 3. Store temporary choice
             currentSelection = {
                 questionId: currentLessonId,
                 questionTitle: questionTitle,
@@ -286,33 +351,33 @@
             };
         }
 
-        // --- SAVE RESULT AND MOVE ON ---
-        async function saveAndNext() {
-            if (!currentSelection) return;
+        async function saveAndNext(force = false) {
+            clearInterval(timerInterval); // Stop timer
 
-            // 1. Add to session results
-            // Remove duplicates if user went back
-            quizResults = quizResults.filter(r => r.questionId !== currentLessonId);
-            quizResults.push(currentSelection);
+            // Jeśli wymuszono (koniec czasu) i brak zaznaczenia -> zapisz jako błąd
+            if (force && !currentSelection) {
+                const currentL = allLessons.find(l => l.id === currentLessonId);
+                // Musimy pobrać poprawną odp (trudne bez zaznaczenia, pobierzemy przy renderowaniu raportu lub teraz na szybko)
+                // Uproszczenie: Zapisujemy pusty wybór (błąd)
+                currentSelection = {
+                    questionId: currentLessonId,
+                    questionTitle: currentL.title,
+                    userAnsText: "(Brak odpowiedzi - czas minął)",
+                    correctAnsText: "Zobacz w podsumowaniu", // Uproszczenie
+                    isCorrect: false
+                };
+            }
 
-            // 2. Mark as "completed" in DB (just to track progress bar), but visual feedback is delayed
-            // We do this silently.
-            await _supabase.from('user_lesson_progress')
-                .upsert({ 
-                    user_id: userId, 
-                    lesson_id: currentLessonId, 
-                    is_completed: true, // We count it as "done" because they answered
-                    completed_at: new Date() 
-                }, { onConflict: 'user_id, lesson_id' });
-            
-            completedSet.add(currentLessonId);
-            renderSidebar();
+            if (currentSelection) {
+                // Usuń stare odp na to pytanie z sesji
+                quizResults = quizResults.filter(r => r.questionId !== currentLessonId);
+                quizResults.push(currentSelection);
+            }
 
-            // 3. Navigation
+            // Nawigacja
             if (isLastLesson(currentLessonId)) {
-                showFullSummary();
+                await finishQuiz();
             } else {
-                // Go to next
                 const idx = allLessons.findIndex(l => l.id === currentLessonId);
                 if (idx < allLessons.length - 1) {
                     const nextLesson = allLessons[idx + 1];
@@ -322,85 +387,63 @@
             }
         }
 
-        // --- FINAL SUMMARY SCREEN ---
-        function showFullSummary() {
+        async function finishQuiz() {
             const container = document.getElementById('lesson-container');
-            
-            // Calculate Score based on quizResults array
+            container.innerHTML = '<h2>Zapisywanie wyniku...</h2>';
+
+            // 1. Oblicz wynik
             let correctCount = 0;
             quizResults.forEach(r => { if (r.isCorrect) correctCount++; });
-            
-            const total = quizResults.length || allLessons.length; // Use results length for accuracy
+            const total = allLessons.length;
             const percentage = Math.round((correctCount / total) * 100);
-            
-            let color = percentage >= 50 ? "#4CAF50" : "#F44336"; // Green or Red
 
-            let html = `
-                <div style="text-align:center; padding-bottom: 30px;">
-                    <h1 style="margin-bottom: 20px;">Wynik Quizu</h1>
-                    
-                    <div class="score-circle" style="border-color:${color}; color:${color}">
-                        ${percentage}%
-                    </div>
-                    <p style="font-size: 18px; margin-bottom:30px;">
-                        Odpowiedziałeś poprawnie na <b>${correctCount}</b> z <b>${total}</b> pytań.
-                    </p>
-                </div>
-                
-                <h3 style="border-bottom:1px solid #ccc; padding-bottom:10px; margin-bottom:20px;">Szczegółowy Raport:</h3>
-            `;
-
-            // Generate list of answers
-            // Note: If user skipped questions, they might not be in quizResults. 
-            // Better to iterate allLessons and find matching result.
-            
-            allLessons.forEach((lesson, idx) => {
-                const result = quizResults.find(r => r.questionId === lesson.id);
-                
-                if (!result) {
-                    // Skipped / Not answered
-                    html += `
-                        <div class="summary-card wrong">
-                            <span class="summary-q-title">${idx+1}. ${lesson.title}</span>
-                            <div class="summary-ans" style="color:#999;">Brak odpowiedzi</div>
-                        </div>`;
-                    return;
-                }
-
-                if (result.isCorrect) {
-                    // Correct
-                    html += `
-                        <div class="summary-card correct">
-                            <span class="summary-q-title">${idx+1}. ${result.questionTitle}</span>
-                            <div class="summary-ans ans-correct">✔ Twoja odpowiedź: ${result.userAnsText}</div>
-                        </div>`;
-                } else {
-                    // Wrong
-                    html += `
-                        <div class="summary-card wrong">
-                            <span class="summary-q-title">${idx+1}. ${result.questionTitle}</span>
-                            <div class="summary-ans ans-user">❌ Twoja odpowiedź: ${result.userAnsText}</div>
-                            <div class="summary-ans ans-correct">➡ Poprawna: ${result.correctAnsText}</div>
-                        </div>`;
-                }
+            // 2. Zapisz do bazy (quiz_attempts)
+            await _supabase.from('quiz_attempts').insert({
+                user_id: userId,
+                course_id: courseId,
+                score: percentage,
+                total_questions: total
             });
 
-            html += `
-                <div style="text-align:center; margin-top:30px;">
-                    <a href="courses_list.html" class="complete-btn" style="text-decoration:none; display:inline-block;">Wróć do listy kursów</a>
+            // 3. Pokaż podsumowanie
+            let color = percentage >= 50 ? "#4CAF50" : "#F44336";
+            
+            let html = `
+                <div style="text-align:center; padding-bottom: 30px;">
+                    <h1>Koniec Quizu</h1>
+                    <div class="score-circle" style="border-color:${color}; color:${color}">${percentage}%</div>
+                    <p>Poprawne: <b>${correctCount}</b> / <b>${total}</b></p>
+                    <a href="courses_list.html" class="complete-btn" style="text-decoration:none;">Wróć do listy</a>
                 </div>
+                <h3>Twój Raport:</h3>
             `;
 
+            // Renderowanie raportu (tylko to co w quizResults)
+            quizResults.forEach((res, i) => {
+                 html += `
+                    <div class="summary-card ${res.isCorrect ? 'correct' : 'wrong'}">
+                        <b>${i+1}. ${res.questionTitle}</b><br>
+                        <span style="color:${res.isCorrect?'green':'red'}">Twój wybór: ${res.userAnsText}</span>
+                        ${!res.isCorrect ? `<br><small>Poprawna: ${res.correctAnsText}</small>` : ''}
+                    </div>
+                 `;
+            });
+
             container.innerHTML = html;
+            // Ukryj sidebar
+            document.getElementById('course-sidebar').style.display = 'none';
         }
 
+        function isLastLesson(id) {
+            return allLessons.length > 0 && allLessons[allLessons.length - 1].id === id;
+        }
+
+        // Standardowa lekcja (nie quiz)
         async function toggleComplete() {
-            // Standard lesson logic (unchanged)
             if (!currentLessonId) return;
             const oldStatus = completedSet.has(currentLessonId);
             const newStatus = !oldStatus;
-            const btn = document.getElementById('action-btn');
-            btn.disabled = true;
+            document.getElementById('action-btn').disabled = true;
             await _supabase.from('user_lesson_progress')
                 .upsert({ user_id: userId, lesson_id: currentLessonId, is_completed: newStatus, completed_at: new Date() }, { onConflict: 'user_id, lesson_id' });
             if (newStatus) completedSet.add(currentLessonId); else completedSet.delete(currentLessonId);
