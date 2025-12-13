@@ -5,36 +5,173 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>mUczelnia - Edytor Kursu</title>
     <link rel="stylesheet" href="style.css">
-    <style>
-    /* --- NOWE STYLE DLA EDYTORA --- */
+<style>
+    /* --- NOWE STYLE DLA EDYTORA (LIGHT & DARK MODE) --- */
 
     /* Zakładki Edit / Preview */
-    .editor-tabs { display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 1px solid #ddd; padding-bottom: 10px; }
-    .tab-btn { background: none; border: none; font-size: 14px; font-weight: 600; color: #888; cursor: pointer; padding: 5px 10px; border-radius: 5px; transition: 0.2s; }
-    .tab-btn:hover { color: #333; background: #eee; }
-    .tab-btn.active { color: var(--accent-color); background: rgba(240, 74, 74, 0.1); }
+    .editor-tabs { 
+        display: flex; 
+        gap: 10px; 
+        margin-bottom: 15px; 
+        border-bottom: 1px solid var(--border-color); /* Używamy zmiennej */
+        padding-bottom: 10px; 
+    }
+    .tab-btn { 
+        background: none; 
+        border: none; 
+        font-size: 14px; 
+        font-weight: 600; 
+        color: var(--text-muted); /* Używamy zmiennej */
+        cursor: pointer; 
+        padding: 5px 10px; 
+        border-radius: 5px; 
+        transition: 0.2s; 
+    }
+    .tab-btn:hover { 
+        color: var(--text-main); 
+        background: var(--hover-bg); /* Używamy zmiennej */
+    }
+    .tab-btn.active { 
+        color: var(--accent-color); 
+        background: rgba(240, 74, 74, 0.1); 
+    }
 
     /* Pasek narzędzi (Toolbar) */
-    .editor-toolbar { display: flex; gap: 5px; background: #f9f9f9; border: 1px solid #ccc; border-bottom: none; padding: 8px; border-radius: 8px 8px 0 0; }
-    .tool-btn { background: #fff; border: 1px solid #ddd; border-radius: 4px; width: 30px; height: 30px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; font-family: serif; font-size: 16px; color: #333; }
-    .tool-btn:hover { background: #eee; border-color: #bbb; }
+    .editor-toolbar { 
+        display: flex; 
+        gap: 5px; 
+        background: var(--hover-bg); /* Jasny szary w light, ciemniejszy w dark */
+        border: 1px solid var(--border-color); 
+        border-bottom: none; 
+        padding: 8px; 
+        border-radius: 8px 8px 0 0; 
+    }
+    .tool-btn { 
+        background: var(--panel-bg); 
+        border: 1px solid var(--border-color); 
+        border-radius: 4px; 
+        width: 30px; 
+        height: 30px; 
+        cursor: pointer; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        font-weight: bold; 
+        font-family: serif; 
+        font-size: 16px; 
+        color: var(--text-main); 
+        transition: background 0.2s, border-color 0.2s;
+    }
+    .tool-btn:hover { 
+        background: var(--hover-bg); 
+        border-color: #bbb; 
+    }
 
     /* Pole tekstowe zintegrowane z toolbarem */
-    .edit-area { border-top-left-radius: 0; border-top-right-radius: 0; margin-top: 0; min-height: 400px; font-family: 'Courier New', monospace; font-size: 14px; }
+    .edit-area { 
+        border-top-left-radius: 0; 
+        border-top-right-radius: 0; 
+        margin-top: 0; 
+        min-height: 400px; 
+        font-family: 'Courier New', monospace; 
+        font-size: 14px; 
+        background-color: var(--panel-bg);
+        color: var(--text-main);
+        border-color: var(--border-color);
+    }
+    .edit-area:focus {
+        border-color: var(--accent-color);
+        outline: none;
+    }
 
     /* Podgląd (Preview Box) */
-    .preview-box { display: none; min-height: 400px; padding: 20px; border: 1px solid #eee; background: #fff; border-radius: 12px; line-height: 1.6; }
-    .preview-box h2 { border-bottom: 1px solid #eee; padding-bottom: 10px; margin-top: 0; }
+    .preview-box { 
+        display: none; 
+        min-height: 400px; 
+        padding: 20px; 
+        border: 1px solid var(--border-color); 
+        background: var(--panel-bg); 
+        border-radius: 12px; 
+        line-height: 1.6; 
+        color: var(--text-main);
+    }
+    .preview-box h2 { 
+        border-bottom: 1px solid var(--border-color); 
+        padding-bottom: 10px; 
+        margin-top: 0; 
+        color: var(--text-main);
+    }
     
     /* Drag & Drop na liście */
-    .lesson-item { cursor: grab; user-select: none; display: flex; justify-content: space-between; align-items: center; }
+    .lesson-item { 
+        cursor: grab; 
+        user-select: none; 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+        color: var(--text-main);
+    }
     .lesson-item:active { cursor: grabbing; }
-    .lesson-item.dragging { opacity: 0.5; background: #f0f0f0; border: 1px dashed #999; }
-    .drag-handle { margin-right: 10px; color: #bbb; cursor: grab; }
+    .lesson-item.dragging { 
+        opacity: 0.5; 
+        background: var(--hover-bg); 
+        border: 1px dashed var(--text-muted); 
+    }
+    .drag-handle { margin-right: 10px; color: var(--text-muted); cursor: grab; }
 
     /* Duży przycisk dodawania w głównym oknie */
-    .big-add-btn { display: inline-block; margin-top: 20px; padding: 15px 30px; border: 2px dashed var(--accent-color); color: var(--accent-color); border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 16px; background: #fff; }
-    .big-add-btn:hover { background: rgba(240, 74, 74, 0.05); transform: scale(1.02); }
+    .big-add-btn { 
+        display: inline-block; 
+        margin-top: 20px; 
+        padding: 15px 30px; 
+        border: 2px dashed var(--accent-color); 
+        color: var(--accent-color); 
+        border-radius: 12px; 
+        font-weight: bold; 
+        cursor: pointer; 
+        transition: 0.2s; 
+        font-size: 16px; 
+        background: var(--panel-bg); 
+    }
+    .big-add-btn:hover { 
+        background: rgba(240, 74, 74, 0.05); 
+        transform: scale(1.02); 
+    }
+
+    /* --- SPECIFIC DARK MODE OVERRIDES --- */
+    /* Te style aktywują się tylko w ciemnym motywie, naprawiając kontrast */
+    @media (prefers-color-scheme: dark) {
+        .editor-toolbar {
+            background-color: #2a2a2a; /* Ciemniejszy niż panel, jaśniejszy niż tło */
+            border-color: #444;
+        }
+        
+        .tool-btn {
+            background-color: #333;
+            border-color: #444;
+            color: #e0e0e0;
+        }
+        
+        .tool-btn:hover {
+            background-color: #444;
+            border-color: #666;
+        }
+        
+        /* Poprawka dla pola tekstowego w trybie ciemnym */
+        .edit-area {
+            background-color: #1e1e1e; /* Panel BG */
+            color: #eee;
+            border-color: #444;
+        }
+
+        .lesson-item.dragging {
+            background: #333;
+        }
+
+        .big-add-btn:hover {
+            background-color: rgba(240, 74, 74, 0.1);
+        }
+    }
 </style>
 </head>
 <body>
