@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mUczelnia - Ćwiczenia</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="mobile-top-bar">
+        <div class="mobile-hamburger" onclick="toggleMobileMenu()">☰</div>
+        <div class="logo-text">Ćwiczenia</div>
+    </div>
+
+    <div class="layout-wrapper">
+        <aside class="sidebar-left" id="mainSidebar">
+            <div class="top-section">
+                <div class="brand-area"><a href="dashboard.html" class="logo-text"><span>m</span>Uczelnia</a></div>
+                <ul class="nav-menu">
+                    <li class="nav-item"><a href="dashboard.html" class="nav-link"><span>Pulpit</span></a></li>
+                    <li class="nav-item"><a href="courses_list.html" class="nav-link"><span>Moje Kursy</span></a></li>
+                    <li class="nav-item"><a href="#" class="nav-link active"><span>Ćwiczenia</span></a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="welcome-header">
+                <div>
+                    <a href="dashboard.html" style="text-decoration:none; color:#888; font-size:14px;">← Wróć do pulpitu</a>
+                    <h1>Ćwiczenia i Testy</h1>
+                    <p>Sprawdź swoją wiedzę rozwiązując quizy.</p>
+                </div>
+            </div>
+
+            <div class="dashboard-grid" id="quizzes-grid">
+                <div style="grid-column: 1/-1; text-align:center; color:#888;">Ładowanie quizów...</div>
+            </div>
+        </main>
+       <aside class="sidebar-right">
+            <div class="profile-card">
+                <div class="avatar" id="avatarTrigger" title="Kliknij, aby otworzyć opcje"></div>
+                <div class="dropdown-menu" id="profileDropdown">
+                    <div class="dropdown-item" id="logoutBtn">
+                        <div class="icon-logout"></div>
+                        Wyloguj się
+                    </div>
+                </div>
+                <h2 class="profile-name" id="profile-name-display">...</h2>
+                <p class="profile-id" id="profile-role-display">...</p>
+                <p style="font-size: 13px; color: #888; margin-top: 5px; max-width: 200px; line-height: 1.4;" id="profile-school-display"></p>
+            </div>
+        </aside>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        function toggleMobileMenu() { document.getElementById('mainSidebar').classList.toggle('active'); }
+        const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg';
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (!session) { window.location.href = 'login.html'; return; }
+
+            const userId = session.user.id;
+            const { data: profile } = await _supabase.from('users').select('username, school_id, class_id, role').eq('id', userId).single();
+            
+            if (profile) {
+                document.getElementById('profile-name-display').textContent = profile.username;
+                document.getElementById('profile-role-display').textContent = profile.role.toUpperCase();
+            }
+
+            // POBIERANIE DANYCH
+            let rawData = [];
+
+            if (profile.role === 'admin' || profile.role === 'manager') {
+                 // Dla Admina: Pobierz wszystko i zmapuj do struktury { courses: ... }
+                 const { data: allCourses } = await _supabase.from('courses').select('id, title, description, type, packages(title)').eq('type', 'quiz');
+                 rawData = allCourses ? allCourses.map(c => ({ courses: c })) : [];
+            } else {
+                // Dla Studenta: Pobierz przez pakiety
+                if (!profile.class_id) { renderQuizzes([]); return; }
+                
+                const { data: pkgLinks } = await _supabase.from('package_classes').select('package_id').eq('class_id', profile.class_id);
+                const pkgIds = pkgLinks.map(p => p.package_id);
+
+                if (pkgIds.length > 0) {
+                    const { data: quizzes } = await _supabase
+                        .from('courses')
+                        .select('id, title, description, type, packages(title)')
+                        .in('package_id', pkgIds)
+                        .eq('type', 'quiz');
+                    
+                    rawData = quizzes ? quizzes.map(c => ({ courses: c })) : [];
+                }
+            }
+
+            renderQuizzes(rawData);
+
+            // Wylogowanie
+             const avatarTrigger = document.getElementById('avatarTrigger');
+            const dropdown = document.getElementById('profileDropdown');
+            const logoutBtn = document.getElementById('logoutBtn');
+            avatarTrigger.addEventListener('click', (e) => { e.stopPropagation(); dropdown.classList.toggle('show'); });
+            window.addEventListener('click', () => { if (dropdown.classList.contains('show')) dropdown.classList.remove('show'); });
+            logoutBtn.addEventListener('click', async () => { await _supabase.auth.signOut(); window.location.href = 'login.html'; });
+        });
+
+        function renderQuizzes(data) {
+            const gridContainer = document.getElementById('quizzes-grid');
+            gridContainer.innerHTML = ''; 
+
+            // Filtrowanie (na wszelki wypadek, choć zapytania już to robią)
+            const quizzes = data.filter(item => item.courses && item.courses.type === 'quiz');
+
+            if (quizzes.length > 0) {
+                quizzes.forEach(item => {
+                    const course = item.courses;
+                    const tile = document.createElement('div'); // Div container
+                    tile.className = 'widget-tile';
+                    tile.style.cursor = "pointer";
+                    
+                    const pkgName = course.packages ? `<div style="font-size:11px; color:#9C27B0; margin-bottom:5px;">📦 ${course.packages.title}</div>` : '';
+                    
+                    // Ikona Quizu
+                    const iconHtml = `<div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%239C27B0%22 stroke-width=%221.5%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z%22></path><polyline points=%2214 2 14 8 20 8%22></polyline><line x=%229%22 y1=%2215%22 x2=%2215%22 y2=%2215%22></line><line x=%229%22 y1=%2211%22 x2=%2215%22 y2=%2211%22></line></svg>');"></div>`;
+
+                    tile.innerHTML = `
+                        ${iconHtml}
+                        ${pkgName}
+                        <h3 style="color: #9C27B0;">${course.title}</h3>
+                        <div class="course-meta" style="margin-top:15px;">Rozpocznij test →</div>
+                    `;
+                    
+                    tile.onclick = () => { window.location.href = `course.html?id=${course.id}`; };
+                    gridContainer.appendChild(tile);
+                });
+            } else {
+                 gridContainer.innerHTML += `<div class="widget-tile" style="grid-column:1/-1; text-align:center; padding:50px;"><h3>Brak quizów</h3><p style="color:#888;">Nie znaleziono testów.</p></div>`;
+            }
+        }
+    </script>
+</body>
+</html>
