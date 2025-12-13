@@ -8,7 +8,7 @@
     <style>
         /* Style dla Quizu */
         .quiz-option {
-            background-color: #fff;
+            background-color: var(--panel-bg);
             border: 2px solid var(--border-color);
             color: var(--text-main);
             font-weight: 500;
@@ -26,7 +26,7 @@
         /* Timer */
         .timer-bar {
             width: 100%; height: 6px; background: #eee; border-radius: 3px; margin-bottom: 20px; overflow: hidden;
-            display: none; /* Domyślnie ukryty */
+            display: none; 
         }
         .timer-fill {
             height: 100%; background: var(--accent-color); width: 100%; transition: width 1s linear;
@@ -35,18 +35,28 @@
             text-align: right; font-size: 14px; color: #888; margin-bottom: 5px; font-weight: bold;
         }
 
-        /* Raport końcowy */
-        .summary-card { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 20px; margin-bottom: 15px; text-align: left; border-left: 5px solid #ccc; }
-        .summary-card.correct { border-left-color: #4CAF50; background: #f9fff9; }
-        .summary-card.wrong { border-left-color: #F44336; background: #fff5f5; }
-        .score-circle { width: 120px; height: 120px; border-radius: 50%; background: #f4f4f4; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: bold; margin: 0 auto 20px; border: 5px solid #ccc; }
+        /* Raport końcowy - poprawiony wygląd */
+        .summary-wrapper {
+            text-align: center;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .summary-card { 
+            background: var(--panel-bg); border: 1px solid var(--border-color); 
+            border-radius: 12px; padding: 15px; margin-bottom: 10px; text-align: left; 
+            border-left: 5px solid #ccc; font-size: 14px;
+        }
+        .summary-card.correct { border-left-color: #4CAF50; background: rgba(76, 175, 80, 0.05); }
+        .summary-card.wrong { border-left-color: #F44336; background: rgba(244, 67, 54, 0.05); }
+        
+        .score-circle { 
+            width: 100px; height: 100px; border-radius: 50%; background: var(--bg-color); 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 28px; font-weight: bold; margin: 0 auto 20px; border: 4px solid #ccc; 
+        }
         
         @media (prefers-color-scheme: dark) {
-            .quiz-option { background-color: var(--panel-bg); color: #eee; border-color: #444; }
-            .quiz-option:hover { background-color: #333; }
-            .summary-card { background: #1e1e1e; border-color: #333; }
-            .summary-card.correct { background: rgba(76, 175, 80, 0.1); }
-            .summary-card.wrong { background: rgba(244, 67, 54, 0.1); }
+            .timer-bar { background: #333; }
         }
     </style>
 </head>
@@ -93,12 +103,12 @@
         let userId = null;
         let completedSet = new Set(); 
         
-        // Quiz Logic Variables
         let isQuizMode = false;
         let quizSettings = { time_limit: 0, attempt_limit: 0, randomize: false };
         let quizResults = []; 
         let currentSelection = null;
         let timerInterval = null;
+        let returnLink = "courses_list.html"; // Domyślny link powrotu
 
         function toggleSidebar() {
             document.getElementById('course-sidebar').classList.toggle('active');
@@ -109,10 +119,9 @@
             const { data: { session } } = await _supabase.auth.getSession();
             if (!session) { window.location.href = 'login.html'; return; }
             userId = session.user.id;
-
             if (!courseId) { window.location.href = 'dashboard.html'; return; }
 
-            // 1. Pobierz dane kursu i ustawienia
+            // 1. Pobierz dane kursu
             const { data: course } = await _supabase.from('courses')
                 .select('title, type, package_id, time_limit, attempt_limit, randomize_answers')
                 .eq('id', courseId).single();
@@ -121,27 +130,25 @@
                 document.getElementById('course-title').innerText = course.title;
                 isQuizMode = (course.type === 'quiz');
                 
-                // Zapisz ustawienia
                 quizSettings.time_limit = course.time_limit || 0;
                 quizSettings.attempt_limit = course.attempt_limit || 0;
                 quizSettings.randomize = course.randomize_answers;
+
+                // Ustaw link powrotu (Dla przycisku Back i Limit Screen)
+                if (course.package_id) returnLink = `subject.html?id=${course.package_id}`;
+                else returnLink = "courses_list.html";
+                
+                const backBtn = document.querySelector('.back-btn');
+                backBtn.href = returnLink;
+                backBtn.innerHTML = course.package_id ? "← Wróć do przedmiotu" : "← Wróć";
 
                 if(isQuizMode) {
                     document.getElementById('mobile-menu-label').innerText = "Pytania";
                     document.getElementById('placeholder-title').innerText = "Witaj w Quizie";
                     
-                    // --- SPRAWDZANIE LIMITU PODEJŚĆ ---
+                    // Sprawdź limit - teraz mamy już poprawny returnLink
                     const allowed = await checkAttempts();
-                    if(!allowed) return; // Zablokuj resztę
-                }
-
-                // Przycisk Wstecz
-                const backBtn = document.querySelector('.back-btn');
-                if (course.package_id) {
-                    backBtn.href = `subject.html?id=${course.package_id}`;
-                    backBtn.innerHTML = "← Wróć do przedmiotu";
-                } else {
-                    backBtn.href = "courses_list.html";
+                    if(!allowed) return; 
                 }
             }
 
@@ -157,15 +164,15 @@
                 if (count >= quizSettings.attempt_limit) {
                     document.getElementById('lesson-container').innerHTML = `
                         <div style="text-align:center; padding: 40px;">
-                            <h1 style="color:red;">Limit podejść wyczerpany</h1>
+                            <h1 style="color:var(--accent-color);">Limit podejść wyczerpany</h1>
                             <p>Wykonałeś ten test ${count} z ${quizSettings.attempt_limit} razy.</p>
-                            <a href="${document.querySelector('.back-btn').href}" class="complete-btn">Wróć</a>
+                            <a href="${returnLink}" class="complete-btn" style="float:none; display:inline-block; text-decoration:none;">Wróć</a>
                         </div>
                     `;
-                    document.getElementById('lesson-list').style.display = 'none'; // Ukryj listę
+                    document.getElementById('lesson-list').style.display = 'none'; 
                     return false;
                 }
-                document.getElementById('placeholder-text').innerText = `Masz ${quizSettings.time_limit > 0 ? quizSettings.time_limit + ' min na pytanie.' : 'brak limitu czasu.'} Dostępne podejścia: ${quizSettings.attempt_limit}.`;
+                document.getElementById('placeholder-text').innerText = `Limit czasu: ${quizSettings.time_limit > 0 ? quizSettings.time_limit + ' min/pytanie.' : 'brak.'} Próba: ${count + 1}/${quizSettings.attempt_limit}.`;
             }
             return true;
         }
@@ -178,13 +185,11 @@
 
             allLessons = lessons || [];
 
-            // Dla kursów (nie quizów) pobierz postęp
             if(!isQuizMode) {
                 const { data: progress } = await _supabase.from('user_lesson_progress')
                     .select('lesson_id').eq('user_id', userId).eq('is_completed', true);
                 completedSet = new Set(progress.map(p => p.lesson_id));
             }
-            
             renderSidebar();
         }
 
@@ -202,12 +207,8 @@
                 if(isQuizMode && !title.toLowerCase().startsWith('pytanie')) title = `Pytanie ${index+1}`;
                 else if(!isQuizMode) title = `${index+1}. ${title}`;
 
-                // W trybie Quizu blokujemy klikanie w sidebarze, żeby wymusić kolejność (opcjonalne, ale zalecane przy timerze)
                 li.innerHTML = `<span>${title}</span><span class="status-icon">${isCompleted ? '✔' : '○'}</span>`;
-                
                 li.onclick = () => {
-                    // W Quizie można nawigować, ale Timer resetuje się per pytanie (prosta wersja). 
-                    // W idealnym świecie przy limicie czasu blokujemy nawigację wstecz. Tu pozwalamy klikać.
                     loadLessonContent(lesson.id, li);
                     if (window.innerWidth <= 768) toggleSidebar(); 
                 };
@@ -215,7 +216,6 @@
             });
         }
 
-        // Helper do losowania
         function shuffleArray(array) {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -225,9 +225,7 @@
         }
 
         async function loadLessonContent(lessonId, liElement) {
-            // Reset Timer
             clearInterval(timerInterval);
-            
             currentLessonId = lessonId;
             currentSelection = null; 
 
@@ -237,25 +235,16 @@
             const container = document.getElementById('lesson-container');
             container.innerHTML = '<p style="text-align:center; padding:40px;">Ładowanie...</p>';
 
-            // Fetch Data
-            const { data: component } = await _supabase.from('lesson_components')
-                .select(`content_text_blocks ( content )`)
-                .eq('lesson_id', lessonId).eq('component_type', 'text').single();
-
-            const { data: answers } = await _supabase.from('lesson_answers')
-                .select('id, answer_text, is_correct')
-                .eq('lesson_id', lessonId);
+            const { data: component } = await _supabase.from('lesson_components').select(`content_text_blocks ( content )`).eq('lesson_id', lessonId).eq('component_type', 'text').single();
+            const { data: answers } = await _supabase.from('lesson_answers').select('id, answer_text, is_correct').eq('lesson_id', lessonId);
 
             let text = component?.content_text_blocks?.content || "";
-            if (text.trim() === "Pytanie" || text.trim() === "Pytanie quizowe") text = ""; // Cleanup placeholderów
+            if (text.trim() === "Pytanie" || text.trim() === "Pytanie quizowe") text = ""; 
 
             const currentLesson = allLessons.find(l => l.id === lessonId);
             const isQuizQuestion = answers && answers.length > 0;
 
-            // --- BUDOWANIE HTML ---
             let html = ``;
-
-            // Timer Display
             if(isQuizMode && quizSettings.time_limit > 0) {
                 html += `
                     <div class="timer-text" id="timer-text">${quizSettings.time_limit}:00</div>
@@ -276,17 +265,12 @@
                     ${isDone ? '✔ Ukończono' : 'Oznacz jako ukończone'}
                 </button>`;
             }
-
             container.innerHTML = html;
 
             if (isQuizQuestion) {
                 const quizArea = document.getElementById('quiz-area');
-                
-                // MIESZANIE ODPOWIEDZI
                 let displayAnswers = [...answers];
-                if (quizSettings.randomize) {
-                    displayAnswers = shuffleArray(displayAnswers);
-                }
+                if (quizSettings.randomize) displayAnswers = shuffleArray(displayAnswers);
 
                 displayAnswers.forEach(ans => {
                     const btn = document.createElement('div');
@@ -296,8 +280,6 @@
                     btn.onclick = () => selectAnswer(ans, btn, correctText, currentLesson.title);
                     quizArea.appendChild(btn);
                 });
-
-                // START TIMER
                 if(quizSettings.time_limit > 0) startTimer(quizSettings.time_limit);
             }
         }
@@ -311,145 +293,95 @@
 
             timerInterval = setInterval(() => {
                 remaining--;
-                
-                // Update UI
                 const m = Math.floor(remaining / 60);
                 const s = remaining % 60;
                 textEl.innerText = `${m}:${s < 10 ? '0'+s : s}`;
                 fillEl.style.width = `${(remaining / totalSeconds) * 100}%`;
-
-                // Color warning
                 if(remaining < 10) fillEl.style.background = '#F44336';
-                
-                // Time's up
-                if(remaining <= 0) {
-                    clearInterval(timerInterval);
-                    handleTimeOut();
-                }
+                if(remaining <= 0) { clearInterval(timerInterval); saveAndNext(true); }
             }, 1000);
-        }
-
-        function handleTimeOut() {
-            // Auto-submit (nawet puste)
-            saveAndNext(true); // true = force submit
         }
 
         function selectAnswer(answerObj, btnElement, correctText, questionTitle) {
             document.querySelectorAll('.quiz-option').forEach(b => b.classList.remove('selected'));
             btnElement.classList.add('selected');
-
             const nextBtn = document.getElementById('action-btn');
-            nextBtn.disabled = false;
-            nextBtn.style.opacity = "1";
-
-            currentSelection = {
-                questionId: currentLessonId,
-                questionTitle: questionTitle,
-                userAnsText: answerObj.answer_text,
-                correctAnsText: correctText,
-                isCorrect: answerObj.is_correct
-            };
+            nextBtn.disabled = false; nextBtn.style.opacity = "1";
+            currentSelection = { questionId: currentLessonId, questionTitle: questionTitle, userAnsText: answerObj.answer_text, correctAnsText: correctText, isCorrect: answerObj.is_correct };
         }
 
         async function saveAndNext(force = false) {
-            clearInterval(timerInterval); // Stop timer
-
-            // Jeśli wymuszono (koniec czasu) i brak zaznaczenia -> zapisz jako błąd
+            clearInterval(timerInterval);
             if (force && !currentSelection) {
                 const currentL = allLessons.find(l => l.id === currentLessonId);
-                // Musimy pobrać poprawną odp (trudne bez zaznaczenia, pobierzemy przy renderowaniu raportu lub teraz na szybko)
-                // Uproszczenie: Zapisujemy pusty wybór (błąd)
-                currentSelection = {
-                    questionId: currentLessonId,
-                    questionTitle: currentL.title,
-                    userAnsText: "(Brak odpowiedzi - czas minął)",
-                    correctAnsText: "Zobacz w podsumowaniu", // Uproszczenie
-                    isCorrect: false
-                };
+                currentSelection = { questionId: currentLessonId, questionTitle: currentL.title, userAnsText: "(Czas minął)", correctAnsText: "Zobacz raport", isCorrect: false };
             }
-
             if (currentSelection) {
-                // Usuń stare odp na to pytanie z sesji
                 quizResults = quizResults.filter(r => r.questionId !== currentLessonId);
                 quizResults.push(currentSelection);
             }
-
-            // Nawigacja
-            if (isLastLesson(currentLessonId)) {
-                await finishQuiz();
-            } else {
+            if (isLastLesson(currentLessonId)) { await finishQuiz(); } 
+            else {
                 const idx = allLessons.findIndex(l => l.id === currentLessonId);
                 if (idx < allLessons.length - 1) {
                     const nextLesson = allLessons[idx + 1];
-                    const nextLi = document.getElementById(`sidebar-item-${nextLesson.id}`);
-                    loadLessonContent(nextLesson.id, nextLi);
+                    loadLessonContent(nextLesson.id, document.getElementById(`sidebar-item-${nextLesson.id}`));
                 }
             }
         }
 
         async function finishQuiz() {
             const container = document.getElementById('lesson-container');
-            container.innerHTML = '<h2>Zapisywanie wyniku...</h2>';
+            container.innerHTML = '<h2 style="text-align:center; padding:40px;">Zapisywanie wyniku...</h2>';
 
-            // 1. Oblicz wynik
             let correctCount = 0;
             quizResults.forEach(r => { if (r.isCorrect) correctCount++; });
             const total = allLessons.length;
             const percentage = Math.round((correctCount / total) * 100);
 
-            // 2. Zapisz do bazy (quiz_attempts)
-            await _supabase.from('quiz_attempts').insert({
-                user_id: userId,
-                course_id: courseId,
-                score: percentage,
-                total_questions: total
-            });
+            await _supabase.from('quiz_attempts').insert({ user_id: userId, course_id: courseId, score: percentage, total_questions: total });
 
-            // 3. Pokaż podsumowanie
             let color = percentage >= 50 ? "#4CAF50" : "#F44336";
             
+            // Renderuj ładniejszy raport, bez ukrywania sidebara
             let html = `
-                <div style="text-align:center; padding-bottom: 30px;">
+                <div class="summary-wrapper">
                     <h1>Koniec Quizu</h1>
                     <div class="score-circle" style="border-color:${color}; color:${color}">${percentage}%</div>
-                    <p>Poprawne: <b>${correctCount}</b> / <b>${total}</b></p>
-                    <a href="courses_list.html" class="complete-btn" style="text-decoration:none;">Wróć do listy</a>
-                </div>
-                <h3>Twój Raport:</h3>
+                    <p style="font-size:18px; margin-bottom:20px;">Poprawne: <b>${correctCount}</b> / <b>${total}</b></p>
+                    <a href="${returnLink}" class="complete-btn" style="text-decoration:none; display:inline-block; float:none; margin-bottom:30px;">Zakończ i Wróć</a>
+                    
+                    <div style="text-align:left;">
+                        <h3 style="border-bottom:1px solid #eee; padding-bottom:10px;">Raport szczegółowy:</h3>
             `;
 
-            // Renderowanie raportu (tylko to co w quizResults)
             quizResults.forEach((res, i) => {
                  html += `
                     <div class="summary-card ${res.isCorrect ? 'correct' : 'wrong'}">
                         <b>${i+1}. ${res.questionTitle}</b><br>
                         <span style="color:${res.isCorrect?'green':'red'}">Twój wybór: ${res.userAnsText}</span>
-                        ${!res.isCorrect ? `<br><small>Poprawna: ${res.correctAnsText}</small>` : ''}
+                        ${!res.isCorrect ? `<br><small style="color:#666;">Poprawna: <b>${res.correctAnsText}</b></small>` : ''}
                     </div>
                  `;
             });
+            html += `</div></div>`;
 
             container.innerHTML = html;
-            // Ukryj sidebar
-            document.getElementById('course-sidebar').style.display = 'none';
         }
 
         function isLastLesson(id) {
             return allLessons.length > 0 && allLessons[allLessons.length - 1].id === id;
         }
 
-        // Standardowa lekcja (nie quiz)
         async function toggleComplete() {
             if (!currentLessonId) return;
             const oldStatus = completedSet.has(currentLessonId);
             const newStatus = !oldStatus;
             document.getElementById('action-btn').disabled = true;
-            await _supabase.from('user_lesson_progress')
-                .upsert({ user_id: userId, lesson_id: currentLessonId, is_completed: newStatus, completed_at: new Date() }, { onConflict: 'user_id, lesson_id' });
+            await _supabase.from('user_lesson_progress').upsert({ user_id: userId, lesson_id: currentLessonId, is_completed: newStatus, completed_at: new Date() }, { onConflict: 'user_id, lesson_id' });
             if (newStatus) completedSet.add(currentLessonId); else completedSet.delete(currentLessonId);
             renderSidebar();
-            const li = document.getElementById(`sidebar-item-${currentLessonId}`);
-            loadLessonContent(currentLessonId, li);
+            loadLessonContent(currentLessonId, document.getElementById(`sidebar-item-${currentLessonId}`));
         }
     </script>
 </body>
