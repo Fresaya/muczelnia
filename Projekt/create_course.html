@@ -5,6 +5,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>mUczelnia - Edytor Kursu</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+    /* --- NOWE STYLE DLA EDYTORA --- */
+
+    /* Zakładki Edit / Preview */
+    .editor-tabs { display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 1px solid #ddd; padding-bottom: 10px; }
+    .tab-btn { background: none; border: none; font-size: 14px; font-weight: 600; color: #888; cursor: pointer; padding: 5px 10px; border-radius: 5px; transition: 0.2s; }
+    .tab-btn:hover { color: #333; background: #eee; }
+    .tab-btn.active { color: var(--accent-color); background: rgba(240, 74, 74, 0.1); }
+
+    /* Pasek narzędzi (Toolbar) */
+    .editor-toolbar { display: flex; gap: 5px; background: #f9f9f9; border: 1px solid #ccc; border-bottom: none; padding: 8px; border-radius: 8px 8px 0 0; }
+    .tool-btn { background: #fff; border: 1px solid #ddd; border-radius: 4px; width: 30px; height: 30px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; font-family: serif; font-size: 16px; color: #333; }
+    .tool-btn:hover { background: #eee; border-color: #bbb; }
+
+    /* Pole tekstowe zintegrowane z toolbarem */
+    .edit-area { border-top-left-radius: 0; border-top-right-radius: 0; margin-top: 0; min-height: 400px; font-family: 'Courier New', monospace; font-size: 14px; }
+
+    /* Podgląd (Preview Box) */
+    .preview-box { display: none; min-height: 400px; padding: 20px; border: 1px solid #eee; background: #fff; border-radius: 12px; line-height: 1.6; }
+    .preview-box h2 { border-bottom: 1px solid #eee; padding-bottom: 10px; margin-top: 0; }
+    
+    /* Drag & Drop na liście */
+    .lesson-item { cursor: grab; user-select: none; display: flex; justify-content: space-between; align-items: center; }
+    .lesson-item:active { cursor: grabbing; }
+    .lesson-item.dragging { opacity: 0.5; background: #f0f0f0; border: 1px dashed #999; }
+    .drag-handle { margin-right: 10px; color: #bbb; cursor: grab; }
+
+    /* Duży przycisk dodawania w głównym oknie */
+    .big-add-btn { display: inline-block; margin-top: 20px; padding: 15px 30px; border: 2px dashed var(--accent-color); color: var(--accent-color); border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 16px; background: #fff; }
+    .big-add-btn:hover { background: rgba(240, 74, 74, 0.05); transform: scale(1.02); }
+</style>
 </head>
 <body>
 
@@ -21,27 +52,50 @@
             <div class="add-lesson-btn" onclick="addNewLesson()">+ Nowa Lekcja</div>
         </aside>
 
-        <main class="course-content">
-            <div class="lesson-card">
-                <!-- SETTINGS -->
-                <div style="border-bottom: 2px solid #eee; margin-bottom: 30px; padding-bottom: 20px;">
-                    <label style="font-size: 12px; color: #888; text-transform: uppercase; font-weight: bold;">Tytuł całego kursu</label>
-                    <input type="text" id="course-title-input" class="edit-input title-input" placeholder="Wpisz nazwę kursu..." oninput="updateCourseState()">
-                    <textarea id="course-desc-input" class="edit-input" style="min-height: 80px; margin-top:10px;" placeholder="O czym jest ten kurs?" oninput="updateCourseState()"></textarea>
-                </div>
+<main class="course-content">
+    <div class="lesson-card">
+        <div style="border-bottom: 2px solid #eee; margin-bottom: 20px; padding-bottom: 20px;">
+            <label style="font-size: 11px; color: #888; text-transform: uppercase; font-weight: bold;">Tytuł Kursu</label>
+            <input type="text" id="course-title-input" class="edit-input title-input" placeholder="Wpisz nazwę kursu..." oninput="updateCourseState()">
+            <textarea id="course-desc-input" class="edit-input" style="min-height: 60px; margin-top:10px;" placeholder="Krótki opis kursu..." oninput="updateCourseState()"></textarea>
+        </div>
 
-                <!-- LESSON EDITOR -->
-                <div id="active-lesson-editor" style="display: none;">
-                    <h2 style="color: var(--accent-color);">Edycja Lekcji</h2>
-                    <input type="text" id="lesson-title-input" class="edit-input title-input" placeholder="Tytuł lekcji" oninput="updateLessonState()">
-                    <textarea id="lesson-content-input" class="edit-area" placeholder="Treść lekcji (HTML dozwolony)..." oninput="updateLessonState()"></textarea>
-                </div>
-
-                <div id="no-selection-msg" style="text-align: center; color: #888; padding: 50px;">
-                    <span id="loading-msg">Ładowanie...</span>
-                </div>
+        <div id="active-lesson-editor" style="display: none;">
+            
+            <div class="editor-tabs">
+                <button class="tab-btn active" id="tab-edit" onclick="toggleMode('edit')">✏️ Edycja</button>
+                <button class="tab-btn" id="tab-preview" onclick="toggleMode('preview')">👁️ Podgląd (Preview)</button>
             </div>
-        </main>
+
+            <div id="mode-edit">
+                <input type="text" id="lesson-title-input" class="edit-input title-input" placeholder="Tytuł lekcji" oninput="updateLessonState()" style="margin-bottom: 15px;">
+                
+                <div class="editor-toolbar">
+                    <button class="tool-btn" onclick="formatText('bold')" title="Pogrubienie">B</button>
+                    <button class="tool-btn" onclick="formatText('italic')" title="Kursywa" style="font-style:italic;">I</button>
+                    <button class="tool-btn" onclick="formatText('underline')" title="Podkreślenie" style="text-decoration:underline;">U</button>
+                    <button class="tool-btn" onclick="formatText('h2')" title="Nagłówek">H2</button>
+                    <button class="tool-btn" onclick="formatText('list')" title="Lista">☰</button>
+                </div>
+
+                <textarea id="lesson-content-input" class="edit-area" placeholder="Treść lekcji... (Możesz używać HTML)" oninput="updateLessonState()"></textarea>
+            </div>
+
+            <div id="mode-preview" class="preview-box">
+                </div>
+            
+            <div style="margin-top: 15px; text-align: right; color: #888; font-size: 12px;">
+                * Kolejność lekcji zapisuje się automatycznie.
+            </div>
+        </div>
+
+        <div id="no-selection-msg" style="text-align: center; color: #888; padding: 40px;">
+            <h3>Zarządzanie Treścią</h3>
+            <p>Wybierz lekcję z menu po lewej, aby edytować.</p>
+            <div class="big-add-btn" onclick="addNewLesson()">+ Dodaj nową lekcję</div>
+        </div>
+    </div>
+</main>
     </div>
 
     <button class="save-course-fab" onclick="handleSaveClick()" id="preSaveBtn">
@@ -51,257 +105,313 @@
     <!-- PACKAGE MODAL -->
     <div class="modal-overlay" id="packageModal"><div class="modal-window"><div class="modal-header"><h3 class="modal-title">Zapisz</h3><span class="close-modal" onclick="closeModal()">&times;</span></div><div style="margin-bottom: 20px;"><label style="display:block; margin-bottom:10px;"><input type="radio" name="pkgOption" value="new" checked onchange="togglePkgInputs()"> Nowy Pakiet</label><div id="new-pkg-inputs" style="padding-left: 20px;"><input type="text" id="new-pkg-name" class="edit-input" placeholder="Nazwa"><select id="new-pkg-level" class="edit-input" style="margin-top:5px;"><option value="1">Podstawowa</option><option value="2">Średnia</option><option value="3">Wyższa</option></select></div><label style="display:block; margin-top:15px;"><input type="radio" name="pkgOption" value="existing" onchange="togglePkgInputs()"> Istniejący</label><div id="existing-pkg-inputs" style="padding-left: 20px; display:none;"><select id="existing-pkg-select" class="edit-input"></select></div></div><button class="login-button full-width-btn" onclick="saveCourseToDB(true)" id="finalSaveBtn">Zapisz</button></div></div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-        const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg'; 
-        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+    const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg'; 
+    const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const editId = urlParams.get('id'); 
+    const urlParams = new URLSearchParams(window.location.search);
+    const editId = urlParams.get('id'); 
 
-        let courseData = { title: "", description: "", author_id: null };
-        let lessons = []; 
-        let activeLessonId = null;
-        let deletedLessonIds = []; 
+    let courseData = { title: "", description: "", author_id: null };
+    let lessons = []; 
+    let activeLessonId = null;
+    let deletedLessonIds = []; 
+    let dragStartIndex = null; // Do przesuwania
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            const { data: { session } } = await _supabase.auth.getSession();
-            if (!session) { window.location.href = 'login.html'; return; }
-            courseData.author_id = session.user.id;
+    document.addEventListener('DOMContentLoaded', async () => {
+        const { data: { session } } = await _supabase.auth.getSession();
+        if (!session) { window.location.href = 'login.html'; return; }
+        courseData.author_id = session.user.id;
 
-            const { data: profile } = await _supabase.from('users').select('role').eq('id', session.user.id).single();
-            if (!profile || profile.role !== 'admin') { alert("Brak uprawnień."); window.location.href = 'dashboard.html'; return; }
+        const { data: profile } = await _supabase.from('users').select('role').eq('id', session.user.id).single();
+        if (!profile || profile.role !== 'admin') { alert("Brak uprawnień."); window.location.href = 'dashboard.html'; return; }
 
-            if (editId) {
-                document.title = "Edycja Kursu";
-                await loadCourseData(editId);
-            } else {
-                document.getElementById('no-selection-msg').innerHTML = "Kliknij <b>+ Nowa Lekcja</b> po lewej stronie.";
-            }
-        });
-
-        // --- LOAD DATA (FIXED) ---
-        async function loadCourseData(id) {
-            // 1. Fetch Course Info
-            const { data: course, error } = await _supabase.from('courses').select('*').eq('id', id).single();
-            if (error) { alert("Błąd pobierania kursu: " + error.message); return; }
-            
-            courseData.title = course.title;
-            courseData.description = course.description;
-            
-            document.getElementById('course-title-input').value = course.title;
-            document.getElementById('course-desc-input').value = course.description || "";
-
-            // 2. Fetch Lessons with Content
-            // NOTE: We join lesson_components -> content_text_blocks to get the text
-            const { data: dbLessons, error: lErr } = await _supabase.from('lessons')
-                .select(`
-                    id, title, order_index,
-                    lesson_components (
-                        content_text_blocks ( content )
-                    )
-                `)
-                .eq('course_id', id)
-                .order('order_index', { ascending: true });
-
-            if (lErr) console.error("Lesson fetch error:", lErr);
-
-            if (dbLessons && dbLessons.length > 0) {
-                lessons = dbLessons.map(l => {
-                    // Extract text content safely
-                    let contentText = "";
-                    if (l.lesson_components && l.lesson_components.length > 0) {
-                        const comp = l.lesson_components[0]; // Assume 1 text block per lesson for now
-                        if (comp.content_text_blocks) {
-                            contentText = comp.content_text_blocks.content;
-                        }
-                    }
-
-                    return {
-                        id: l.id, // Real DB ID
-                        title: l.title,
-                        content: contentText
-                    };
-                });
-                
-                renderSidebar();
-                // Select first lesson automatically
-                selectLesson(lessons[0].id);
-            } else {
-                document.getElementById('no-selection-msg').innerHTML = "Ten kurs nie ma jeszcze lekcji.";
-            }
+        if (editId) {
+            document.title = "Edycja Kursu";
+            await loadCourseData(editId);
         }
+    });
 
-        // --- UI LOGIC ---
-        function addNewLesson() {
-            const tempId = 'new-' + Date.now(); 
-            lessons.push({ id: tempId, title: "Nowa lekcja", content: "<p>...</p>" });
-            renderSidebar(); selectLesson(tempId);
-        }
+    // --- ŁADOWANIE DANYCH ---
+    async function loadCourseData(id) {
+        const { data: course } = await _supabase.from('courses').select('*').eq('id', id).single();
+        if (!course) return;
 
-        function renderSidebar() {
-            const list = document.getElementById('editor-lesson-list');
-            list.innerHTML = '';
-            lessons.forEach((l, index) => {
-                const li = document.createElement('li');
-                li.className = `lesson-item ${l.id === activeLessonId ? 'active' : ''}`;
-                li.innerHTML = `<span>${index + 1}. ${l.title}</span> <span style="color:red; cursor:pointer;" onclick="removeLesson(event, '${l.id}')">&times;</span>`;
-                li.onclick = () => selectLesson(l.id);
-                list.appendChild(li);
+        courseData.title = course.title;
+        courseData.description = course.description;
+        
+        document.getElementById('course-title-input').value = course.title;
+        document.getElementById('course-desc-input').value = course.description || "";
+
+        // Pobranie lekcji
+        const { data: dbLessons } = await _supabase.from('lessons')
+            .select(`id, title, order_index, lesson_components ( content_text_blocks ( content ) )`)
+            .eq('course_id', id)
+            .order('order_index', { ascending: true });
+
+        if (dbLessons && dbLessons.length > 0) {
+            lessons = dbLessons.map(l => {
+                let contentText = "";
+                if (l.lesson_components?.[0]?.content_text_blocks) {
+                    contentText = l.lesson_components[0].content_text_blocks.content;
+                }
+                return { id: l.id, title: l.title, content: contentText };
             });
-        }
-
-        function selectLesson(id) {
-            activeLessonId = id;
-            document.getElementById('no-selection-msg').style.display = 'none';
-            document.getElementById('active-lesson-editor').style.display = 'block';
-            
-            // Find lesson in memory
-            const l = lessons.find(x => x.id === id);
-            
-            // Populate Inputs
-            document.getElementById('lesson-title-input').value = l.title;
-            document.getElementById('lesson-content-input').value = l.content;
-            
             renderSidebar();
+            selectLesson(lessons[0].id);
         }
+    }
 
-        function removeLesson(e, id) {
-            e.stopPropagation();
-            if(!confirm("Usunąć lekcję?")) return;
+    // --- DRAG & DROP + RENDER SIDEBAR ---
+    function renderSidebar() {
+        const list = document.getElementById('editor-lesson-list');
+        list.innerHTML = '';
+        
+        lessons.forEach((l, index) => {
+            const li = document.createElement('li');
+            li.className = `lesson-item ${l.id === activeLessonId ? 'active' : ''}`;
+            li.draggable = true; // Włączamy przeciąganie
+            li.dataset.index = index;
+
+            // Uchwyt i Tytuł
+            li.innerHTML = `
+                <div style="display:flex; align-items:center; width:100%;">
+                    <span class="drag-handle">☰</span>
+                    <span style="flex-grow:1;">${index + 1}. ${l.title}</span>
+                </div>
+                <span style="color:red; cursor:pointer; padding:5px;" onclick="removeLesson(event, '${l.id}')">&times;</span>
+            `;
+
+            // Zdarzenia Drag & Drop
+            li.addEventListener('dragstart', dragStart);
+            li.addEventListener('dragover', dragOver);
+            li.addEventListener('drop', dragDrop);
+            li.addEventListener('dragenter', dragEnter);
+            li.addEventListener('dragleave', dragLeave);
             
-            if (typeof id === 'number' || (typeof id === 'string' && !id.startsWith('new-'))) {
-                deletedLessonIds.push(id);
-            }
+            // Kliknięcie (wybór)
+            li.addEventListener('click', (e) => {
+               // Ignoruj kliknięcie jeśli to był drag lub usuwanie
+               if(e.target.tagName !== 'SPAN' || e.target.innerText !== '×') selectLesson(l.id);
+            });
 
-            lessons = lessons.filter(l => l.id != id);
-            if (activeLessonId == id) { 
-                activeLessonId = null; 
-                document.getElementById('active-lesson-editor').style.display = 'none'; 
-                document.getElementById('no-selection-msg').style.display = 'block'; 
-            }
-            renderSidebar();
+            list.appendChild(li);
+        });
+    }
+
+    // --- LOGIKA DRAG & DROP ---
+    function dragStart() {
+        dragStartIndex = +this.dataset.index;
+        this.classList.add('dragging');
+    }
+    function dragOver(e) { e.preventDefault(); }
+    function dragEnter() { this.classList.add('active'); }
+    function dragLeave() { this.classList.remove('active'); }
+    function dragDrop() {
+        const dragEndIndex = +this.dataset.index;
+        swapItems(dragStartIndex, dragEndIndex);
+        this.classList.remove('active');
+        document.querySelector('.dragging').classList.remove('dragging');
+    }
+    function swapItems(fromIndex, toIndex) {
+        const item = lessons[fromIndex];
+        lessons.splice(fromIndex, 1);
+        lessons.splice(toIndex, 0, item);
+        renderSidebar(); // Przeładuj listę (z nowymi indeksami)
+    }
+
+    // --- PODSTAWOWE FUNKCJE EDYTORA ---
+    function addNewLesson() {
+        const tempId = 'new-' + Date.now(); 
+        lessons.push({ id: tempId, title: "Nowa lekcja", content: "" });
+        renderSidebar(); selectLesson(tempId);
+    }
+
+    function selectLesson(id) {
+        activeLessonId = id;
+        document.getElementById('no-selection-msg').style.display = 'none';
+        document.getElementById('active-lesson-editor').style.display = 'block';
+        
+        // Domyślnie tryb edycji
+        toggleMode('edit');
+
+        const l = lessons.find(x => x.id === id);
+        document.getElementById('lesson-title-input').value = l.title;
+        document.getElementById('lesson-content-input').value = l.content;
+        renderSidebar();
+    }
+
+    function removeLesson(e, id) {
+        e.stopPropagation();
+        if(!confirm("Usunąć lekcję?")) return;
+        if (typeof id !== 'string' || !id.startsWith('new-')) deletedLessonIds.push(id);
+        lessons = lessons.filter(l => l.id != id);
+        if (activeLessonId == id) { 
+            activeLessonId = null; 
+            document.getElementById('active-lesson-editor').style.display = 'none'; 
+            document.getElementById('no-selection-msg').style.display = 'block'; 
         }
+        renderSidebar();
+    }
 
-        function updateCourseState() {
-            courseData.title = document.getElementById('course-title-input').value;
-            courseData.description = document.getElementById('course-desc-input').value;
-        }
+    function updateCourseState() {
+        courseData.title = document.getElementById('course-title-input').value;
+        courseData.description = document.getElementById('course-desc-input').value;
+    }
 
-        function updateLessonState() {
-            if (!activeLessonId) return;
+    function updateLessonState() {
+        if (!activeLessonId) return;
+        const l = lessons.find(x => x.id === activeLessonId);
+        l.title = document.getElementById('lesson-title-input').value;
+        l.content = document.getElementById('lesson-content-input').value;
+        // Odśwież tytuł na liście, ale nie renderuj całej listy (żeby nie psuć focusu inputa)
+        const activeLi = document.querySelector('.lesson-item.active span[style="flex-grow:1;"]');
+        if(activeLi) activeLi.innerText = `${lessons.indexOf(l) + 1}. ${l.title}`;
+    }
+
+    // --- TOOLBAR & PREVIEW ---
+    function toggleMode(mode) {
+        const editDiv = document.getElementById('mode-edit');
+        const prevDiv = document.getElementById('mode-preview');
+        const btnEdit = document.getElementById('tab-edit');
+        const btnPrev = document.getElementById('tab-preview');
+
+        if (mode === 'preview') {
+            // Render HTML
             const l = lessons.find(x => x.id === activeLessonId);
-            l.title = document.getElementById('lesson-title-input').value;
-            l.content = document.getElementById('lesson-content-input').value;
-            renderSidebar(); // Update title in list
+            const title = document.getElementById('lesson-title-input').value;
+            const content = document.getElementById('lesson-content-input').value;
+            
+            prevDiv.innerHTML = `<h2 style="color:#f04a4a;">${title}</h2><div>${content || '<i>(Brak treści)</i>'}</div>`;
+            
+            editDiv.style.display = 'none';
+            prevDiv.style.display = 'block';
+            btnEdit.classList.remove('active');
+            btnPrev.classList.add('active');
+        } else {
+            editDiv.style.display = 'block';
+            prevDiv.style.display = 'none';
+            btnEdit.classList.add('active');
+            btnPrev.classList.remove('active');
+        }
+    }
+
+    function formatText(cmd) {
+        const area = document.getElementById('lesson-content-input');
+        const start = area.selectionStart;
+        const end = area.selectionEnd;
+        const text = area.value;
+        const selected = text.substring(start, end);
+        
+        let before = text.substring(0, start);
+        let after = text.substring(end);
+        let insertion = "";
+
+        switch(cmd) {
+            case 'bold': insertion = `<b>${selected || 'tekst'}</b>`; break;
+            case 'italic': insertion = `<i>${selected || 'tekst'}</i>`; break;
+            case 'underline': insertion = `<u>${selected || 'tekst'}</u>`; break;
+            case 'h2': insertion = `\n<h2>${selected || 'Nagłówek'}</h2>\n`; break;
+            case 'list': insertion = `\n<ul>\n  <li>${selected || 'Element listy'}</li>\n</ul>\n`; break;
         }
 
-        // --- SAVE LOGIC ---
-        function handleSaveClick() {
-            if (!courseData.title) return alert("Podaj tytuł!");
-            if (lessons.length === 0) return alert("Dodaj lekcje!");
+        area.value = before + insertion + after;
+        updateLessonState(); // Zapisz do pamięci
+        area.focus();
+    }
 
-            if (editId) {
-                saveCourseToDB(false); // Update existing
-            } else {
-                openPackageModal(); // Create new
-            }
-        }
+    // --- ZAPISYWANIE (BEZ ZMIAN W LOGICE) ---
+    function handleSaveClick() {
+        if (!courseData.title) return alert("Podaj tytuł!");
+        if (lessons.length === 0) return alert("Dodaj lekcje!");
+        if (editId) saveCourseToDB(false);
+        else { document.getElementById('packageModal').classList.add('active'); openPackageModal(); }
+    }
 
-        async function openPackageModal() {
-            document.getElementById('packageModal').classList.add('active');
-            document.getElementById('new-pkg-name').value = courseData.title;
-            const s = document.getElementById('existing-pkg-select'); s.innerHTML = '<option>Ładowanie...</option>';
-            const { data } = await _supabase.from('packages').select('*').order('created_at', { ascending: false });
-            s.innerHTML = '<option value="" disabled selected>-- Wybierz --</option>';
-            data.forEach(p => s.add(new Option(p.title, p.id)));
-        }
-        function closeModal() { document.getElementById('packageModal').classList.remove('active'); }
-        function togglePkgInputs() { 
-            const n = document.querySelector('input[name="pkgOption"]:checked').value === 'new';
-            document.getElementById('new-pkg-inputs').style.display = n ? 'block' : 'none';
-            document.getElementById('existing-pkg-inputs').style.display = n ? 'none' : 'block';
-        }
+    async function openPackageModal() {
+        document.getElementById('new-pkg-name').value = courseData.title;
+        const s = document.getElementById('existing-pkg-select'); 
+        s.innerHTML = '<option>Ładowanie...</option>';
+        const { data } = await _supabase.from('packages').select('*').order('created_at', { ascending: false });
+        s.innerHTML = '<option value="" disabled selected>-- Wybierz --</option>';
+        data.forEach(p => s.add(new Option(p.title, p.id)));
+    }
+    function closeModal() { document.getElementById('packageModal').classList.remove('active'); }
+    function togglePkgInputs() { 
+        const n = document.querySelector('input[name="pkgOption"]:checked').value === 'new';
+        document.getElementById('new-pkg-inputs').style.display = n ? 'block' : 'none';
+        document.getElementById('existing-pkg-inputs').style.display = n ? 'none' : 'block';
+    }
 
-        async function saveCourseToDB(isNew) {
-            const btn = isNew ? document.getElementById('finalSaveBtn') : document.getElementById('preSaveBtn');
-            const originalText = btn.innerHTML;
-            btn.disabled = true; btn.innerHTML = "⏳ Zapisywanie...";
+    async function saveCourseToDB(isNew) {
+        const btn = isNew ? document.getElementById('finalSaveBtn') : document.getElementById('preSaveBtn');
+        const originalText = btn.innerHTML;
+        btn.disabled = true; btn.innerHTML = "⏳ Zapisywanie...";
 
-            try {
-                let courseId = editId;
+        try {
+            let courseId = editId;
 
-                // 1. CREATE or UPDATE Course
-                if (isNew) {
-                    let packageId = null;
-                    const pkgOpt = document.querySelector('input[name="pkgOption"]:checked').value;
-                    if (pkgOpt === 'new') {
-                        const { data: pkg } = await _supabase.from('packages').insert({ 
-                            title: document.getElementById('new-pkg-name').value, 
-                            level: document.getElementById('new-pkg-level').value 
-                        }).select().single();
-                        packageId = pkg.id;
-                    } else {
-                        packageId = document.getElementById('existing-pkg-select').value;
-                    }
-
-                    const { data: newC, error } = await _supabase.from('courses').insert({
-                        title: courseData.title, description: courseData.description, author_id: courseData.author_id, type: 'course', package_id: packageId
+            // 1. Kurs
+            if (isNew) {
+                let packageId = null;
+                const pkgOpt = document.querySelector('input[name="pkgOption"]:checked').value;
+                if (pkgOpt === 'new') {
+                    const { data: pkg } = await _supabase.from('packages').insert({ 
+                        title: document.getElementById('new-pkg-name').value, 
+                        level: document.getElementById('new-pkg-level').value 
                     }).select().single();
-                    if(error) throw error;
-                    courseId = newC.id;
+                    packageId = pkg.id;
                 } else {
-                    // Update existing
-                    await _supabase.from('courses').update({
-                        title: courseData.title, description: courseData.description
-                    }).eq('id', courseId);
+                    packageId = document.getElementById('existing-pkg-select').value;
                 }
+                const { data: newC, error } = await _supabase.from('courses').insert({
+                    title: courseData.title, description: courseData.description, author_id: courseData.author_id, type: 'course', package_id: packageId
+                }).select().single();
+                if(error) throw error;
+                courseId = newC.id;
+            } else {
+                await _supabase.from('courses').update({ title: courseData.title, description: courseData.description }).eq('id', courseId);
+            }
 
-                // 2. Handle Deletions
-                if (deletedLessonIds.length > 0) {
-                    await _supabase.from('lessons').delete().in('id', deletedLessonIds);
-                }
+            // 2. Usuwanie
+            if (deletedLessonIds.length > 0) await _supabase.from('lessons').delete().in('id', deletedLessonIds);
 
-                // 3. Upsert Lessons
-                for (let i = 0; i < lessons.length; i++) {
-                    const l = lessons[i];
-                    let lessonId = l.id;
-                    const isTemp = String(l.id).startsWith('new-');
+            // 3. Zapis lekcji (ZACHOWUJE KOLEJNOŚĆ Z TABLICY lessons)
+            for (let i = 0; i < lessons.length; i++) {
+                const l = lessons[i];
+                let lessonId = l.id;
+                const isTemp = String(l.id).startsWith('new-');
 
-                    if (isTemp) {
-                        // INSERT
-                        const { data: insL } = await _supabase.from('lessons').insert({
-                            course_id: courseId, title: l.title, order_index: i + 1
-                        }).select().single();
-                        lessonId = insL.id;
-
-                        const { data: content } = await _supabase.from('content_text_blocks').insert({ content: l.content }).select().single();
-                        await _supabase.from('lesson_components').insert({
-                            lesson_id: lessonId, order_index: 1, component_type: 'text', content_text_block_id: content.id
-                        });
-                    } else {
-                        // UPDATE
-                        await _supabase.from('lessons').update({ title: l.title, order_index: i + 1 }).eq('id', lessonId);
-                        
-                        // Find content block ID
-                        const { data: comp } = await _supabase.from('lesson_components').select('content_text_block_id').eq('lesson_id', lessonId).single();
-                        if (comp) {
-                            await _supabase.from('content_text_blocks').update({ content: l.content }).eq('id', comp.content_text_block_id);
-                        }
+                if (isTemp) {
+                    const { data: insL } = await _supabase.from('lessons').insert({
+                        course_id: courseId, title: l.title, order_index: i + 1 
+                    }).select().single();
+                    lessonId = insL.id;
+                    const { data: content } = await _supabase.from('content_text_blocks').insert({ content: l.content }).select().single();
+                    await _supabase.from('lesson_components').insert({
+                        lesson_id: lessonId, order_index: 1, component_type: 'text', content_text_block_id: content.id
+                    });
+                } else {
+                    // Update: WAŻNE - aktualizujemy też order_index
+                    await _supabase.from('lessons').update({ title: l.title, order_index: i + 1 }).eq('id', lessonId);
+                    
+                    const { data: comp } = await _supabase.from('lesson_components').select('content_text_block_id').eq('lesson_id', lessonId).single();
+                    if (comp) {
+                        await _supabase.from('content_text_blocks').update({ content: l.content }).eq('id', comp.content_text_block_id);
                     }
                 }
-
-                alert("✅ Zapisano pomyślnie!");
-                window.location.href = 'admin_content.html'; // Go back to Admin Content
-
-            } catch (err) {
-                console.error(err);
-                alert("Błąd: " + err.message);
-            } finally {
-                btn.disabled = false; btn.innerHTML = originalText;
             }
+            alert("✅ Zapisano pomyślnie!");
+            window.location.href = 'admin_content.html';
+        } catch (err) {
+            console.error(err);
+            alert("Błąd: " + err.message);
+        } finally {
+            btn.disabled = false; btn.innerHTML = originalText;
         }
-    </script>
+    }
+</script>
 </body>
 </html>
