@@ -84,30 +84,26 @@
 
             // POBIERANIE DANYCH
             let rawData = [];
-
+            
+            // Pobieramy pakiety (Przedmioty) przypisane do klasy ucznia
             if (profile.role === 'admin' || profile.role === 'manager') {
-                 // ADMIN: Pobierz wszystko i zmapuj do struktury { courses: ... }
-                 const { data: allCourses } = await _supabase.from('courses').select('id, title, description, type, packages(title)').neq('type', 'quiz');
-                 rawData = allCourses ? allCourses.map(c => ({ courses: c })) : [];
+                 // Admin widzi wszystkie pakiety
+                 const { data } = await _supabase.from('packages').select('*').order('title');
+                 rawData = data || [];
             } else {
-                // STUDENT: Pobierz przez pakiety
-                if (!profile.class_id) { renderCourses([]); return; }
+                // Uczeń widzi pakiety przypisane do jego klasy
+                if (!profile.class_id) { renderPackages([]); return; }
                 
-                const { data: pkgLinks } = await _supabase.from('package_classes').select('package_id').eq('class_id', profile.class_id);
-                const pkgIds = pkgLinks.map(p => p.package_id);
-
-                if (pkgIds.length > 0) {
-                    const { data: courses } = await _supabase
-                        .from('courses')
-                        .select('id, title, type, packages(title)')
-                        .in('package_id', pkgIds)
-                        .neq('type', 'quiz');
-                    
-                    rawData = courses ? courses.map(c => ({ courses: c })) : [];
-                }
+                const { data: pkgLinks } = await _supabase
+                    .from('package_classes')
+                    .select('package_id, packages(*)') // Join do tabeli packages
+                    .eq('class_id', profile.class_id);
+                
+                // Wyciągamy same obiekty pakietów z relacji
+                rawData = pkgLinks ? pkgLinks.map(p => p.packages) : [];
             }
 
-            renderCourses(rawData);
+            renderPackages(rawData);
 
             // Wylogowanie
              const avatarTrigger = document.getElementById('avatarTrigger');
@@ -117,7 +113,34 @@
             window.addEventListener('click', () => { if (dropdown.classList.contains('show')) dropdown.classList.remove('show'); });
             logoutBtn.addEventListener('click', async () => { await _supabase.auth.signOut(); window.location.href = 'login.html'; });
         });
+        function renderPackages(packages) {
+            const gridContainer = document.getElementById('courses-grid');
+            gridContainer.innerHTML = ''; 
 
+            if (packages.length > 0) {
+                packages.forEach(pkg => {
+                    const tile = document.createElement('div');
+                    tile.className = 'widget-tile';
+                    tile.style.cursor = "pointer";
+                    // Stylizacja na "Folder" / "Przedmiot"
+                    tile.style.borderLeft = "5px solid var(--accent-color)";
+                    
+                    tile.innerHTML = `
+                        <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23333%22 stroke-width=%221.5%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z%22></path></svg>');"></div>
+                        <h3>${pkg.title}</h3>
+                        <p style="font-size:12px; color:#666; margin-top:5px;">Poziom: ${pkg.level === 1 ? 'Podstawowa' : (pkg.level===2 ? 'Średnia' : 'Wyższa')}</p>
+                        <div class="course-meta" style="margin-top:15px; font-weight:bold;">Otwórz Przedmiot →</div>
+                    `;
+                    
+                    // KLIKNIĘCIE PROWADZI DO NOWEGO WIDOKU "SUBJECT.HTML"
+                    tile.onclick = () => { window.location.href = `subject.html?id=${pkg.id}`; };
+                    gridContainer.appendChild(tile);
+                });
+            } else {
+                 gridContainer.innerHTML += `<div class="widget-tile" style="grid-column:1/-1; text-align:center; padding:50px;"><h3>Brak przedmiotów</h3><p style="color:#888;">Nie przypisano Ci jeszcze żadnych materiałów.</p></div>`;
+            }
+        }
+        /*
         function renderCourses(data) {
             const gridContainer = document.getElementById('courses-grid');
             gridContainer.innerHTML = ''; 
@@ -146,7 +169,7 @@
             } else {
                  gridContainer.innerHTML += `<div class="widget-tile" style="grid-column:1/-1; text-align:center; padding:50px;"><h3>Brak kursów</h3><p style="color:#888;">Brak materiałów.</p></div>`;
             }
-        }
+        }*/
     </script>
 </body>
 </html>
