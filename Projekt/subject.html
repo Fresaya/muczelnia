@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mUczelnia - Przedmiot</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .section-header { margin: 30px 0 15px 0; border-bottom: 2px solid #eee; padding-bottom: 10px; color: var(--accent-color); font-size: 18px; font-weight: bold; display: flex; align-items: center; gap: 10px;}
+        .module-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .module-card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border: 1px solid #eee; transition: transform 0.2s; cursor: pointer; position: relative; overflow: hidden; }
+        .module-card:hover { transform: translateY(-3px); border-color: var(--accent-color); }
+        .module-card h4 { margin: 0 0 5px 0; font-size: 16px; }
+        .module-card p { font-size: 13px; color: #777; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .type-badge { position: absolute; top: 10px; right: 10px; font-size: 10px; padding: 3px 8px; border-radius: 10px; font-weight: bold; text-transform: uppercase; }
+        .badge-course { background: #e3f2fd; color: #2196F3; }
+        .badge-quiz { background: #f3e5f5; color: #9C27B0; }
+    </style>
+</head>
+<body>
+
+    <div class="layout-wrapper">
+        <aside class="sidebar-left">
+            <div class="top-section">
+                <div class="brand-area"><a href="dashboard.html" class="logo-text"><span>m</span>Uczelnia</a></div>
+                <ul class="nav-menu">
+                    <li class="nav-item"><a href="dashboard.html" class="nav-link"><span>Pulpit</span></a></li>
+                    <li class="nav-item"><a href="courses_list.html" class="nav-link active"><span>Moje Kursy</span></a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="welcome-header">
+                <div>
+                    <a href="courses_list.html" style="text-decoration:none; color:#888; font-size:14px;">← Wróć do listy przedmiotów</a>
+                    <h1 id="subject-title">Ładowanie...</h1>
+                    <p>Wybierz dział lub quiz, aby rozpocząć naukę.</p>
+                </div>
+            </div>
+
+            <div id="modules-section" style="display:none;">
+                <div class="section-header">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                    Działy / Tematy
+                </div>
+                <div class="module-list" id="modules-grid"></div>
+            </div>
+
+            <div id="quizzes-section" style="display:none;">
+                <div class="section-header" style="color: #9C27B0; margin-top: 50px;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="9" y1="15" x2="15" y2="15"></line><line x1="9" y1="11" x2="15" y2="11"></line></svg>
+                    Sprawdziany i Quizy
+                </div>
+                <div class="module-list" id="quizzes-grid"></div>
+            </div>
+            
+            <div id="empty-msg" style="display:none; text-align:center; padding:40px; color:#888;">Ten przedmiot jest pusty.</div>
+
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg'; 
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const pkgId = urlParams.get('id');
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (!session) { window.location.href = 'login.html'; return; }
+            if (!pkgId) { window.location.href = 'courses_list.html'; return; }
+
+            // 1. Pobierz dane Pakietu (Przedmiotu)
+            const { data: pkg } = await _supabase.from('packages').select('title').eq('id', pkgId).single();
+            if (pkg) document.getElementById('subject-title').textContent = pkg.title;
+
+            // 2. Pobierz "Kursy" (Działy) i "Quizy" należące do tego pakietu
+            const { data: items } = await _supabase
+                .from('courses')
+                .select('id, title, description, type')
+                .eq('package_id', pkgId)
+                .order('created_at', { ascending: true });
+
+            if (!items || items.length === 0) {
+                document.getElementById('empty-msg').style.display = 'block';
+                return;
+            }
+
+            const modulesGrid = document.getElementById('modules-grid');
+            const quizzesGrid = document.getElementById('quizzes-grid');
+            let hasModules = false;
+            let hasQuizzes = false;
+
+            items.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'module-card';
+                card.onclick = () => window.location.href = `course.html?id=${item.id}`;
+                
+                const desc = item.description ? item.description : 'Brak opisu.';
+                
+                if (item.type === 'quiz') {
+                    hasQuizzes = true;
+                    card.innerHTML = `
+                        <span class="type-badge badge-quiz">Quiz</span>
+                        <h4>${item.title}</h4>
+                        <p>${desc}</p>
+                    `;
+                    quizzesGrid.appendChild(card);
+                } else {
+                    hasModules = true;
+                    card.innerHTML = `
+                        <span class="type-badge badge-course">Dział</span>
+                        <h4>${item.title}</h4>
+                        <p>${desc}</p>
+                    `;
+                    modulesGrid.appendChild(card);
+                }
+            });
+
+            if (hasModules) document.getElementById('modules-section').style.display = 'block';
+            if (hasQuizzes) document.getElementById('quizzes-section').style.display = 'block';
+        });
+    </script>
+</body>
+</html>
