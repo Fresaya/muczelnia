@@ -6,90 +6,35 @@
     <title>mUczelnia - Przedmiot</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* --- STYLE Z OBSŁUGĄ MOTYWÓW (DARK/LIGHT) --- */
+        .section-header { margin: 30px 0 15px 0; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; color: var(--accent-color); font-size: 18px; font-weight: bold; display: flex; align-items: center; gap: 10px;}
+        .section-header.quiz-header { color: #9C27B0; margin-top: 50px; }
         
-        .section-header { 
-            margin: 30px 0 15px 0; 
-            border-bottom: 2px solid var(--border-color); 
-            padding-bottom: 10px; 
-            color: var(--accent-color); 
-            font-size: 18px; 
-            font-weight: bold; 
-            display: flex; 
-            align-items: center; 
-            gap: 10px;
-        }
-
-        /* Specjalny kolor dla nagłówka Quizów */
-        .section-header.quiz-header {
-            color: #9C27B0; /* Fioletowy */
-            margin-top: 50px;
-        }
-
-        .module-list { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
-            gap: 20px; 
-        }
-
+        .module-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        
         .module-card { 
-            background: var(--panel-bg); 
-            padding: 20px; 
-            border-radius: 12px; 
-            box-shadow: var(--shadow); 
-            border: 1px solid var(--border-color); 
-            transition: transform 0.2s, border-color 0.2s; 
-            cursor: pointer; 
-            position: relative; 
-            overflow: hidden; 
+            background: var(--panel-bg); padding: 20px; border-radius: 12px; 
+            box-shadow: var(--shadow); border: 1px solid var(--border-color); 
+            transition: transform 0.2s, border-color 0.2s; cursor: pointer; position: relative; overflow: hidden; 
         }
+        .module-card:hover { transform: translateY(-3px); border-color: var(--accent-color); }
+        
+        /* Styl dla ukończonego quizu */
+        .module-card.completed-card { opacity: 0.7; cursor: default; background: var(--bg-color); border-color: transparent; }
+        .module-card.completed-card:hover { transform: none; border-color: transparent; }
 
-        .module-card:hover { 
-            transform: translateY(-3px); 
-            border-color: var(--accent-color); 
-        }
-
-        .module-card h4 { 
-            margin: 0 0 5px 0; 
-            font-size: 16px; 
-            color: var(--text-main); 
-        }
-
-        .module-card p { 
-            font-size: 13px; 
-            color: var(--text-muted); 
-            margin: 0; 
-            display: -webkit-box; 
-            -webkit-line-clamp: 2; 
-            -webkit-box-orient: vertical; 
-            overflow: hidden; 
-        }
-
-        .type-badge { 
-            position: absolute; 
-            top: 10px; 
-            right: 10px; 
-            font-size: 10px; 
-            padding: 3px 8px; 
-            border-radius: 10px; 
-            font-weight: bold; 
-            text-transform: uppercase; 
-        }
-
-        /* Kolory Badge (Dział vs Quiz) */
+        .module-card h4 { margin: 0 0 5px 0; font-size: 16px; color: var(--text-main); }
+        .module-card p { font-size: 13px; color: var(--text-muted); margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        
+        .type-badge { position: absolute; top: 10px; right: 10px; font-size: 10px; padding: 3px 8px; border-radius: 10px; font-weight: bold; text-transform: uppercase; }
         .badge-course { background: #e3f2fd; color: #1565C0; }
         .badge-quiz { background: #f3e5f5; color: #7B1FA2; }
+        .badge-done { background: #E8F5E9; color: #2E7D32; border: 1px solid #C8E6C9; }
 
-        /* --- POPRAWKI DLA TRYBU CIEMNEGO --- */
         @media (prefers-color-scheme: dark) {
-            /* W trybie ciemnym, pastelowe tła badge'y są zbyt jasne. Odwracamy kolory. */
             .badge-course { background: #1565C0; color: #fff; }
             .badge-quiz { background: #7B1FA2; color: #fff; }
-            
-            /* Cień w trybie ciemnym jest zbędny lub brzydki, zmienne style.css to obsługują,
-               ale tutaj upewniamy się, że karty wyglądają dobrze */
-            .module-card { box-shadow: none; }
-            .module-card:hover { background-color: var(--hover-bg); }
+            .badge-done { background: #1B5E20; color: #fff; border-color: #2E7D32; }
+            .module-card.completed-card { background: #1a1a1a; }
         }
     </style>
 </head>
@@ -132,7 +77,6 @@
             </div>
             
             <div id="empty-msg" style="display:none; text-align:center; padding:40px; color:var(--text-muted);">Ten przedmiot jest pusty.</div>
-
         </main>
     </div>
 
@@ -150,20 +94,38 @@
             if (!session) { window.location.href = 'login.html'; return; }
             if (!pkgId) { window.location.href = 'courses_list.html'; return; }
 
-            // 1. Pobierz dane Pakietu (Przedmiotu)
+            // 1. Pobierz pakiet
             const { data: pkg } = await _supabase.from('packages').select('title').eq('id', pkgId).single();
             if (pkg) document.getElementById('subject-title').textContent = pkg.title;
 
-            // 2. Pobierz "Kursy" (Działy) i "Quizy" należące do tego pakietu
+            // 2. Pobierz kursy/quizy
             const { data: items } = await _supabase
                 .from('courses')
-                .select('id, title, description, type')
+                .select('id, title, description, type, attempt_limit')
                 .eq('package_id', pkgId)
                 .order('created_at', { ascending: true });
 
             if (!items || items.length === 0) {
                 document.getElementById('empty-msg').style.display = 'block';
                 return;
+            }
+
+            // 3. Pobierz historię podejść użytkownika do tych quizów
+            const itemIds = items.map(i => i.id);
+            const { data: attempts } = await _supabase
+                .from('quiz_attempts')
+                .select('course_id, score')
+                .eq('user_id', session.user.id)
+                .in('course_id', itemIds);
+
+            // Przetwórz historię: Mapa { courseId: { count: number, maxScore: number } }
+            const historyMap = {};
+            if (attempts) {
+                attempts.forEach(a => {
+                    if (!historyMap[a.course_id]) historyMap[a.course_id] = { count: 0, maxScore: 0 };
+                    historyMap[a.course_id].count++;
+                    if (a.score > historyMap[a.course_id].maxScore) historyMap[a.course_id].maxScore = a.score;
+                });
             }
 
             const modulesGrid = document.getElementById('modules-grid');
@@ -174,20 +136,39 @@
             items.forEach(item => {
                 const card = document.createElement('div');
                 card.className = 'module-card';
-                card.onclick = () => window.location.href = `course.html?id=${item.id}`;
-                
                 const desc = item.description ? item.description : 'Brak opisu.';
-                
+
                 if (item.type === 'quiz') {
                     hasQuizzes = true;
-                    card.innerHTML = `
-                        <span class="type-badge badge-quiz">Quiz</span>
-                        <h4>${item.title}</h4>
-                        <p>${desc}</p>
-                    `;
+                    
+                    // Sprawdź limity
+                    const stats = historyMap[item.id] || { count: 0, maxScore: 0 };
+                    const limit = item.attempt_limit || 0;
+                    const isFinished = (limit > 0 && stats.count >= limit);
+
+                    if (isFinished) {
+                        // ZABLOKOWANY (UKOŃCZONY)
+                        card.classList.add('completed-card');
+                        card.innerHTML = `
+                            <span class="type-badge badge-done">Wynik: ${stats.maxScore}%</span>
+                            <h4>${item.title}</h4>
+                            <p>Ukończono (${stats.count}/${limit} podejść)</p>
+                        `;
+                        // Brak onclick -> nieklikalne
+                    } else {
+                        // DOSTĘPNY
+                        card.onclick = () => window.location.href = `course.html?id=${item.id}`;
+                        card.innerHTML = `
+                            <span class="type-badge badge-quiz">Quiz</span>
+                            <h4>${item.title}</h4>
+                            <p>${desc}</p>
+                        `;
+                    }
                     quizzesGrid.appendChild(card);
+
                 } else {
                     hasModules = true;
+                    card.onclick = () => window.location.href = `course.html?id=${item.id}`;
                     card.innerHTML = `
                         <span class="type-badge badge-course">Dział</span>
                         <h4>${item.title}</h4>
