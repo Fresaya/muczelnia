@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mUczelnia - Wyniki Uczniów</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .filter-bar {
+            background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #e0e0e0;
+            display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 20px;
+        }
+        .filter-group { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 200px; }
+        .filter-group label { font-size: 12px; font-weight: bold; color: #666; text-transform: uppercase; }
+        
+        .results-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .results-table th, .results-table td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
+        .results-table th { background: #f9f9f9; font-weight: 600; color: #444; }
+        .results-table tr:hover { background: #fdfdfd; }
+        
+        .score-badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: bold; }
+        .score-good { background: #E8F5E9; color: #2E7D32; } /* Zielony */
+        .score-bad { background: #FFEBEE; color: #C62828; } /* Czerwony */
+        
+        .reset-btn { 
+            background: #fff; border: 1px solid #ddd; padding: 6px 12px; border-radius: 6px; 
+            cursor: pointer; color: #333; font-size: 13px; transition: 0.2s; 
+        }
+        .reset-btn:hover { background: #FFEBEE; color: #d32f2f; border-color: #d32f2f; }
+    </style>
+</head>
+<body>
+
+    <div class="layout-wrapper">
+        <aside class="sidebar-left">
+            <div class="top-section">
+                <div class="brand-area"><a href="dashboard.html" class="logo-text"><span>m</span>Uczelnia</a></div>
+                <ul class="nav-menu">
+                    <li class="nav-item"><a href="dashboard.html" class="nav-link"><span>Pulpit</span></a></li>
+                    <li class="nav-item"><a href="#" class="nav-link active"><span>Wyniki</span></a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="welcome-header">
+                <div>
+                    <a href="dashboard.html" style="text-decoration:none; color:#888; font-size:14px;">← Wróć do pulpitu</a>
+                    <h1>Dziennik Wyników</h1>
+                    <p>Sprawdź postępy uczniów i zarządzaj poprawami.</p>
+                </div>
+            </div>
+
+            <div class="filter-bar">
+                <div class="filter-group">
+                    <label>1. Wybierz Klasę</label>
+                    <select id="class-select" class="edit-input" style="margin:0;">
+                        <option value="" disabled selected>Ładowanie...</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>2. Wybierz Quiz / Sprawdzian</label>
+                    <select id="quiz-select" class="edit-input" style="margin:0;" disabled>
+                        <option value="" disabled selected>-- Najpierw klasa --</option>
+                    </select>
+                </div>
+                <button class="login-button" style="width: auto; height: 42px;" onclick="fetchResults()">Pokaż Wyniki</button>
+            </div>
+
+            <div id="results-container" style="display:none;">
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>Uczeń</th>
+                            <th>Najlepszy Wynik</th>
+                            <th>Liczba Podejść</th>
+                            <th>Ostatnia Próba</th>
+                            <th>Akcje</th>
+                        </tr>
+                    </thead>
+                    <tbody id="results-body">
+                        </tbody>
+                </table>
+                <p id="no-data-msg" style="text-align:center; padding:30px; color:#888; display:none;">Brak wyników dla tego quizu w tej klasie.</p>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg'; 
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        let currentSchoolId = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (!session) { window.location.href = 'login.html'; return; }
+
+            // Sprawdź uprawnienia
+            const { data: profile } = await _supabase.from('users').select('role, school_id').eq('id', session.user.id).single();
+            
+            if (!['admin', 'manager', 'teacher'].includes(profile.role)) {
+                alert("Brak uprawnień."); window.location.href = 'dashboard.html'; return;
+            }
+            currentSchoolId = profile.school_id;
+
+            await loadClasses(profile.role);
+        });
+
+        // 1. Ładowanie klas
+        async function loadClasses(role) {
+            let query = _supabase.from('classes').select('id, name').order('name');
+            
+            if (role !== 'admin') {
+                // Nauczyciel i Manager widzą tylko swoją szkołę
+                query = query.eq('school_id', currentSchoolId);
+            }
+
+            const { data: classes } = await query;
+            const select = document.getElementById('class-select');
+            select.innerHTML = '<option value="" disabled selected>-- Wybierz Klasę --</option>';
+            
+            if(classes) classes.forEach(c => select.add(new Option(c.name, c.id)));
+
+            // Listener zmiany klasy -> ładuj quizy
+            select.addEventListener('change', async function() {
+                await loadQuizzesForClass(this.value);
+            });
+        }
+
+        // 2. Ładowanie quizów przypisanych do klasy (przez pakiety)
+        async function loadQuizzesForClass(classId) {
+            const qSelect = document.getElementById('quiz-select');
+            qSelect.innerHTML = '<option>Ładowanie...</option>';
+            qSelect.disabled = true;
+
+            // Pobieramy pakiety przypisane do klasy
+            const { data: pkgLinks } = await _supabase.from('package_classes').select('package_id').eq('class_id', classId);
+            
+            if (!pkgLinks || pkgLinks.length === 0) {
+                qSelect.innerHTML = '<option disabled selected>Brak pakietów w tej klasie</option>';
+                return;
+            }
+
+            const pkgIds = pkgLinks.map(p => p.package_id);
+
+            // Pobieramy quizy z tych pakietów
+            const { data: quizzes } = await _supabase
+                .from('courses')
+                .select('id, title')
+                .in('package_id', pkgIds)
+                .eq('type', 'quiz');
+
+            qSelect.innerHTML = '<option value="" disabled selected>-- Wybierz Quiz --</option>';
+            if (quizzes && quizzes.length > 0) {
+                quizzes.forEach(q => qSelect.add(new Option(q.title, q.id)));
+                qSelect.disabled = false;
+            } else {
+                qSelect.innerHTML = '<option disabled selected>Brak quizów w pakietach tej klasy</option>';
+            }
+        }
+
+        // 3. Wyświetlanie wyników
+        async function fetchResults() {
+            const classId = document.getElementById('class-select').value;
+            const quizId = document.getElementById('quiz-select').value;
+
+            if (!classId || !quizId) return alert("Wybierz klasę i quiz!");
+
+            const tbody = document.getElementById('results-body');
+            const container = document.getElementById('results-container');
+            const noDataMsg = document.getElementById('no-data-msg');
+            
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Ładowanie danych...</td></tr>';
+            container.style.display = 'block';
+
+            // A. Pobierz wszystkich uczniów z klasy
+            const { data: students } = await _supabase
+                .from('users')
+                .select('id, username')
+                .eq('class_id', classId)
+                .eq('role', 'student')
+                .order('username');
+
+            if (!students || students.length === 0) {
+                tbody.innerHTML = '';
+                noDataMsg.style.display = 'block';
+                noDataMsg.textContent = "Brak uczniów w tej klasie.";
+                return;
+            }
+
+            // B. Pobierz wyniki dla tego quizu dla tych uczniów
+            const studentIds = students.map(s => s.id);
+            const { data: attempts } = await _supabase
+                .from('quiz_attempts')
+                .select('user_id, score, created_at')
+                .eq('course_id', quizId)
+                .in('user_id', studentIds);
+
+            tbody.innerHTML = '';
+            let hasResults = false;
+
+            // Przetwarzanie danych
+            students.forEach(student => {
+                // Filtrujemy podejścia danego studenta
+                const userAttempts = attempts.filter(a => a.user_id === student.id);
+                
+                if (userAttempts.length === 0) {
+                    // Student nie robił quizu - opcjonalnie wyświetlamy lub pomijamy
+                    // Wyświetlmy jako "Brak podejść"
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${student.username}</td>
+                        <td style="color:#888;">-</td>
+                        <td>0</td>
+                        <td>-</td>
+                        <td style="color:#ccc; font-size:12px;">Brak danych do resetu</td>
+                    `;
+                    tbody.appendChild(tr);
+                    return;
+                }
+
+                hasResults = true;
+                
+                // Znajdź najlepszy wynik i datę ostatniego
+                const maxScore = Math.max(...userAttempts.map(a => a.score));
+                const count = userAttempts.length;
+                const lastAttempt = userAttempts.sort((a,b) => new Date(b.created_at) - new Date(a.created_at))[0];
+                const dateStr = new Date(lastAttempt.created_at).toLocaleString('pl-PL');
+
+                // Stylizacja wyniku
+                const badgeClass = maxScore >= 50 ? 'score-good' : 'score-bad';
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-weight:500;">${student.username}</td>
+                    <td><span class="score-badge ${badgeClass}">${maxScore}%</span></td>
+                    <td>${count}</td>
+                    <td style="font-size:13px; color:#555;">${dateStr}</td>
+                    <td>
+                        <button class="reset-btn" onclick="resetProgress('${student.id}', '${quizId}', '${student.username}')">
+                            ↺ Resetuj (Poprawa)
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            if (!hasResults) {
+                // wszyscy w tabeli mają "Brak podejść" - to ok, tabela jest widoczna
+                noDataMsg.style.display = 'none';
+            }
+            noDataMsg.style.display = 'none';
+        }
+
+        // 4. Funkcja Resetowania (Usuwanie historii)
+        async function resetProgress(userId, quizId, studentName) {
+            if (!confirm(`Czy na pewno chcesz zresetować postępy ucznia ${studentName} w tym quizie?\n\nTo usunie wszystkie jego dotychczasowe wyniki z tego testu i pozwoli podejść ponownie.`)) {
+                return;
+            }
+
+            const { error } = await _supabase
+                .from('quiz_attempts')
+                .delete()
+                .eq('user_id', userId)
+                .eq('course_id', quizId);
+
+            if (error) {
+                alert("Błąd: " + error.message);
+            } else {
+                alert(`Zresetowano postępy dla: ${studentName}.`);
+                fetchResults(); // Odśwież tabelę
+            }
+        }
+
+    </script>
+</body>
+</html>
