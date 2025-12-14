@@ -6,27 +6,88 @@
     <title>mUczelnia - Wyniki Uczniów</title>
     <link rel="stylesheet" href="style.css">
     <style>
+        /* --- STYLE Z OBSŁUGĄ MOTYWÓW (DARK/LIGHT) --- */
+
         .filter-bar {
-            background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #e0e0e0;
-            display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 20px;
+            background: var(--panel-bg); 
+            padding: 20px; 
+            border-radius: 12px; 
+            border: 1px solid var(--border-color);
+            display: flex; 
+            gap: 20px; 
+            align-items: flex-end; 
+            flex-wrap: wrap; 
+            margin-bottom: 20px;
         }
+        
         .filter-group { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 200px; }
-        .filter-group label { font-size: 12px; font-weight: bold; color: #666; text-transform: uppercase; }
-        
-        .results-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .results-table th, .results-table td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
-        .results-table th { background: #f9f9f9; font-weight: 600; color: #444; }
-        .results-table tr:hover { background: #fdfdfd; }
-        
-        .score-badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: bold; }
-        .score-good { background: #E8F5E9; color: #2E7D32; } /* Zielony */
-        .score-bad { background: #FFEBEE; color: #C62828; } /* Czerwony */
-        
-        .reset-btn { 
-            background: #fff; border: 1px solid #ddd; padding: 6px 12px; border-radius: 6px; 
-            cursor: pointer; color: #333; font-size: 13px; transition: 0.2s; 
+        .filter-group label { 
+            font-size: 12px; 
+            font-weight: bold; 
+            color: var(--text-muted); 
+            text-transform: uppercase; 
         }
-        .reset-btn:hover { background: #FFEBEE; color: #d32f2f; border-color: #d32f2f; }
+        
+        /* Tabela */
+        .results-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            background: var(--panel-bg); 
+            border-radius: 8px; 
+            overflow: hidden; 
+            box-shadow: var(--shadow); 
+            border: 1px solid var(--border-color);
+        }
+        
+        .results-table th, .results-table td { 
+            padding: 15px; 
+            text-align: left; 
+            border-bottom: 1px solid var(--border-color); 
+            color: var(--text-main);
+        }
+        
+        .results-table th { 
+            background: var(--hover-bg); 
+            font-weight: 600; 
+            color: var(--text-main); 
+        }
+        
+        .results-table tr:hover { 
+            background: var(--hover-bg); 
+        }
+        
+        /* Plakietki wyników (Domyślne - Jasne) */
+        .score-badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: bold; }
+        .score-good { background: #E8F5E9; color: #2E7D32; } /* Jasny Zielony */
+        .score-bad { background: #FFEBEE; color: #C62828; } /* Jasny Czerwony */
+        
+        /* Przycisk Reset */
+        .reset-btn { 
+            background: var(--bg-color); 
+            border: 1px solid var(--border-color); 
+            padding: 6px 12px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            color: var(--text-main); 
+            font-size: 13px; 
+            transition: 0.2s; 
+        }
+        .reset-btn:hover { 
+            background: #FFEBEE; 
+            color: #d32f2f; 
+            border-color: #d32f2f; 
+        }
+
+        /* --- POPRAWKI DLA TRYBU CIEMNEGO --- */
+        @media (prefers-color-scheme: dark) {
+            /* Ciemniejsze tła dla plakietek, żeby nie świeciły */
+            .score-good { background: rgba(46, 125, 50, 0.2); color: #81c784; border: 1px solid rgba(46, 125, 50, 0.5); }
+            .score-bad { background: rgba(198, 40, 40, 0.2); color: #e57373; border: 1px solid rgba(198, 40, 40, 0.5); }
+            
+            /* Przycisk reset w trybie ciemnym */
+            .reset-btn { background: #2a2a2a; }
+            .reset-btn:hover { background: rgba(211, 47, 47, 0.2); color: #e57373; border-color: #e57373; }
+        }
     </style>
 </head>
 <body>
@@ -45,9 +106,9 @@
         <main class="main-content">
             <div class="welcome-header">
                 <div>
-                    <a href="dashboard.html" style="text-decoration:none; color:#888; font-size:14px;">← Wróć do pulpitu</a>
+                    <a href="dashboard.html" style="text-decoration:none; color:var(--text-muted); font-size:14px;">← Wróć do pulpitu</a>
                     <h1>Dziennik Wyników</h1>
-                    <p>Sprawdź postępy uczniów i zarządzaj poprawami.</p>
+                    <p style="color: var(--text-muted);">Sprawdź postępy uczniów i zarządzaj poprawami.</p>
                 </div>
             </div>
 
@@ -64,7 +125,7 @@
                         <option value="" disabled selected>-- Najpierw klasa --</option>
                     </select>
                 </div>
-                <button class="login-button" style="width: auto; height: 42px;" onclick="fetchResults()">Pokaż Wyniki</button>
+                <button class="login-button" style="width: auto; height: 42px; margin-bottom: 0;" onclick="fetchResults()">Pokaż Wyniki</button>
             </div>
 
             <div id="results-container" style="display:none;">
@@ -81,7 +142,7 @@
                     <tbody id="results-body">
                         </tbody>
                 </table>
-                <p id="no-data-msg" style="text-align:center; padding:30px; color:#888; display:none;">Brak wyników dla tego quizu w tej klasie.</p>
+                <p id="no-data-msg" style="text-align:center; padding:30px; color:var(--text-muted); display:none;">Brak wyników dla tego quizu w tej klasie.</p>
             </div>
 
         </main>
@@ -99,7 +160,6 @@
             const { data: { session } } = await _supabase.auth.getSession();
             if (!session) { window.location.href = 'login.html'; return; }
 
-            // Sprawdź uprawnienia
             const { data: profile } = await _supabase.from('users').select('role, school_id').eq('id', session.user.id).single();
             
             if (!['admin', 'manager', 'teacher'].includes(profile.role)) {
@@ -110,14 +170,9 @@
             await loadClasses(profile.role);
         });
 
-        // 1. Ładowanie klas
         async function loadClasses(role) {
             let query = _supabase.from('classes').select('id, name').order('name');
-            
-            if (role !== 'admin') {
-                // Nauczyciel i Manager widzą tylko swoją szkołę
-                query = query.eq('school_id', currentSchoolId);
-            }
+            if (role !== 'admin') query = query.eq('school_id', currentSchoolId);
 
             const { data: classes } = await query;
             const select = document.getElementById('class-select');
@@ -125,19 +180,16 @@
             
             if(classes) classes.forEach(c => select.add(new Option(c.name, c.id)));
 
-            // Listener zmiany klasy -> ładuj quizy
             select.addEventListener('change', async function() {
                 await loadQuizzesForClass(this.value);
             });
         }
 
-        // 2. Ładowanie quizów przypisanych do klasy (przez pakiety)
         async function loadQuizzesForClass(classId) {
             const qSelect = document.getElementById('quiz-select');
             qSelect.innerHTML = '<option>Ładowanie...</option>';
             qSelect.disabled = true;
 
-            // Pobieramy pakiety przypisane do klasy
             const { data: pkgLinks } = await _supabase.from('package_classes').select('package_id').eq('class_id', classId);
             
             if (!pkgLinks || pkgLinks.length === 0) {
@@ -146,8 +198,6 @@
             }
 
             const pkgIds = pkgLinks.map(p => p.package_id);
-
-            // Pobieramy quizy z tych pakietów
             const { data: quizzes } = await _supabase
                 .from('courses')
                 .select('id, title')
@@ -163,7 +213,6 @@
             }
         }
 
-        // 3. Wyświetlanie wyników
         async function fetchResults() {
             const classId = document.getElementById('class-select').value;
             const quizId = document.getElementById('quiz-select').value;
@@ -174,10 +223,9 @@
             const container = document.getElementById('results-container');
             const noDataMsg = document.getElementById('no-data-msg');
             
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Ładowanie danych...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-muted);">Ładowanie danych...</td></tr>';
             container.style.display = 'block';
 
-            // A. Pobierz wszystkich uczniów z klasy
             const { data: students } = await _supabase
                 .from('users')
                 .select('id, username')
@@ -192,7 +240,6 @@
                 return;
             }
 
-            // B. Pobierz wyniki dla tego quizu dla tych uczniów
             const studentIds = students.map(s => s.id);
             const { data: attempts } = await _supabase
                 .from('quiz_attempts')
@@ -203,35 +250,27 @@
             tbody.innerHTML = '';
             let hasResults = false;
 
-            // Przetwarzanie danych
             students.forEach(student => {
-                // Filtrujemy podejścia danego studenta
                 const userAttempts = attempts.filter(a => a.user_id === student.id);
                 
                 if (userAttempts.length === 0) {
-                    // Student nie robił quizu - opcjonalnie wyświetlamy lub pomijamy
-                    // Wyświetlmy jako "Brak podejść"
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td>${student.username}</td>
-                        <td style="color:#888;">-</td>
+                        <td style="color:var(--text-muted);">-</td>
                         <td>0</td>
                         <td>-</td>
-                        <td style="color:#ccc; font-size:12px;">Brak danych do resetu</td>
+                        <td style="color:var(--border-color); font-size:12px;">Brak danych</td>
                     `;
                     tbody.appendChild(tr);
                     return;
                 }
 
                 hasResults = true;
-                
-                // Znajdź najlepszy wynik i datę ostatniego
                 const maxScore = Math.max(...userAttempts.map(a => a.score));
                 const count = userAttempts.length;
                 const lastAttempt = userAttempts.sort((a,b) => new Date(b.created_at) - new Date(a.created_at))[0];
                 const dateStr = new Date(lastAttempt.created_at).toLocaleString('pl-PL');
-
-                // Stylizacja wyniku
                 const badgeClass = maxScore >= 50 ? 'score-good' : 'score-bad';
 
                 const tr = document.createElement('tr');
@@ -239,7 +278,7 @@
                     <td style="font-weight:500;">${student.username}</td>
                     <td><span class="score-badge ${badgeClass}">${maxScore}%</span></td>
                     <td>${count}</td>
-                    <td style="font-size:13px; color:#555;">${dateStr}</td>
+                    <td style="font-size:13px; color:var(--text-muted);">${dateStr}</td>
                     <td>
                         <button class="reset-btn" onclick="resetProgress('${student.id}', '${quizId}', '${student.username}')">
                             ↺ Resetuj (Poprawa)
@@ -249,33 +288,21 @@
                 tbody.appendChild(tr);
             });
 
-            if (!hasResults) {
-                // wszyscy w tabeli mają "Brak podejść" - to ok, tabela jest widoczna
-                noDataMsg.style.display = 'none';
-            }
+            if (!hasResults) noDataMsg.style.display = 'none';
             noDataMsg.style.display = 'none';
         }
 
-        // 4. Funkcja Resetowania (Usuwanie historii)
         async function resetProgress(userId, quizId, studentName) {
-            if (!confirm(`Czy na pewno chcesz zresetować postępy ucznia ${studentName} w tym quizie?\n\nTo usunie wszystkie jego dotychczasowe wyniki z tego testu i pozwoli podejść ponownie.`)) {
-                return;
-            }
+            if (!confirm(`Czy na pewno chcesz zresetować postępy ucznia ${studentName} w tym quizie?`)) return;
 
-            const { error } = await _supabase
-                .from('quiz_attempts')
-                .delete()
-                .eq('user_id', userId)
-                .eq('course_id', quizId);
+            const { error } = await _supabase.from('quiz_attempts').delete().eq('user_id', userId).eq('course_id', quizId);
 
-            if (error) {
-                alert("Błąd: " + error.message);
-            } else {
+            if (error) alert("Błąd: " + error.message);
+            else {
                 alert(`Zresetowano postępy dla: ${studentName}.`);
-                fetchResults(); // Odśwież tabelę
+                fetchResults();
             }
         }
-
     </script>
 </body>
 </html>
