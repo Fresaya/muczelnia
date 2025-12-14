@@ -6,11 +6,31 @@
     <title>mUczelnia - Baza Treści</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* Lokalne style dla wyszukiwarki, jeśli nie ma ich w style.css */
-        .search-bar-container { margin-bottom: 30px; display: flex; gap: 10px; }
-        .search-input { flex-grow: 1; padding: 12px 20px; border-radius: 50px; border: 1px solid #e0e0e0; font-size: 16px; outline: none; }
-        .filter-btn { padding: 0 25px; border-radius: 50px; border: 1px solid #e0e0e0; background: #fff; cursor: pointer; color: #888; }
-        .filter-btn.active { background: #f04a4a; color: white; border-color: #f04a4a; }
+        .search-bar-container { margin-bottom: 30px; display: flex; gap: 10px; flex-wrap: wrap; }
+        .search-input { flex-grow: 1; padding: 12px 20px; border-radius: 50px; border: 1px solid var(--border-color); font-size: 16px; outline: none; background: var(--panel-bg); color: var(--text-main); }
+        .filter-btn { padding: 0 25px; border-radius: 50px; border: 1px solid var(--border-color); background: var(--panel-bg); cursor: pointer; color: var(--text-muted); font-weight: bold; transition: 0.2s; }
+        .filter-btn:hover { background: var(--hover-bg); }
+        .filter-btn.active { background: var(--accent-color); color: white; border-color: var(--accent-color); }
+        
+        .action-icon-btn {
+            position: absolute; top: 10px; width: 30px; height: 30px; border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; font-size: 14px; 
+            cursor: pointer; background: rgba(255,255,255,0.9); box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        .action-icon-btn:hover { transform: scale(1.1); }
+        .edit-icon { right: 45px; color: #333; }
+        .delete-icon { right: 10px; color: #F44336; }
+
+        /* Style dla managera pakietów */
+        .pkg-item { 
+            display: flex; justify-content: space-between; align-items: center; 
+            background: var(--bg-color); padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid var(--border-color);
+        }
+        .linked-course-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px; border-bottom: 1px solid #eee; font-size: 13px;
+        }
     </style>
 </head>
 <body>
@@ -29,39 +49,74 @@
         <main class="main-content">
             <div class="welcome-header">
                 <div>
-                    <a href="dashboard.html" style="text-decoration:none; color:#888; font-size:14px;">← Wróć do pulpitu</a>
-                    <h1>Baza Treści</h1>
-                    <p>Zarządzaj wszystkimi kursami i quizami w jednym miejscu.</p>
+                    <a href="dashboard.html" style="text-decoration:none; color:var(--text-muted); font-size:14px;">← Wróć do pulpitu</a>
+                    <h1>Zarządzanie Treścią</h1>
+                    <p>Edytuj kursy, quizy i pakiety.</p>
                 </div>
             </div>
 
-            <!-- SZUKAJ I FILTRUJ -->
             <div class="search-bar-container">
-                <input type="text" id="searchInput" class="search-input" placeholder="Szukaj po tytule...">
-                <button class="filter-btn active" onclick="setFilter('all')">Wszystko</button>
-                <button class="filter-btn" onclick="setFilter('course')">Kursy</button>
-                <button class="filter-btn" onclick="setFilter('quiz')">Quizy</button>
+                <input type="text" class="search-input" id="search-input" placeholder="Szukaj kursu lub quizu..." oninput="filterContent()">
+                <button class="filter-btn active" onclick="filterType('all')" id="btn-all">Wszystko</button>
+                <button class="filter-btn" onclick="filterType('course')" id="btn-course">Kursy</button>
+                <button class="filter-btn" onclick="filterType('quiz')" id="btn-quiz">Quizy</button>
+                <button class="login-button" style="width: auto; margin:0;" onclick="openPackageManager()">📦 Pakiety</button>
             </div>
 
-            <!-- GRID WYNIKÓW -->
             <div class="dashboard-grid" id="content-grid">
-                <div style="grid-column: 1/-1; text-align:center; color:#888;">Ładowanie bazy danych...</div>
-            </div>
+                </div>
         </main>
+    </div>
 
-        <aside class="sidebar-right">
-            <div class="profile-card">
-                <div class="avatar"></div>
-                <h2 class="profile-name" id="profile-name-display">...</h2>
-                <p class="profile-id">ADMINISTRATOR</p>
+    <div class="modal-overlay" id="packagesListModal">
+        <div class="modal-window">
+            <div class="modal-header">
+                <h3 class="modal-title">Zarządzaj Pakietami</h3>
+                <span class="close-modal" onclick="closeModal('packagesListModal')">&times;</span>
             </div>
-        </aside>
+            <div id="packages-list-container" style="max-height: 400px; overflow-y: auto;">Ładowanie...</div>
+            <button class="login-button full-width-btn" onclick="openEditPackage(null)" style="margin-top:15px;">+ Stwórz Nowy Pakiet</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="editPackageModal">
+        <div class="modal-window">
+            <div class="modal-header">
+                <h3 class="modal-title" id="pkg-modal-title">Edycja Pakietu</h3>
+                <span class="close-modal" onclick="closeModal('editPackageModal')">&times;</span>
+            </div>
+            <form id="pkgForm">
+                <input type="hidden" id="edit-pkg-id">
+                
+                <label>Nazwa Pakietu</label>
+                <input type="text" id="edit-pkg-title" class="edit-input" required>
+                
+                <label>Opis Pakietu</label>
+                <textarea id="edit-pkg-desc" class="edit-input" style="min-height: 80px;" placeholder="Krótki opis..."></textarea>
+                
+                <label>Poziom</label>
+                <select id="edit-pkg-level" class="edit-input">
+                    <option value="1">Podstawowy</option>
+                    <option value="2">Średni</option>
+                    <option value="3">Wyższy</option>
+                </select>
+
+                <div id="linked-courses-section" style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px;">
+                    <label style="margin-bottom: 5px;">Podpięte elementy:</label>
+                    <div id="linked-courses-list" style="background: #f9f9f9; padding: 10px; border-radius: 5px; max-height: 150px; overflow-y: auto;">
+                        </div>
+                </div>
+
+                <button type="submit" class="login-button full-width-btn" style="margin-top: 15px;">Zapisz Zmiany</button>
+                <button type="button" class="login-button full-width-btn" style="background: #f44336; margin-top: 10px;" id="btn-delete-pkg" onclick="deletePackage()">Usuń Pakiet</button>
+            </form>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg'; 
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
         let allContent = [];
@@ -70,67 +125,211 @@
         document.addEventListener('DOMContentLoaded', async () => {
             const { data: { session } } = await _supabase.auth.getSession();
             if (!session) { window.location.href = 'login.html'; return; }
+            fetchContent();
 
-            // Sprawdź uprawnienia
-            const { data: profile } = await _supabase.from('users').select('username, role').eq('id', session.user.id).single();
-            if (profile.role !== 'admin') { alert("Brak dostępu"); window.location.href = 'dashboard.html'; return; }
-            document.getElementById('profile-name-display').textContent = profile.username;
-
-            // Pobierz dane
-            const { data: courses } = await _supabase.from('courses').select('id, title, type, packages(title)').order('created_at', { ascending: false });
-            allContent = courses || [];
-            renderContent(allContent);
-
-            // Szukanie
-            document.getElementById('searchInput').addEventListener('input', (e) => filterContent(e.target.value));
+            document.getElementById('pkgForm').addEventListener('submit', savePackage);
         });
 
-        window.setFilter = function(type) {
+        // --- 1. WYŚWIETLANIE TREŚCI ---
+        async function fetchContent() {
+            const grid = document.getElementById('content-grid');
+            grid.innerHTML = '<p style="padding:20px;">Ładowanie...</p>';
+
+            const { data: courses } = await _supabase
+                .from('courses')
+                .select(`id, title, type, created_at, packages(title)`)
+                .order('created_at', { ascending: false });
+
+            allContent = courses || [];
+            filterContent();
+        }
+
+        function filterType(type) {
             currentFilter = type;
             document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            event.target.classList.add('active');
-            filterContent(document.getElementById('searchInput').value);
+            document.getElementById(`btn-${type}`).classList.add('active');
+            filterContent();
         }
 
-        function filterContent(term) {
-            const lower = term.toLowerCase();
-            const filtered = allContent.filter(item => {
-                if (currentFilter !== 'all' && item.type !== currentFilter) return false;
-                const titleMatch = item.title.toLowerCase().includes(lower);
-                const pkgMatch = item.packages?.title.toLowerCase().includes(lower);
-                return titleMatch || pkgMatch;
-            });
-            renderContent(filtered);
-        }
-
-        function renderContent(items) {
+        function filterContent() {
+            const search = document.getElementById('search-input').value.toLowerCase();
             const grid = document.getElementById('content-grid');
             grid.innerHTML = '';
-            if (items.length === 0) { grid.innerHTML = '<div style="color:#888; text-align:center; grid-column:1/-1;">Brak wyników.</div>'; return; }
 
-            items.forEach(c => {
+            const filtered = allContent.filter(c => {
+                const matchesType = currentFilter === 'all' || c.type === currentFilter;
+                const matchesSearch = c.title.toLowerCase().includes(search);
+                return matchesType && matchesSearch;
+            });
+
+            if (filtered.length === 0) { grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:#888;">Brak wyników.</div>'; return; }
+
+            filtered.forEach(c => {
                 const isQuiz = c.type === 'quiz';
                 const editUrl = isQuiz ? `create_quiz.html?id=${c.id}` : `create_course.html?id=${c.id}`;
                 const icon = isQuiz ? '📝' : '📚';
                 const color = isQuiz ? '#9C27B0' : '#f04a4a';
-                const pkg = c.packages ? `<div style="font-size:11px; margin-bottom:5px; color:#666;">📦 ${c.packages.title}</div>` : '';
+                const pkg = c.packages ? `<div style="font-size:11px; margin-bottom:5px; color:#666;">📦 ${c.packages.title}</div>` : '<div style="font-size:11px; margin-bottom:5px; color:#ccc;">Brak pakietu</div>';
 
                 const tile = document.createElement('div');
                 tile.className = 'widget-tile';
-                tile.style.cursor = 'pointer';
-                tile.onclick = () => window.location.href = `course.html?id=${c.id}`;
+                tile.style.position = 'relative'; // Dla pozycjonowania ikon
                 
                 tile.innerHTML = `
-                    <div onclick="window.location.href='${editUrl}'; event.stopPropagation();" 
-                         style="position:absolute; top:10px; right:10px; background:#eee; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px;" title="Edytuj">✏️</div>
+                    <div class="action-icon-btn edit-icon" onclick="window.location.href='${editUrl}'" title="Edytuj">✏️</div>
+                    <div class="action-icon-btn delete-icon" onclick="deleteContent(${c.id}, '${c.type}')" title="Usuń">🗑️</div>
+                    
                     <div style="font-size:40px; margin-bottom:10px;">${icon}</div>
                     ${pkg}
                     <h3 style="color:${color}">${c.title}</h3>
-                    <div class="course-meta" style="margin-top:10px;">${isQuiz ? 'QUIZ' : 'KURS'}</div>
                 `;
                 grid.appendChild(tile);
             });
         }
+
+        // --- 2. USUWANIE TREŚCI (KURS/QUIZ) ---
+        async function deleteContent(id, type) {
+            if(!confirm(`Czy na pewno chcesz usunąć ten ${type === 'quiz' ? 'quiz' : 'kurs'}?\nOperacja jest nieodwracalna!`)) return;
+
+            // Supabase Cascade powinno usunąć lekcje/pytania, ale dla pewności usuwamy główny rekord
+            const { error } = await _supabase.from('courses').delete().eq('id', id);
+            
+            if (error) alert("Błąd: " + error.message);
+            else {
+                alert("Usunięto pomyślnie.");
+                fetchContent(); // Odśwież listę
+            }
+        }
+
+        // --- 3. ZARZĄDZANIE PAKIETAMI ---
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+        async function openPackageManager() {
+            openModal('packagesListModal');
+            const container = document.getElementById('packages-list-container');
+            container.innerHTML = 'Ładowanie...';
+
+            const { data: pkgs } = await _supabase.from('packages').select('*').order('title');
+            container.innerHTML = '';
+
+            if (!pkgs || pkgs.length === 0) {
+                container.innerHTML = '<p>Brak pakietów.</p>';
+                return;
+            }
+
+            pkgs.forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'pkg-item';
+                div.innerHTML = `
+                    <span><b>${p.title}</b> <small>(${p.level === 1 ? 'Podst.' : (p.level===2 ? 'Śr.' : 'Wyż.')})</small></span>
+                    <button class="login-button" style="width:auto; height:30px; font-size:12px; margin:0;" onclick="openEditPackage(${p.id})">Edytuj</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        async function openEditPackage(id) {
+            closeModal('packagesListModal');
+            openModal('editPackageModal');
+            
+            const titleInput = document.getElementById('edit-pkg-title');
+            const descInput = document.getElementById('edit-pkg-desc');
+            const levelInput = document.getElementById('edit-pkg-level');
+            const idInput = document.getElementById('edit-pkg-id');
+            const deleteBtn = document.getElementById('btn-delete-pkg');
+            const linkedDiv = document.getElementById('linked-courses-section');
+            const linkedList = document.getElementById('linked-courses-list');
+
+            if (id) {
+                // TRYB EDYCJI
+                document.getElementById('pkg-modal-title').innerText = "Edycja Pakietu";
+                deleteBtn.style.display = 'block';
+                linkedDiv.style.display = 'block';
+                idInput.value = id;
+
+                // Pobierz dane
+                const { data: pkg } = await _supabase.from('packages').select('*').eq('id', id).single();
+                titleInput.value = pkg.title;
+                descInput.value = pkg.description || "";
+                levelInput.value = pkg.level;
+
+                // Pobierz podpięte elementy
+                const { data: courses } = await _supabase.from('courses').select('id, title, type').eq('package_id', id);
+                linkedList.innerHTML = '';
+                if(courses && courses.length > 0) {
+                    courses.forEach(c => {
+                        const row = document.createElement('div');
+                        row.className = 'linked-course-item';
+                        row.innerHTML = `
+                            <span>${c.type === 'quiz' ? '📝' : '📚'} ${c.title}</span>
+                            <span style="color:red; cursor:pointer; font-weight:bold;" onclick="unlinkCourse(${c.id}, this)" title="Odepnij">×</span>
+                        `;
+                        linkedList.appendChild(row);
+                    });
+                } else {
+                    linkedList.innerHTML = '<small style="color:#888;">Brak elementów w pakiecie.</small>';
+                }
+
+            } else {
+                // TRYB TWORZENIA
+                document.getElementById('pkg-modal-title').innerText = "Nowy Pakiet";
+                deleteBtn.style.display = 'none';
+                linkedDiv.style.display = 'none';
+                idInput.value = "";
+                titleInput.value = "";
+                descInput.value = "";
+                levelInput.value = "1";
+            }
+        }
+
+        async function savePackage(e) {
+            e.preventDefault();
+            const id = document.getElementById('edit-pkg-id').value;
+            const title = document.getElementById('edit-pkg-title').value;
+            const desc = document.getElementById('edit-pkg-desc').value;
+            const level = document.getElementById('edit-pkg-level').value;
+
+            let error;
+            if (id) {
+                // Update
+                const { err } = await _supabase.from('packages').update({ title, description: desc, level }).eq('id', id);
+                error = err;
+            } else {
+                // Insert
+                const { err } = await _supabase.from('packages').insert({ title, description: desc, level });
+                error = err;
+            }
+
+            if (error) alert("Błąd: " + error.message);
+            else {
+                alert("Zapisano!");
+                closeModal('editPackageModal');
+                fetchContent(); // Odśwież główny widok (bo mogły zmienić się nazwy pakietów na kafelkach)
+            }
+        }
+
+        async function deletePackage() {
+            const id = document.getElementById('edit-pkg-id').value;
+            if(!confirm("Usunąć ten pakiet? Kursy wewnątrz NIE zostaną usunięte, ale zostaną odpięte.")) return;
+
+            const { error } = await _supabase.from('packages').delete().eq('id', id);
+            if(error) alert("Błąd: " + error.message);
+            else {
+                alert("Pakiet usunięty.");
+                closeModal('editPackageModal');
+                fetchContent();
+            }
+        }
+
+        async function unlinkCourse(courseId, el) {
+            if(!confirm("Odpiąć ten element od pakietu?")) return;
+            // Ustaw package_id na null
+            const { error } = await _supabase.from('courses').update({ package_id: null }).eq('id', courseId);
+            if(error) alert("Błąd: " + error.message);
+            else el.parentElement.remove();
+        }
+
     </script>
 </body>
 </html>
