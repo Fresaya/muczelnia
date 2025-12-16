@@ -36,12 +36,32 @@
         .bg-homework { background: #FF9800; } 
         .bg-info { background: #2196F3; } 
 
-        /* --- SIDEBAR LISTY (NOWE) --- */
-        .sidebar-section { margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border-color); }
+        /* --- SIDEBAR LISTY (POPRAWIONE UKŁADANIE PIONOWE) --- */
+        
+        #student-sidebar-content {
+            display: flex;
+            flex-direction: column; /* WYMUSZA PION */
+            gap: 25px; /* Odstęp między sekcjami */
+            width: 100%;
+        }
+
+        .sidebar-section { 
+            width: 100%;
+            display: block;
+        }
+        
+        /* Linia oddzielająca tylko dla drugiej sekcji (Oceny) */
+        .sidebar-section + .sidebar-section {
+            border-top: 1px solid var(--border-color);
+            padding-top: 25px;
+        }
+
         .sidebar-title { font-size: 12px; text-transform: uppercase; color: var(--text-muted); font-weight: bold; margin-bottom: 15px; letter-spacing: 1px; }
+        
         .sidebar-list-item { display: flex; align-items: center; margin-bottom: 12px; font-size: 14px; }
         .sidebar-list-date { font-weight: bold; color: var(--accent-color); margin-right: 10px; font-size: 12px; min-width: 35px; }
         .sidebar-list-content { flex: 1; color: var(--text-main); line-height: 1.3; }
+        
         .sidebar-grade-circle { 
             width: 28px; height: 28px; border-radius: 50%; background: var(--hover-bg); 
             border: 2px solid var(--border-color); display: flex; align-items: center; 
@@ -498,9 +518,7 @@
 
         async function loadSidebarGrades() {
             const list = document.getElementById('sidebar-grades-list');
-            // Last 7 days
             const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-            
             const { data: { session } } = await _supabase.auth.getSession();
             const { data: grades } = await _supabase.from('grades')
                 .select('grade, packages(title)')
