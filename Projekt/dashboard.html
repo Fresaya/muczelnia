@@ -6,28 +6,11 @@
     <title>mUczelnia - Pulpit</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* Style dla usuwania pakietów w edycji klasy */
-        .chip {
-            display: inline-flex;
-            align-items: center;
-            background: #eee;
-            padding: 5px 10px;
-            border-radius: 15px;
-            margin: 2px;
-            font-size: 12px;
-        }
-        .chip-remove {
-            margin-left: 5px;
-            cursor: pointer;
-            color: red;
-            font-weight: bold;
-        }
-        .action-icon {
-            cursor: pointer;
-            margin: 0 5px;
-            font-size: 16px;
-        }
-        .action-icon:hover { transform: scale(1.2); }
+        /* Style dla zarządzania klasami */
+        .class-edit-row { display: flex; align-items: center; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; }
+        .class-edit-row:hover { background: #f9f9f9; }
+        .save-mini-btn { padding: 5px 10px; font-size: 12px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px; }
+        .delete-mini-btn { cursor: pointer; color: red; font-size: 18px; margin-left: 10px; }
     </style>
 </head>
 <body>
@@ -88,11 +71,11 @@
                     <p class="course-meta">Admin & Manager</p>
                 </div>
 
-                <a href="teacher_results.html" id="widget-teacher-results" class="widget-tile" style="display: none; border: 2px solid #673AB7; text-decoration: none; color: inherit;">
-                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23673AB7%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z%22></path><polyline points=%2214 2 14 8 20 8%22></polyline><line x=%2216%22 y1=%2213%22 x2=%228%22 y2=%2213%22></line><line x=%2216%22 y1=%2217%22 x2=%228%22 y2=%2217%22></line><polyline points=%2210 9 9 9 8 9%22></polyline></svg>');"></div>
-                    <h3 style="color: #673AB7;">Wyniki Uczniów</h3>
-                    <p class="course-meta">Podgląd i Poprawy</p>
-                </a>
+                <div id="widget-manage-classes" class="widget-tile" style="display: none; border: 2px dashed #009688; cursor: pointer;">
+                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23009688%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7%22></path><path d=%22M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z%22></path></svg>');"></div>
+                    <h3 style="color: #009688;">Zarządzaj Klasami</h3>
+                    <p class="course-meta">Edycja i Usuwanie</p>
+                </div>
 
                 <div id="widget-manage-students" class="widget-tile" style="display: none; border: 2px dashed #FF9800; cursor: pointer;">
                     <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23FF9800%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2%22></path><circle cx=%229%22 cy=%227%22 r=%224%22></circle><path d=%22M23 21v-2a4 4 0 0 0-3-3.87%22></path><path d=%22M16 3.13a4 4 0 0 1 0 7.75%22></path></svg>');"></div>
@@ -100,17 +83,17 @@
                     <p class="course-meta">Edycja i Usuwanie</p>
                 </div>
 
-                <div id="widget-teacher-results" class="widget-tile" style="display: none; border: 2px solid #673AB7; text-decoration: none; color: inherit;">
-                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23673AB7%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z%22></path><polyline points=%2214 2 14 8 20 8%22></polyline><line x=%2216%22 y1=%2213%22 x2=%228%22 y2=%2213%22></line><line x=%2216%22 y1=%2217%22 x2=%228%22 y2=%2217%22></line><polyline points=%2210 9 9 9 8 9%22></polyline></svg>');"></div>
-                    <h3 style="color: #673AB7;">Wyniki Uczniów</h3>
-                    <p class="course-meta">Podgląd i Poprawy</p>
-                </div>
-
                 <div id="widget-assign-course" class="widget-tile" style="display: none; border: 2px dashed #9C27B0; cursor: pointer;">
                     <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%239C27B0%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M4 19.5A2.5 2.5 0 0 1 6.5 17H20%22></path><path d=%22M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z%22></path><path d=%22M12 11h5%22></path><path d=%22M12 8h5%22></path></svg>');"></div>
                     <h3 style="color: #9C27B0;">Przypisz Materiał</h3>
                     <p class="course-meta">Dodaj pakiet do klasy</p>
                 </div>
+                
+                <a href="teacher_results.html" id="widget-teacher-results" class="widget-tile" style="display: none; border: 2px solid #673AB7; text-decoration: none; color: inherit;">
+                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23673AB7%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z%22></path><polyline points=%2214 2 14 8 20 8%22></polyline><line x=%2216%22 y1=%2213%22 x2=%228%22 y2=%2213%22></line><line x=%2216%22 y1=%2217%22 x2=%228%22 y2=%2217%22></line><polyline points=%2210 9 9 9 8 9%22></polyline></svg>');"></div>
+                    <h3 style="color: #673AB7;">Wyniki Uczniów</h3>
+                    <p class="course-meta">Podgląd i Poprawy</p>
+                </a>
 
                 <a href="courses_list.html" id="widget-student-courses" class="widget-tile">
                     <div class="widget-icon icon-course-active"></div>
@@ -205,19 +188,16 @@
             <form id="addSchoolForm" class="modal-form">
                 <label>Nazwa Szkoły</label>
                 <input type="text" id="school-name" class="edit-input" placeholder="np. Liceum nr 1" required>
-                
-                <label>Skrót (max 5 znaków, np. LO1)</label>
+                <label>Skrót (max 5 znaków)</label>
                 <input type="text" id="school-abbr" class="edit-input" placeholder="LO1" maxlength="5" style="text-transform:uppercase;" required>
-                
                 <label>Poziom Szkoły</label>
                 <select id="school-level" class="edit-input" style="border:1px solid #ccc;" required>
                     <option value="1">Szkoła Podstawowa</option>
                     <option value="2">Szkoła Średnia</option>
                     <option value="3">Szkoła Wyższa</option>
                 </select>
-
-                <label>Adres (Opcjonalnie)</label>
-                <input type="text" id="school-address" class="edit-input" placeholder="ul. Słoneczna 5">
+                <label>Adres</label>
+                <input type="text" id="school-address" class="edit-input">
                 <button type="submit" class="login-button full-width-btn">Zapisz Szkołę</button>
             </form>
         </div>
@@ -229,11 +209,11 @@
         <div style="display: flex; gap: 10px; margin-bottom: 20px;">
             <div style="flex:1;">
                 <label>Typ Szkoły</label>
-                <select id="manage-level-filter" class="edit-input" style="margin:0;"><option value="1">Podst.</option><option value="2">Średnia</option><option value="3">Wyższa</option><option value="all" selected>Wszystkie</option></select>
+                <select id="manage-level-filter" class="edit-input" style="margin:0;"><option value="" disabled selected>-- Wybierz --</option><option value="1">Podst.</option><option value="2">Średnia</option><option value="3">Wyższa</option><option value="all">Wszystkie</option></select>
             </div>
             <div id="manage-school-wrapper" style="flex: 2;">
                 <label>Szkoła</label>
-                <select id="manage-school-select" class="edit-input" style="margin:0;"><option value="" disabled selected>Wybierz...</option></select>
+                <select id="manage-school-select" class="edit-input" style="margin:0;"><option value="" disabled selected>Najpierw typ...</option></select>
             </div>
             <div id="manage-class-filter-wrapper" style="flex: 1; display: none;">
                 <label>Filtruj klasę</label>
@@ -258,12 +238,15 @@
                 <h3 class="modal-title">Edycja Klas</h3>
                 <span class="close-modal" onclick="closeModal('manageClassesModal')">&times;</span>
             </div>
-            <label>Wybierz Szkołę</label>
+            
+            <label>Wybierz Szkołę, aby edytować klasy:</label>
             <select id="manage-class-school-select" class="edit-input" style="border:1px solid #ccc; margin-bottom:20px;">
-                <option value="">Ładowanie...</option>
+                <option value="">Ładowanie szkół...</option>
             </select>
 
-            <div id="classes-list-container" style="max-height: 400px; overflow-y: auto;"></div>
+            <div id="classes-list-container" style="max-height: 400px; overflow-y: auto;">
+                <p style="color:#888; text-align:center;">Wybierz szkołę, aby zobaczyć listę.</p>
+            </div>
         </div>
     </div>
 
@@ -333,39 +316,51 @@
             window.addEventListener('click', () => document.getElementById('profileDropdown').classList.remove('show'));
             document.getElementById('logoutBtn').addEventListener('click', async () => { await _supabase.auth.signOut(); window.location.href = 'login.html'; });
 
-            // Listeners
+            // Listeners for Forms
             document.getElementById('createUserForm').addEventListener('submit', createNewUser);
             document.getElementById('addSchoolForm').addEventListener('submit', addSchool);
             document.getElementById('addClassForm').addEventListener('submit', addClass);
             document.getElementById('assignCourseForm').addEventListener('submit', assignCourseToClass);
             
-            // Filtrowanie przy tworzeniu usera
+            // Filters & Logic
             document.getElementById('new-role').addEventListener('change', handleRoleChange);
             document.getElementById('new-user-level-filter').addEventListener('change', filterNewUserSchools);
             document.getElementById('new-user-school').addEventListener('change', async function() {
-                await loadClassesForSchool(this.value); // Załaduj klasy jak wybrano szkołę
+                await loadClassesForSchool(this.value); 
                 generateEmail();
             });
-            document.getElementById('new-user-class').addEventListener('change', generateEmail); // Opcjonalnie przeładuj email
+            document.getElementById('new-user-class').addEventListener('change', generateEmail);
 
-            // Zarządzanie studentami - filtr
+            // MANAGE STUDENTS Logic
             document.getElementById('manage-level-filter').addEventListener('change', filterManageStudentSchools);
             document.getElementById('manage-school-select').addEventListener('change', function() { loadStudentsForSchool(this.value); });
             document.getElementById('filter-class-select').addEventListener('change', filterStudentsTable);
 
-            // Przypisywanie kursu - kaskada
-            document.getElementById('assign-school-select').addEventListener('change', async function() {
-                const sid = this.value;
-                const cSelect = document.getElementById('assign-class-select');
-                cSelect.disabled = true; cSelect.innerHTML = '<option>Ładowanie...</option>';
-                const { data } = await _supabase.from('classes').select('id, name').eq('school_id', sid);
-                cSelect.innerHTML = '<option value="" disabled selected>-- Wybierz Klasę --</option>';
-                if(data) data.forEach(c => cSelect.add(new Option(c.name, c.id)));
-                cSelect.disabled = false;
-            });
-            
-            // Zarządzanie klasami
+            // MANAGE CLASSES Logic
             document.getElementById('manage-class-school-select').addEventListener('change', function() { loadClassesForEdit(this.value); });
+
+            // ASSIGN PACKAGE Logic (Fixed)
+            document.getElementById('assign-school-select').addEventListener('change', async function() {
+                const sidString = this.value;
+                const sid = parseInt(sidString); 
+                console.log("Wybrano szkołę do pakietu:", sid);
+
+                const cSelect = document.getElementById('assign-class-select');
+                cSelect.disabled = true; 
+                cSelect.innerHTML = '<option>Ładowanie...</option>';
+                
+                const { data, error } = await _supabase.from('classes').select('id, name').eq('school_id', sid).order('name');
+
+                if (error) { console.error(error); cSelect.innerHTML = '<option>Błąd</option>'; return; }
+
+                cSelect.innerHTML = '<option value="" disabled selected>-- Wybierz Klasę --</option>';
+                if (data && data.length > 0) {
+                    data.forEach(c => cSelect.add(new Option(c.name, c.id)));
+                    cSelect.disabled = false;
+                } else {
+                    cSelect.innerHTML = '<option value="" disabled selected>Brak klas</option>';
+                }
+            });
         });
 
         // --- COMMON FUNCTIONS ---
@@ -374,27 +369,23 @@
         function openModal(id) { document.getElementById(id).classList.add('active'); }
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
-        // --- 1. USER CREATION LOGIC ---
+        // --- LOAD SCHOOLS CACHE ---
+        async function ensureSchoolsCache() {
+            if (schoolsCache.length === 0) {
+                const { data } = await _supabase.from('schools').select('id, name, level, abbreviation');
+                schoolsCache = data || [];
+            }
+        }
+
+        // --- USER CREATION ---
         async function openCreateUserModal() {
             openModal('createUserModal');
-            // Reset fields
+            await ensureSchoolsCache();
             document.getElementById('new-user-level-filter').value = "";
             const sSelect = document.getElementById('new-user-school');
             sSelect.innerHTML = '<option value="" disabled selected>-- Wybierz typ najpierw --</option>';
             sSelect.disabled = true;
             document.getElementById('class-select-container').style.display = 'none';
-            document.getElementById('new-email').value = "";
-
-            if(currentUserRole === 'manager') {
-                // Manager widzi tylko swoją szkołę
-                document.getElementById('new-role').value = 'student';
-                // Ukryj filtry, pokaż od razu szkołę
-                // ... (uproszczona logika dla managera - pomijam dla czytelności kodu admina)
-            } else {
-                // Admin: Pobierz wszystkie szkoły do cache
-                const { data } = await _supabase.from('schools').select('id, name, level, abbreviation');
-                schoolsCache = data || [];
-            }
         }
 
         function handleRoleChange() {
@@ -412,7 +403,6 @@
                 schoolContainer.style.display = 'block';
                 emailInput.setAttribute('readonly', true);
                 emailInput.placeholder = "Wybierz szkołę...";
-                // Pokaż wybór klasy tylko dla studenta
                 classContainer.style.display = (role === 'student') ? 'block' : 'none';
                 if(document.getElementById('new-user-school').value) generateEmail();
             }
@@ -422,7 +412,6 @@
             const lvl = document.getElementById('new-user-level-filter').value;
             const sSelect = document.getElementById('new-user-school');
             sSelect.innerHTML = '<option value="" disabled selected>-- Wybierz Szkołę --</option>';
-            
             const filtered = schoolsCache.filter(s => s.level == lvl);
             filtered.forEach(s => sSelect.add(new Option(s.name, s.id)));
             sSelect.disabled = false;
@@ -432,7 +421,6 @@
             const cSelect = document.getElementById('new-user-class');
             cSelect.innerHTML = '<option>Ładowanie...</option>';
             cSelect.disabled = true;
-            
             const { data } = await _supabase.from('classes').select('id, name').eq('school_id', schoolId);
             cSelect.innerHTML = '<option value="" selected>-- Brak / Nie dotyczy --</option>';
             if(data) data.forEach(c => cSelect.add(new Option(c.name, c.id)));
@@ -443,32 +431,17 @@
             const role = document.getElementById('new-role').value;
             const schoolId = document.getElementById('new-user-school').value;
             const emailInput = document.getElementById('new-email');
-
             if (role === 'admin' || !schoolId) return;
-
             emailInput.value = "Generowanie ID...";
             
-            // 1. Znajdź szkołę w cache
             const school = schoolsCache.find(s => s.id == schoolId);
             const abbr = school ? school.abbreviation : "SZKOLA";
-
-            // 2. NOWA LOGIKA: Policz userów tej roli w tej szkole
-            // Zamiast globalnego licznika, liczymy ile jest rekordów: role=X AND school_id=Y
-            const { count, error } = await _supabase
-                .from('users')
-                .select('*', { count: 'exact', head: true })
-                .eq('school_id', schoolId)
-                .eq('role', role);
-
-            if (error) { console.error(error); emailInput.value = "Błąd"; return; }
-
+            const { count } = await _supabase.from('users').select('*', { count: 'exact', head: true }).eq('school_id', schoolId).eq('role', role);
+            
             const nextNum = (count || 0) + 1;
-            generatedMemberCode = nextNum; // Zapisujemy, choć w tym modelu nie musimy tego wysyłać do bazy jeśli nie ma pola, ale user chce ID.
-
-            // Format: 0001.LO1-student@muczelnia.pl
+            generatedMemberCode = nextNum;
             const padCode = String(nextNum).padStart(4, '0');
             const suffix = (role === 'student') ? 'student' : 'kadra';
-            
             emailInput.value = `${padCode}.${abbr}-${suffix}@muczelnia.pl`;
         }
 
@@ -476,7 +449,6 @@
             e.preventDefault();
             const btn = document.getElementById('createBtn');
             btn.disabled = true; btn.textContent = "Tworzenie...";
-
             const email = document.getElementById('new-email').value;
             const password = document.getElementById('new-password').value;
             const username = document.getElementById('new-username').value;
@@ -484,47 +456,31 @@
             const schoolId = document.getElementById('new-user-school').value;
             const classId = document.getElementById('new-user-class').value || null;
 
-            // Używamy tymczasowego klienta bez sesji żeby nie przelogować admina
-            const tempSupabase = supabase.createClient(supabaseUrl, supabaseKey, {
-                auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+            const tempSupabase = supabase.createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } });
+            const { error } = await tempSupabase.auth.signUp({
+                email: email, password: password,
+                options: { data: { username: username, role: role, school_id: schoolId || null, class_id: classId, member_code: generatedMemberCode } }
             });
-
-            const { data, error } = await tempSupabase.auth.signUp({
-                email: email,
-                password: password,
-                options: {
-                    data: {
-                        username: username,
-                        role: role,
-                        school_id: schoolId || null,
-                        class_id: classId, // Zapisujemy klasę
-                        member_code: generatedMemberCode
-                    }
-                }
-            });
-
             if (error) alert("Błąd: " + error.message);
             else { alert(`✅ Utworzono konto: ${email}`); closeModal('createUserModal'); document.getElementById('createUserForm').reset(); }
             btn.disabled = false; btn.textContent = "Utwórz konto";
         }
 
-        // --- 2. SCHOOL & CLASS MANAGEMENT ---
+        // --- SCHOOL & CLASS CREATION ---
         async function addSchool(e) {
             e.preventDefault();
-            const name = document.getElementById('school-name').value;
-            const abbr = document.getElementById('school-abbr').value;
-            const lvl = document.getElementById('school-level').value;
-            const address = document.getElementById('school-address').value;
-            
-            const { error } = await _supabase.from('schools').insert({ name, abbreviation: abbr, level: lvl, address });
-            if (error) alert("Błąd: " + error.message);
-            else { alert("Szkoła dodana!"); closeModal('addSchoolModal'); document.getElementById('addSchoolForm').reset(); }
+            const { error } = await _supabase.from('schools').insert({
+                name: document.getElementById('school-name').value,
+                abbreviation: document.getElementById('school-abbr').value,
+                level: document.getElementById('school-level').value,
+                address: document.getElementById('school-address').value
+            });
+            if (error) alert(error.message); else { alert("Dodano"); closeModal('addSchoolModal'); schoolsCache=[]; }
         }
 
         async function openClassModal(){ 
             openModal('addClassModal'); 
             const s = document.getElementById('class-school-select');
-            // Pobieramy wszystkie szkoły dla Admina
             const {data} = await _supabase.from('schools').select('id, name');
             s.innerHTML = '<option value="">-- Wybierz --</option>';
             data.forEach(x => s.add(new Option(x.name, x.id)));
@@ -539,104 +495,14 @@
             if(error) alert(error.message); else {alert("Dodano"); closeModal('addClassModal');}
         }
 
-        // --- 3. MANAGE CLASSES (NEW) ---
-        async function openManageClassesModal() {
-            openModal('manageClassesModal');
-            const sSelect = document.getElementById('manage-class-school-select');
-            document.getElementById('classes-list-container').innerHTML = '';
-            
-            // Load schools
-            const { data } = await _supabase.from('schools').select('id, name');
-            sSelect.innerHTML = '<option value="" disabled selected>-- Wybierz Szkołę --</option>';
-            data.forEach(s => sSelect.add(new Option(s.name, s.id)));
-        }
-
-        async function loadClassesForEdit(schoolId) {
-            const container = document.getElementById('classes-list-container');
-            container.innerHTML = 'Ładowanie...';
-            
-            // Pobierz klasy i ich pakiety
-            const { data: classes } = await _supabase.from('classes')
-                .select(`id, name, package_classes(id, packages(title))`)
-                .eq('school_id', schoolId)
-                .order('name');
-
-            container.innerHTML = '';
-            if(!classes || classes.length === 0) { container.innerHTML = 'Brak klas.'; return; }
-
-            classes.forEach(c => {
-                const row = document.createElement('div');
-                row.style.cssText = "border:1px solid #eee; padding:10px; margin-bottom:10px; border-radius:8px;";
-                
-                // Nazwa klasy (Editable)
-                const nameInput = document.createElement('input');
-                nameInput.type = "text";
-                nameInput.value = c.name;
-                nameInput.className = "edit-input";
-                nameInput.style.cssText = "width: 200px; display:inline-block; margin-right:10px;";
-                
-                const saveBtn = document.createElement('button');
-                saveBtn.innerText = "Zmień nazwę";
-                saveBtn.className = "save-mini-btn";
-                saveBtn.onclick = async () => {
-                    await _supabase.from('classes').update({name: nameInput.value}).eq('id', c.id);
-                    alert("Zmieniono nazwę!");
-                };
-
-                // Lista pakietów
-                const pkgContainer = document.createElement('div');
-                pkgContainer.style.marginTop = "5px";
-                if(c.package_classes && c.package_classes.length > 0) {
-                    pkgContainer.innerHTML = "<small>Pakiety:</small> ";
-                    c.package_classes.forEach(pc => {
-                        const chip = document.createElement('span');
-                        chip.className = "chip";
-                        chip.innerHTML = `${pc.packages.title} <span class="chip-remove" onclick="removePackageFromClass(${pc.id}, this)">×</span>`;
-                        pkgContainer.appendChild(chip);
-                    });
-                } else {
-                    pkgContainer.innerHTML = "<small style='color:#ccc;'>Brak przypisanych pakietów</small>";
-                }
-
-                row.appendChild(nameInput);
-                row.appendChild(saveBtn);
-                row.appendChild(pkgContainer);
-                
-                // Delete Class Button
-                const delBtn = document.createElement('span');
-                delBtn.innerHTML = "🗑️";
-                delBtn.title = "Usuń klasę";
-                delBtn.style.cssText = "float:right; cursor:pointer; font-size:18px;";
-                delBtn.onclick = () => deleteClass(c.id, row);
-                row.appendChild(delBtn);
-
-                container.appendChild(row);
-            });
-        }
-
-        async function removePackageFromClass(linkId, el) {
-            if(!confirm("Odpiąć ten pakiet od klasy?")) return;
-            const { error } = await _supabase.from('package_classes').delete().eq('id', linkId);
-            if(!error) el.parentElement.remove();
-        }
-
-        async function deleteClass(classId, rowElement) {
-            if(!confirm("Usunąć klasę? Upewnij się, że nie ma w niej uczniów!")) return;
-            const { error } = await _supabase.from('classes').delete().eq('id', classId);
-            if(error) alert("Nie można usunąć: " + error.message);
-            else rowElement.remove();
-        }
-
-
-        // --- 4. MANAGE STUDENTS LOGIC ---
+        // --- MANAGE STUDENTS (FIXED) ---
         async function openManageStudentsModal() { 
             openModal('manageStudentsModal'); 
-            // Load schools cache if empty
-            if(schoolsCache.length === 0) {
-                const { data } = await _supabase.from('schools').select('id, name, level, abbreviation');
-                schoolsCache = data || [];
-            }
-            filterManageStudentSchools();
+            await ensureSchoolsCache(); // Upewnij się, że mamy szkoły
+            
+            // Reset filters
+            document.getElementById('manage-level-filter').value = "";
+            document.getElementById('manage-school-select').innerHTML = '<option value="" disabled selected>Najpierw typ...</option>';
         }
 
         function filterManageStudentSchools() {
@@ -656,10 +522,11 @@
             
             loading.style.display = 'block'; container.style.display = 'none'; tb.innerHTML = '';
             
-            const { data: students } = await _supabase.from('users').select('id, username, email, class_id').eq('school_id', sid).eq('role', 'student');
+            const { data: students, error } = await _supabase.from('users').select('id, username, email, class_id').eq('school_id', sid).eq('role', 'student');
+            if(error) console.error("Error loading students:", error);
+
             const { data: classes } = await _supabase.from('classes').select('id, name').eq('school_id', sid);
             
-            // Populate Class Filter
             classFilter.innerHTML = '<option value="all">Wszyscy</option>';
             if(classes) classes.forEach(c => classFilter.add(new Option(c.name, c.id)));
 
@@ -672,7 +539,6 @@
                 const tr = document.createElement('tr');
                 tr.dataset.classId = s.class_id || 'none';
                 
-                // Class Select Logic (Same as before)
                 const classSel = document.createElement('select');
                 classSel.className = 'class-select-small';
                 classSel.add(new Option('-- Brak --', ''));
@@ -682,12 +548,9 @@
                     classSel.add(opt);
                 });
 
-                // Actions
                 const actionsTd = document.createElement('td');
-                
-                // 1. Zapisz klasę
                 const saveBtn = document.createElement('button');
-                saveBtn.textContent = '💾'; saveBtn.title = "Zapisz klasę"; saveBtn.className = 'action-icon'; saveBtn.style.border="none"; saveBtn.style.background="transparent";
+                saveBtn.textContent = '💾'; saveBtn.className = 'action-icon'; saveBtn.style.border="none"; saveBtn.style.background="transparent";
                 saveBtn.onclick = async () => {
                     const cid = classSel.value ? parseInt(classSel.value) : null;
                     await _supabase.from('users').update({class_id: cid}).eq('id', s.id);
@@ -695,28 +558,17 @@
                     alert("Zapisano klasę");
                 };
 
-                // 2. Reset Hasła (Atrapa/Info)
-                const resetBtn = document.createElement('span');
-                resetBtn.textContent = '🔑'; resetBtn.title = "Reset hasła"; resetBtn.className = 'action-icon';
-                resetBtn.onclick = () => alert("Reset hasła wymaga funkcji backendowej (Supabase Edge Function) ze względów bezpieczeństwa. W tej wersji demo możesz usunąć użytkownika i stworzyć go na nowo.");
-
-                // 3. Usuń usera
                 const delBtn = document.createElement('span');
-                delBtn.textContent = '❌'; delBtn.title = "Usuń użytkownika"; delBtn.className = 'action-icon';
-                delBtn.style.color = "red";
+                delBtn.textContent = '❌'; delBtn.className = 'action-icon'; delBtn.style.color = "red";
                 delBtn.onclick = async () => {
                     if(confirm(`Usunąć użytkownika ${s.username}?`)) {
-                        // Usuwamy z tabeli publicznej. Z auth.users nie usuniemy klientem, ale user straci dostęp do danych.
                         const { error } = await _supabase.from('users').delete().eq('id', s.id);
-                        if(error) alert("Błąd: " + error.message);
-                        else tr.remove();
+                        if(error) alert("Błąd: " + error.message); else tr.remove();
                     }
                 };
 
                 actionsTd.appendChild(saveBtn);
-                actionsTd.appendChild(resetBtn);
                 actionsTd.appendChild(delBtn);
-
                 tr.innerHTML = `<td><b>${s.username}</b></td><td>${s.email}</td>`;
                 const tdClass = document.createElement('td'); tdClass.appendChild(classSel);
                 tr.appendChild(tdClass);
@@ -735,16 +587,65 @@
             });
         }
 
-        // --- 5. ASSIGN COURSE ---
+        // --- MANAGE CLASSES (NOWY MODAL) ---
+        async function openManageClassesModal() {
+            openModal('manageClassesModal');
+            const sSelect = document.getElementById('manage-class-school-select');
+            document.getElementById('classes-list-container').innerHTML = '';
+            
+            const { data } = await _supabase.from('schools').select('id, name').order('name');
+            sSelect.innerHTML = '<option value="" disabled selected>-- Wybierz Szkołę --</option>';
+            data.forEach(s => sSelect.add(new Option(s.name, s.id)));
+        }
+
+        async function loadClassesForEdit(schoolId) {
+            const container = document.getElementById('classes-list-container');
+            container.innerHTML = 'Ładowanie...';
+            
+            const { data: classes } = await _supabase.from('classes').select('id, name').eq('school_id', schoolId).order('name');
+            container.innerHTML = '';
+            
+            if(!classes || classes.length === 0) { container.innerHTML = 'Brak klas.'; return; }
+
+            classes.forEach(c => {
+                const row = document.createElement('div');
+                row.className = 'class-edit-row';
+
+                const input = document.createElement('input');
+                input.type = "text"; input.value = c.name; input.className = "edit-input"; input.style.margin = "0";
+
+                const btnSave = document.createElement('button');
+                btnSave.innerText = "Zapisz"; btnSave.className = "save-mini-btn";
+                btnSave.onclick = async () => {
+                    await _supabase.from('classes').update({name: input.value}).eq('id', c.id);
+                    alert("Zaktualizowano!");
+                };
+
+                const btnDel = document.createElement('span');
+                btnDel.innerText = "🗑️"; btnDel.className = "delete-mini-btn";
+                btnDel.onclick = async () => {
+                    if(confirm("Usunąć klasę?")) {
+                        const {error} = await _supabase.from('classes').delete().eq('id', c.id);
+                        if(error) alert(error.message); else row.remove();
+                    }
+                };
+
+                row.appendChild(input);
+                const acts = document.createElement('div');
+                acts.appendChild(btnSave); acts.appendChild(btnDel);
+                row.appendChild(acts);
+                container.appendChild(row);
+            });
+        }
+
+        // --- ASSIGN COURSE (FIXED) ---
         async function openAssignCourseModal() {
             openModal('assignCourseModal');
-            // Load Schools
             const { data } = await _supabase.from('schools').select('id, name');
             const sSelect = document.getElementById('assign-school-select');
             sSelect.innerHTML = '<option value="" disabled selected>-- Wybierz Szkołę --</option>';
             data.forEach(s => sSelect.add(new Option(s.name, s.id)));
             
-            // Load Packages
             const { data: pkgs } = await _supabase.from('packages').select('id, title');
             const pSelect = document.getElementById('assign-package-select');
             pSelect.innerHTML = '<option value="" disabled selected>-- Wybierz Pakiet --</option>';
@@ -763,4 +664,3 @@
     </script>
 </body>
 </html>
-
