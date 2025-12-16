@@ -156,15 +156,22 @@
                     <p class="course-meta">Podgląd i Poprawy</p>
                 </a>
 
+                <a href="teacher_grades.html" id="widget-teacher-grades" class="widget-tile" style="display: none; border: 2px solid #FF9800; text-decoration: none; color: inherit;">
+                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23FF9800%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2%22></path><rect x=%228%22 y=%222%22 width=%228%22 height=%224%22 rx=%221%22 ry=%221%22></rect><path d=%22M9 14l2 2 4-4%22></path></svg>');"></div>
+                    <h3 style="color: #FF9800;">Dziennik Ocen</h3>
+                    <p class="course-meta">Wystawianie i edycja</p>
+                </a>
+
                 <a href="courses_list.html" id="widget-student-courses" class="widget-tile">
                     <div class="widget-icon icon-course-active"></div>
                     <h3>Moje Przedmioty</h3>
                     <p class="course-meta">Przejdź do nauki</p>
                 </a>
 
-                <a href="#" id="widget-student-grades" class="widget-tile" onclick="alert('Moduł w budowie!')">
+                <a href="grades.html" id="widget-student-grades" class="widget-tile">
                     <div class="widget-icon icon-grades"></div>
-                    <h3>Oceny</h3>
+                    <h3>Moje Oceny</h3>
+                    <p class="course-meta">Sprawdź wyniki</p>
                 </a>
             </div>
         </main>
@@ -346,6 +353,7 @@
                 if (['admin', 'manager', 'teacher'].includes(currentUserRole)) {
                     show('widget-assign-course');
                     show('widget-teacher-results');
+                    show('widget-teacher-grades'); // Pokaż Dziennik
                     document.getElementById('widget-assign-course').onclick = () => openAssignCourseModal();
                 }
 
@@ -400,10 +408,9 @@
             // MANAGE CLASSES Logic
             document.getElementById('manage-class-school-select').addEventListener('change', function() { loadClassesForEdit(this.value); });
 
-            // ASSIGN PACKAGE Logic (Fixed)
+            // ASSIGN PACKAGE Logic (Fixed with parseInt)
             document.getElementById('assign-school-select').addEventListener('change', async function() {
-                const sidString = this.value;
-                const sid = parseInt(sidString); 
+                const sid = parseInt(this.value); 
                 console.log("Wybrano szkołę do pakietu:", sid);
 
                 const cSelect = document.getElementById('assign-class-select');
