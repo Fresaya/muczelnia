@@ -98,7 +98,7 @@
 
         /* Obszar Pakietów */
         .packages-area {
-            flex: 1; /* Wypełnia dostępną przestrzeń */
+            flex: 1;
             display: flex;
             flex-wrap: wrap;
             gap: 6px;
@@ -127,7 +127,7 @@
         /* Stopka karty (Dodawanie pakietu) */
         .card-footer {
             background: var(--hover-bg);
-            margin: -15px -15px -15px -15px; /* Rozciągnięcie na całą szerokość */
+            margin: -15px -15px -15px -15px;
             padding: 10px 15px;
             border-radius: 0 0 12px 12px;
             border-top: 1px solid var(--border-color);
@@ -192,7 +192,12 @@
                     </select>
                 </div>
 
-                <div class="tool-group" style="flex: 2; border-left: 1px solid var(--border-color); padding-left: 20px;">
+                <div class="tool-group" style="flex: 1; min-width: 150px;">
+                    <label>Filtruj Klasy</label>
+                    <input type="text" id="class-search" class="edit-input" style="margin:0;" placeholder="Szukaj nazwy...">
+                </div>
+
+                <div class="tool-group" style="flex: 1.5; border-left: 1px solid var(--border-color); padding-left: 20px;">
                     <label>Dodaj Nową Klasę</label>
                     <div style="display: flex; gap: 10px;">
                         <input type="text" id="new-class-name" class="edit-input" style="margin:0;" placeholder="np. 1A - Informatyka">
@@ -217,15 +222,14 @@
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
         let currentRole = null;
-        let availablePackages = []; // Pakiety pasujące do poziomu wybranej szkoły
+        let availablePackages = []; // Pakiety pasujące do poziomu
+        let allClassesCache = []; // Cache wszystkich pobranych klas
 
         document.addEventListener('DOMContentLoaded', async () => {
             const { data: { session } } = await _supabase.auth.getSession();
             if (!session) { window.location.href = 'login.html'; return; }
 
             const { data: user } = await _supabase.from('users').select('role, school_id').eq('id', session.user.id).single();
-            
-            // Dodano 'teacher' do listy uprawnionych
             if (!['admin', 'manager', 'lecturer', 'teacher'].includes(user.role)) {
                 alert("Brak uprawnień."); window.location.href = 'dashboard.html'; return;
             }
@@ -238,6 +242,9 @@
                 await loadPackagesForSchoolLevel(this.value); 
                 loadClasses(this.value); 
             });
+
+            // Listener wyszukiwarki
+            document.getElementById('class-search').addEventListener('input', filterClasses);
         });
 
         async function loadSchools(user) {
@@ -256,26 +263,21 @@
                     const opt = document.createElement('option');
                     opt.value = s.id;
                     opt.textContent = s.name;
-                    opt.dataset.level = s.level; // Zapisujemy poziom w atrybucie
+                    opt.dataset.level = s.level;
                     sSelect.appendChild(opt);
                 });
 
-                // POPRAWKA: Jeśli user ma jedną szkołę, wybieramy ją I WYMUSZAMY ŁADOWANIE DANYCH
                 if (schools.length === 1) {
                     const singleSchool = schools[0];
                     sSelect.value = singleSchool.id;
-                    sSelect.disabled = true; // Zablokuj zmianę
-                    
-                    // Ręcznie wywołujemy funkcje ładujące, bo 'change' może nie zadziałać przy programowym ustawieniu
+                    sSelect.disabled = true; 
                     await loadPackagesForSchoolLevel(singleSchool.id);
                     loadClasses(singleSchool.id);
                 }
             }
         }
 
-        // Pobiera pakiety pasujące do POZIOMU wybranej szkoły
         async function loadPackagesForSchoolLevel(schoolId) {
-            // Znajdź poziom szkoły w selectcie
             const select = document.getElementById('school-select');
             const selectedOption = select.options[select.selectedIndex];
             const level = selectedOption ? selectedOption.dataset.level : null;
@@ -284,7 +286,7 @@
 
             const { data: pkgs } = await _supabase.from('packages')
                 .select('id, title')
-                .eq('level', level) // FILTROWANIE PO POZIOMIE!
+                .eq('level', level)
                 .order('title');
             
             availablePackages = pkgs || [];
@@ -294,39 +296,44 @@
             const grid = document.getElementById('classes-grid');
             grid.innerHTML = '<p style="grid-column:1/-1; text-align:center;">Ładowanie klas...</p>';
 
-            // Pobieramy klasę WRAZ z jej pakietami (relacja)
             const { data: classes, error } = await _supabase
                 .from('classes')
-                .select(`
-                    id, name,
-                    package_classes (
-                        id,
-                        packages ( id, title )
-                    )
-                `)
+                .select(`id, name, package_classes ( id, packages ( id, title ) )`)
                 .eq('school_id', schoolId)
                 .order('name');
 
             if (error) { console.error(error); grid.innerHTML = '<p>Błąd ładowania.</p>'; return; }
+            
+            allClassesCache = classes || [];
+            renderClassesGrid(allClassesCache);
+        }
+
+        function filterClasses() {
+            const term = document.getElementById('class-search').value.toLowerCase();
+            const filtered = allClassesCache.filter(c => c.name.toLowerCase().includes(term));
+            renderClassesGrid(filtered);
+        }
+
+        function renderClassesGrid(classesToRender) {
+            const grid = document.getElementById('classes-grid');
             grid.innerHTML = '';
 
-            if (!classes || classes.length === 0) {
-                grid.innerHTML = '<p style="grid-column:1/-1; text-align:center; color:#888;">Brak klas w tej szkole. Dodaj nową powyżej!</p>';
+            if (classesToRender.length === 0) {
+                grid.innerHTML = '<p style="grid-column:1/-1; text-align:center; color:#888;">Brak klas spełniających kryteria.</p>';
                 return;
             }
 
-            classes.forEach(c => {
+            classesToRender.forEach(c => {
                 const card = document.createElement('div');
                 card.className = 'class-card';
 
-                // --- 1. HEADER (Nazwa + Save + Delete) ---
+                // 1. Header
                 const header = document.createElement('div');
                 header.className = 'card-header';
                 
                 const nameInput = document.createElement('input');
                 nameInput.className = 'class-name-input';
                 nameInput.value = c.name;
-                // Zapisz przy Enter
                 nameInput.addEventListener('keypress', async (e) => {
                     if (e.key === 'Enter') { await updateClassName(c.id, nameInput.value); nameInput.blur(); }
                 });
@@ -334,18 +341,16 @@
                 const saveBtn = document.createElement('div');
                 saveBtn.className = 'btn-icon-small btn-save-name';
                 saveBtn.innerHTML = '💾';
-                saveBtn.title = "Zapisz nazwę";
                 saveBtn.onclick = () => updateClassName(c.id, nameInput.value);
 
                 const delBtn = document.createElement('div');
                 delBtn.className = 'btn-icon-small btn-delete-class';
                 delBtn.innerHTML = '🗑️';
-                delBtn.title = "Usuń klasę";
                 delBtn.onclick = () => deleteClass(c.id);
 
                 header.append(nameInput, saveBtn, delBtn);
 
-                // --- 2. PAKIETY (Chips) ---
+                // 2. Packages
                 const pkgArea = document.createElement('div');
                 pkgArea.className = 'packages-area';
                 
@@ -362,15 +367,14 @@
                     pkgArea.innerHTML = '<span style="font-size:11px; color:#aaa; margin:auto 0;">Brak pakietów</span>';
                 }
 
-                // --- 3. FOOTER (Dodaj Pakiet) ---
+                // 3. Footer
                 const footer = document.createElement('div');
                 footer.className = 'card-footer';
 
                 const pkgSelect = document.createElement('select');
                 pkgSelect.className = 'add-pkg-select';
-                pkgSelect.innerHTML = '<option value="">+ Przypisz pakiet...</option>';
+                pkgSelect.innerHTML = '<option value="">+ Przypisz...</option>';
                 
-                // Filtrujemy: Pokaż tylko te pakiety, których klasa JESZCZE NIE MA
                 const assignedIds = c.package_classes.map(pc => pc.packages ? pc.packages.id : -1);
                 
                 availablePackages.forEach(p => {
@@ -388,7 +392,6 @@
                 };
 
                 footer.append(pkgSelect, addBtn);
-
                 card.append(header, pkgArea, footer);
                 grid.appendChild(card);
             });
