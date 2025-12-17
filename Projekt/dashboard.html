@@ -528,8 +528,50 @@
         function handleRoleChange() { const role = document.getElementById('new-role').value; const sc = document.getElementById('school-select-container'); const cc = document.getElementById('class-select-container'); const em = document.getElementById('new-email'); if (role === 'admin') { sc.style.display = 'none'; em.removeAttribute('readonly'); em.value = ""; em.placeholder = "Email admina"; } else { sc.style.display = 'block'; em.setAttribute('readonly', true); em.placeholder = "Wybierz szkołę..."; cc.style.display = (role === 'student') ? 'block' : 'none'; if(document.getElementById('new-user-school').value) generateEmail(); } }
         function filterNewUserSchools() { const lvl = document.getElementById('new-user-level-filter').value; const s = document.getElementById('new-user-school'); s.innerHTML = '<option value="" disabled selected>-- Wybierz --</option>'; schoolsCache.filter(x => x.level == lvl).forEach(x => s.add(new Option(x.name, x.id))); s.disabled = false; }
         async function loadClassesForSchool(sid) { const c = document.getElementById('new-user-class'); c.innerHTML = '<option>...</option>'; c.disabled = true; const { data } = await _supabase.from('classes').select('id, name').eq('school_id', sid); c.innerHTML = '<option value="">-- Brak --</option>'; if(data) data.forEach(x => c.add(new Option(x.name, x.id))); c.disabled = false; }
-        async function generateEmail() { const r = document.getElementById('new-role').value; const sid = document.getElementById('new-user-school').value; const em = document.getElementById('new-email'); if(r==='admin'||!sid)return; em.value="..."; const s=schoolsCache.find(x=>x.id==sid); const abbr=s?s.abbreviation:"SC"; const {count}=await _supabase.from('users').select('*',{count:'exact',head:true}).eq('school_id',sid).eq('role',r); const n=(count||0)+1; generatedMemberCode=n; em.value = `${String(n).padStart(4,'0')}.${abbr}-${r==='student'?'student':'kadra'}@muczelnia.pl`; }
+         async function generateEmail() {
+                    const role = document.getElementById('new-role').value;
+                    const schoolId = document.getElementById('new-user-school').value;
+                    const emailInput = document.getElementById('new-email');
         
+                    // Admin zazwyczaj wpisuje własny email, ale jeśli jest przypisany do szkoły, też go policzymy
+                    if (role === 'admin' && !schoolId) return; 
+                    if (!schoolId) return;
+        
+                    emailInput.value = "Generowanie ID...";
+                    
+                    // Pobierz skrót szkoły
+                    const school = schoolsCache.find(s => s.id == schoolId);
+                    const abbr = school ? school.abbreviation : "SZKOLA";
+        
+                    // --- POPRAWIONA LOGIKA LICZNIKA ---
+                    let query = _supabase.from('users')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('school_id', schoolId);
+        
+                    // Podział na dwa worki: Student vs Reszta Świata (Kadra)
+                    if (role === 'student') {
+                        query = query.eq('role', 'student');
+                    } else {
+                        // Zliczamy wszystkich pracowników razem, żeby uniknąć duplikatów ID
+                        query = query.in('role', ['teacher', 'manager', 'lecturer', 'admin']);
+                    }
+        
+                    const { count, error } = await query;
+                    
+                    if (error) {
+                        console.error(error);
+                        emailInput.value = "Błąd licznika";
+                        return;
+                    }
+        
+                    const nextNum = (count || 0) + 1;
+                    generatedMemberCode = nextNum; // Zapisz do zmiennej globalnej (używanej przy createNewUser)
+                    
+                    const padCode = String(nextNum).padStart(4, '0');
+                    const suffix = (role === 'student') ? 'student' : 'kadra';
+                    
+                    emailInput.value = `${padCode}.${abbr}-${suffix}@muczelnia.pl`;
+                }        
         // --- STUDENT MANAGEMENT (Buttons Styled) ---
         async function openManageStudentsModal(){ openModal('manageStudentsModal'); await ensureSchoolsCache(); document.getElementById('manage-level-filter').value=""; document.getElementById('manage-school-select').innerHTML='<option disabled selected>Typ...</option>'; document.getElementById('students-table-body').innerHTML=''; document.getElementById('students-table-container').style.display='none'; }
         function filterManageStudentSchools(){ const lvl=document.getElementById('manage-level-filter').value; const s=document.getElementById('manage-school-select'); s.innerHTML='<option disabled selected>Wybierz</option>'; schoolsCache.filter(x=>x.level==lvl).forEach(x=>s.add(new Option(x.name,x.id))); }
@@ -596,4 +638,5 @@
     </script>
 </body>
 </html>
+
 
