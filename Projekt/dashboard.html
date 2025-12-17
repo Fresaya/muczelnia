@@ -6,19 +6,12 @@
     <title>mUczelnia - Pulpit</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* --- STYLE DLA MODALI I LIST --- */
-        .class-edit-item { border-bottom: 1px solid var(--border-color); padding: 12px; transition: background 0.2s; }
-        .class-edit-item:hover { background: var(--hover-bg); }
-        .class-row-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-        .save-mini-btn { padding: 5px 10px; font-size: 12px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px; }
-        .delete-mini-btn { cursor: pointer; color: var(--accent-color); font-size: 18px; margin-left: 10px; }
+        /* --- STYL DLA KAFELKÓW I SIDEBARA --- */
         
-        /* CHIPY PAKIETÓW */
+        /* CHIPY PAKIETÓW (Dla modali) */
         .packages-container { display: flex; flex-wrap: wrap; gap: 5px; padding-left: 2px; }
         .pkg-chip { display: inline-flex; align-items: center; background-color: rgba(33, 150, 243, 0.1); color: #1565C0; border: 1px solid rgba(33, 150, 243, 0.3); border-radius: 12px; padding: 2px 8px; font-size: 11px; font-weight: 500; }
-        .pkg-chip-remove { margin-left: 6px; cursor: pointer; font-weight: bold; color: #1565C0; opacity: 0.6; font-size: 14px; line-height: 1; }
-        .pkg-chip-remove:hover { opacity: 1; color: red; }
-
+        
         /* --- KALENDARZ (MODAL) --- */
         .event-item { display: flex; align-items: center; padding: 10px; border-bottom: 1px solid var(--border-color); }
         .event-date-box { 
@@ -36,20 +29,26 @@
         .bg-homework { background: #FF9800; } 
         .bg-info { background: #2196F3; } 
 
-        /* --- SIDEBAR LISTY --- */
-        #student-sidebar-content { display: flex; flex-direction: column; gap: 25px; width: 100%; }
+        /* --- SIDEBAR LISTY (PIONOWY UKŁAD) --- */
+        #student-sidebar-content { display: flex; flex-direction: column; gap: 30px; width: 100%; margin-top: 30px;}
         .sidebar-section { width: 100%; display: block; }
-        .sidebar-section + .sidebar-section { border-top: 1px solid var(--border-color); padding-top: 25px; }
-        .sidebar-title { font-size: 12px; text-transform: uppercase; color: var(--text-muted); font-weight: bold; margin-bottom: 15px; letter-spacing: 1px; }
+        .sidebar-section + .sidebar-section { border-top: 1px solid var(--border-color); padding-top: 20px; }
+        
+        .sidebar-title { font-size: 12px; text-transform: uppercase; color: var(--text-muted); font-weight: bold; margin-bottom: 15px; letter-spacing: 1px; display: flex; justify-content: space-between; align-items: center; }
+        
         .sidebar-list-item { display: flex; align-items: center; margin-bottom: 12px; font-size: 14px; }
         .sidebar-list-date { font-weight: bold; color: var(--accent-color); margin-right: 10px; font-size: 12px; min-width: 35px; }
-        .sidebar-list-content { flex: 1; color: var(--text-main); line-height: 1.3; }
-        .sidebar-grade-circle { width: 28px; height: 28px; border-radius: 50%; background: var(--hover-bg); border: 2px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; margin-right: 10px; color: var(--text-main); }
+        .sidebar-list-content { flex: 1; color: var(--text-main); line-height: 1.3; font-size: 13px; }
+        
+        .sidebar-grade-circle { 
+            width: 30px; height: 30px; border-radius: 50%; background: var(--hover-bg); 
+            border: 2px solid var(--border-color); display: flex; align-items: center; 
+            justify-content: center; font-weight: bold; font-size: 14px; margin-right: 10px; color: var(--text-main);
+        }
         .empty-sidebar { font-size: 12px; color: var(--text-muted); font-style: italic; }
 
         @media (prefers-color-scheme: dark) {
             .pkg-chip { background-color: rgba(33, 150, 243, 0.2); color: #90caf9; border-color: rgba(33, 150, 243, 0.5); }
-            .pkg-chip-remove { color: #90caf9; }
             .event-date-box { background: #2a2a2a; border-color: #444; }
             .sidebar-grade-circle { background: #333; border-color: #555; color: #fff; }
         }
@@ -107,17 +106,11 @@
                     <p class="course-meta">Administrator</p>
                 </div>
 
-                <div id="widget-add-class" class="widget-tile" style="display: none; border: 2px dashed #4CAF50; cursor: pointer;">
-                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%234CAF50%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2%22></path><circle cx=%229%22 cy=%227%22 r=%224%22></circle><path d=%22M23 21v-2a4 4 0 0 0-3-3.87%22></path><path d=%22M16 3.13a4 4 0 0 1 0 7.75%22></path></svg>');"></div>
-                    <h3 style="color: #4CAF50;">Dodaj Klasę</h3>
-                    <p class="course-meta">Admin & Manager</p>
-                </div>
-
-                <div id="widget-manage-classes" class="widget-tile" style="display: none; border: 2px dashed #009688; cursor: pointer;">
-                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23009688%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7%22></path><path d=%22M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z%22></path></svg>');"></div>
+                <a href="manage_classes.html" id="widget-manage-classes" class="widget-tile" style="display: none; border: 2px dashed #009688; text-decoration: none; color: inherit;">
+                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23009688%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M3 21h18M5 21V7l8-4 8 4v14M8 21v-4h8v4%22></path><path d=%22M18 7v3m3 0h-3m0 0h-3m3 0v-3%22 stroke=%22%23009688%22 stroke-width=%222%22/></svg>');"></div>
                     <h3 style="color: #009688;">Zarządzaj Klasami</h3>
-                    <p class="course-meta">Edycja i Usuwanie</p>
-                </div>
+                    <p class="course-meta">Dodawanie i Edycja</p>
+                </a>
 
                 <a href="manage_students.html" id="widget-manage-students" class="widget-tile" style="display: none; border: 2px dashed #FF9800; text-decoration: none; color: inherit;">
                     <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23FF9800%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2%22></path><circle cx=%229%22 cy=%227%22 r=%224%22></circle><path d=%22M23 21v-2a4 4 0 0 0-3-3.87%22></path><path d=%22M16 3.13a4 4 0 0 1 0 7.75%22></path></svg>');"></div>
@@ -179,7 +172,7 @@
 
             <div id="student-sidebar-content" style="display: none;">
                 <div class="sidebar-section">
-                    <div class="sidebar-title" onclick="openCalendarModal()" style="cursor:pointer; display:flex; justify-content:space-between;">
+                    <div class="sidebar-title" onclick="openCalendarModal()" style="cursor:pointer;">
                         <span>NADCHODZĄCE</span>
                         <span style="font-size:10px;">WIĘCEJ &rarr;</span>
                     </div>
@@ -212,8 +205,9 @@
                     <option value="student" selected>Student</option>
                     <option value="teacher">Nauczyciel</option>
                     <option value="manager">Dziekanat (Manager)</option>
+                    <option value="lecturer">Wykładowca</option>
                     <option value="admin">Administrator</option>
-                    <option value="lecturer">Wykładowca</option> </select>
+                </select>
 
                 <div id="school-select-container" style="display: block;">
                     <label>Typ Szkoły</label>
@@ -275,51 +269,12 @@
             </form>
         </div>
     </div>
-
-    <div class="modal-overlay" id="addClassModal"><div class="modal-window"><div class="modal-header"><h3 class="modal-title">Dodaj Klasę/Grupę</h3><span class="close-modal" onclick="closeModal('addClassModal')">&times;</span></div><form id="addClassForm" class="modal-form"><label>Wybierz Szkołę</label><select id="class-school-select" class="edit-input" style="border:1px solid #ccc;" required><option value="" disabled selected>Ładowanie szkół...</option></select><label>Nazwa Klasy</label><input type="text" id="class-name" class="edit-input" placeholder="np. 1A - Informatyka" required><button type="submit" class="login-button full-width-btn">Zapisz Klasę</button></form></div></div>
-    
-    <div class="modal-overlay" id="manageStudentsModal"><div class="modal-window" style="max-width: 900px;"><div class="modal-header"><h3 class="modal-title">Zarządzanie Uczniami</h3><span class="close-modal" onclick="closeModal('manageStudentsModal')">&times;</span></div>
-        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-            <div style="flex:1;">
-                <label>Typ Szkoły</label>
-                <select id="manage-level-filter" class="edit-input" style="margin:0;"><option value="" disabled selected>-- Wybierz --</option><option value="1">Podst.</option><option value="2">Średnia</option><option value="3">Wyższa</option><option value="all">Wszystkie</option></select>
-            </div>
-            <div id="manage-school-wrapper" style="flex: 2;">
-                <label>Szkoła</label>
-                <select id="manage-school-select" class="edit-input" style="margin:0;"><option value="" disabled selected>Najpierw typ...</option></select>
-            </div>
-            <div id="manage-class-filter-wrapper" style="flex: 1; display: none;">
-                <label>Filtruj klasę</label>
-                <select id="filter-class-select" class="edit-input" style="margin:0;"><option value="all" selected>Wszyscy</option></select>
-            </div>
-        </div>
-        <div id="students-loading" style="display:none; text-align:center;">Ładowanie listy...</div>
-        <div id="students-table-container" style="max-height: 400px; overflow-y: auto; display: none;">
-            <table class="student-table"><thead><tr><th>Imię i Nazwisko</th><th>Login</th><th>Klasa</th><th>Akcje</th></tr></thead><tbody id="students-table-body"></tbody></table>
-            <p id="no-students-msg" style="text-align:center; color:#888; display:none; padding:20px;">Brak studentów.</p>
-        </div></div></div>
     
     <div class="modal-overlay" id="assignCourseModal"><div class="modal-window"><div class="modal-header"><h3 class="modal-title">Przypisz Pakiet do Klasy</h3><span class="close-modal" onclick="closeModal('assignCourseModal')">&times;</span></div><form id="assignCourseForm" class="modal-form"><div style="margin-bottom: 10px;">
         <label>1. Wybierz Szkołę</label><select id="assign-school-select" class="edit-input" style="border:1px solid #ccc; margin-bottom:10px;"><option value="">-- Wybierz --</option></select>
         <label>2. Wybierz Klasę</label><select id="assign-class-select" class="edit-input" style="border:1px solid #ccc; margin-bottom:10px;" disabled><option value="">-- Wybierz szkołę najpierw --</option></select>
-        <label>3. Wybierz Pakiet</label><select id="assign-package-select" class="edit-input" style="border:1px solid #ccc;" required><option value="" disabled selected>-- Wybierz Pakiet --</option></select>
+        <label>3. Wybierz Pakiet (zgodny z poziomem)</label><select id="assign-package-select" class="edit-input" style="border:1px solid #ccc;" required><option value="" disabled selected>-- Wybierz Pakiet --</option></select>
     </div><button type="submit" class="login-button full-width-btn">Przypisz Pakiet</button></form></div></div>
-
-    <div class="modal-overlay" id="manageClassesModal">
-        <div class="modal-window" style="max-width: 600px;">
-            <div class="modal-header">
-                <h3 class="modal-title">Edycja Klas</h3>
-                <span class="close-modal" onclick="closeModal('manageClassesModal')">&times;</span>
-            </div>
-            <label>Wybierz Szkołę, aby edytować klasy:</label>
-            <select id="manage-class-school-select" class="edit-input" style="border:1px solid #ccc; margin-bottom:20px;">
-                <option value="">Ładowanie szkół...</option>
-            </select>
-            <div id="classes-list-container" style="max-height: 400px; overflow-y: auto;">
-                <p style="color:#888; text-align:center;">Wybierz szkołę, aby zobaczyć listę.</p>
-            </div>
-        </div>
-    </div>
 
     <div class="modal-overlay" id="calendarModal">
         <div class="modal-window" style="max-width: 700px;">
@@ -327,6 +282,7 @@
                 <h3 class="modal-title">Terminarz</h3>
                 <span class="close-modal" onclick="closeModal('calendarModal')">&times;</span>
             </div>
+            
             <div id="calendar-teacher-tools" style="display:none; background:#f9f9f9; padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid #eee;">
                 <h4 style="margin:0 0 10px 0; font-size:14px;">Dodaj Wydarzenie</h4>
                 <div style="display:flex; gap:10px; flex-wrap:wrap;">
@@ -341,6 +297,7 @@
                 <input type="text" id="cal-title" class="edit-input" placeholder="Tytuł (np. Test z Historii)" style="margin-top:10px;">
                 <button class="login-button full-width-btn" style="margin-top:10px;" onclick="addCalendarEvent()">Dodaj do kalendarza</button>
             </div>
+
             <div id="calendar-events-list" style="max-height: 400px; overflow-y: auto;">
                 <p style="text-align:center; color:#888;">Ładowanie wydarzeń...</p>
             </div>
@@ -382,7 +339,6 @@
                 document.getElementById('welcome-message').textContent = `Witaj, ${profile.username}!`;
 
                 // --- WIDOCZNOŚĆ WIDGETÓW ---
-                // Admin, Manager, Teacher, Lecturer - mają dostęp do materiałów/ocen
                 if (['admin', 'manager', 'teacher', 'lecturer'].includes(currentUserRole)) {
                     show('widget-assign-course');
                     show('widget-teacher-results');
@@ -391,53 +347,43 @@
                     document.getElementById('widget-assign-course').onclick = () => openAssignCourseModal();
                     document.getElementById('widget-calendar').onclick = () => openCalendarModal();
                 } else {
+                    // UCZEŃ
                     show('student-sidebar-content'); 
                     loadSidebarCalendar(); 
                     loadSidebarGrades();
                 }
 
                 if (currentUserRole === 'admin') {
-                    ['widget-admin-content', 'widget-create-course', 'widget-create-quiz', 'widget-add-user', 'widget-add-school', 'widget-add-class', 'widget-manage-students', 'widget-manage-classes'].forEach(show);
+                    ['widget-admin-content', 'widget-create-course', 'widget-create-quiz', 'widget-add-user', 'widget-add-school', 'widget-manage-classes', 'widget-manage-students'].forEach(show);
                     ['widget-student-courses', 'widget-student-grades'].forEach(hide);
                     
                     document.getElementById('widget-add-user').onclick = () => openCreateUserModal();
                     document.getElementById('widget-add-school').onclick = () => openModal('addSchoolModal');
-                    document.getElementById('widget-add-class').onclick = () => openClassModal();
-                    document.getElementById('widget-manage-classes').onclick = () => openManageClassesModal();
                 }
 
                 if (currentUserRole === 'manager') {
                     show('widget-add-user');
-                    show('widget-add-class');
-                    show('widget-manage-students');
                     show('widget-manage-classes');
+                    show('widget-manage-students');
                     document.getElementById('widget-add-user').onclick = () => openCreateUserModal();
-                    document.getElementById('widget-add-class').onclick = () => openClassModal();
-                    document.getElementById('widget-manage-students').onclick = () => openManageStudentsModal();
-                    document.getElementById('widget-manage-classes').onclick = () => openManageClassesModal();
                 }
 
-                // NOWA ROLA: WYKŁADOWCA (Lecturer)
-                // Ma to samo co Manager, ALE nie może tworzyć userów (widget-add-user)
+                // WYKŁADOWCA: Ma dostęp do edycji klas (przypisywanie) i studentów, ale nie tworzenia userów
                 if (currentUserRole === 'lecturer') {
-                    // show('widget-add-class'); // Wykładowca zazwyczaj nie tworzy klas, ale może przypisywać
-                    show('widget-manage-students'); // Może przypisywać uczniów do klas
-                    // Ukrywamy widgety dodawania kont
+                    show('widget-manage-classes'); 
+                    show('widget-manage-students');
                     hide('widget-add-user'); 
                     hide('widget-add-school');
-                    
-                    document.getElementById('widget-manage-students').onclick = () => openManageStudentsModal();
                 }
             }
 
-            // Listenery
+            // Listeners
             document.getElementById('avatarTrigger').addEventListener('click', (e) => { e.stopPropagation(); document.getElementById('profileDropdown').classList.toggle('show'); });
             window.addEventListener('click', () => document.getElementById('profileDropdown').classList.remove('show'));
             document.getElementById('logoutBtn').addEventListener('click', async () => { await _supabase.auth.signOut(); window.location.href = 'login.html'; });
 
             document.getElementById('createUserForm').addEventListener('submit', createNewUser);
             document.getElementById('addSchoolForm').addEventListener('submit', addSchool);
-            document.getElementById('addClassForm').addEventListener('submit', addClass);
             document.getElementById('assignCourseForm').addEventListener('submit', assignCourseToClass);
             
             document.getElementById('new-role').addEventListener('change', handleRoleChange);
@@ -445,21 +391,16 @@
             document.getElementById('new-user-school').addEventListener('change', async function() { await loadClassesForSchool(this.value); generateEmail(); });
             document.getElementById('new-user-class').addEventListener('change', generateEmail);
 
-            document.getElementById('manage-level-filter').addEventListener('change', filterManageStudentSchools);
-            document.getElementById('manage-school-select').addEventListener('change', function() { loadStudentsForSchool(this.value); });
-            document.getElementById('filter-class-select').addEventListener('change', filterStudentsTable);
-            document.getElementById('manage-class-school-select').addEventListener('change', function() { loadClassesForEdit(this.value); });
-
-            // ASSIGN COURSE LOGIC (New Filtered)
+            // ASSIGN COURSE LOGIC (INTELIGENTNE FILTROWANIE)
             document.getElementById('assign-school-select').addEventListener('change', async function() {
                 const sid = parseInt(this.value); 
                 const cSelect = document.getElementById('assign-class-select');
-                const pSelect = document.getElementById('assign-package-select'); // Pakiet select
+                const pSelect = document.getElementById('assign-package-select');
                 
                 cSelect.disabled = true; cSelect.innerHTML = '<option>Ładowanie...</option>';
                 pSelect.disabled = true; pSelect.innerHTML = '<option>Ładowanie...</option>';
 
-                // 1. Get School Level first
+                // 1. Get School Level
                 const { data: school } = await _supabase.from('schools').select('level').eq('id', sid).single();
                 
                 // 2. Load Classes
@@ -495,148 +436,184 @@
             }
         }
 
-        // --- SIDEBAR DATA ---
+        // --- SIDEBAR DATA (STUDENT) ---
         async function loadSidebarCalendar() {
             const list = document.getElementById('sidebar-calendar-list');
             if(!currentUserClassId) { list.innerHTML = '<p class="empty-sidebar">Brak klasy.</p>'; return; }
             const today = new Date().toISOString().split('T')[0];
-            const { data } = await _supabase.from('calendar_events').select('title, event_date').eq('class_id', currentUserClassId).gte('event_date', today).order('event_date', { ascending: true }).limit(3);
+            const { data } = await _supabase.from('calendar_events')
+                .select('title, event_date')
+                .eq('class_id', currentUserClassId)
+                .gte('event_date', today)
+                .order('event_date', { ascending: true })
+                .limit(3);
+            
             list.innerHTML = '';
             if(!data || data.length === 0) { list.innerHTML = '<p class="empty-sidebar">Brak wydarzeń.</p>'; return; }
-            data.forEach(e => { const d = new Date(e.event_date); const dateStr = `${d.getDate()}.${d.getMonth()+1}`; list.innerHTML += `<div class="sidebar-list-item"><div class="sidebar-list-date">${dateStr}</div><div class="sidebar-list-content">${e.title}</div></div>`; });
+            
+            data.forEach(e => {
+                const d = new Date(e.event_date);
+                const dateStr = `${d.getDate()}.${d.getMonth()+1}`;
+                list.innerHTML += `
+                    <div class="sidebar-list-item">
+                        <div class="sidebar-list-date">${dateStr}</div>
+                        <div class="sidebar-list-content">${e.title}</div>
+                    </div>`;
+            });
         }
+
         async function loadSidebarGrades() {
             const list = document.getElementById('sidebar-grades-list');
             const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
             const { data: { session } } = await _supabase.auth.getSession();
-            const { data: grades } = await _supabase.from('grades').select('grade, packages(title)').eq('user_id', session.user.id).gte('created_at', weekAgo).order('created_at', { ascending: false }).limit(5);
+            const { data: grades } = await _supabase.from('grades')
+                .select('grade, packages(title)')
+                .eq('user_id', session.user.id)
+                .gte('created_at', weekAgo)
+                .order('created_at', { ascending: false })
+                .limit(5);
+
             list.innerHTML = '';
             if(!grades || grades.length === 0) { list.innerHTML = '<p class="empty-sidebar">Brak nowych ocen.</p>'; return; }
-            grades.forEach(g => { const pkgTitle = g.packages ? g.packages.title : 'Inne'; list.innerHTML += `<div class="sidebar-list-item"><div class="sidebar-grade-circle">${g.grade}</div><div class="sidebar-list-content" style="font-size:12px; display:flex; align-items:center;">${pkgTitle}</div></div>`; });
+
+            grades.forEach(g => {
+                const pkgTitle = g.packages ? g.packages.title : 'Inne';
+                list.innerHTML += `
+                    <div class="sidebar-list-item">
+                        <div class="sidebar-grade-circle">${g.grade}</div>
+                        <div class="sidebar-list-content">${pkgTitle}</div>
+                    </div>`;
+            });
         }
 
         // --- FULL CALENDAR MODAL ---
-        async function openCalendarModal() { openModal('calendarModal'); const list=document.getElementById('calendar-events-list'); const tools=document.getElementById('calendar-teacher-tools'); list.innerHTML='Ładowanie...'; if(['admin', 'teacher', 'manager', 'lecturer'].includes(currentUserRole)) { tools.style.display='block'; const sel=document.getElementById('cal-class'); if(sel.options.length<=1){const {data}=await _supabase.from('classes').select('id,name').eq('school_id',currentUserSchoolId).order('name');if(data)data.forEach(c=>sel.add(new Option(c.name,c.id)));} loadFullCalendar(true); } else { tools.style.display='none'; loadFullCalendar(false); } }
-        async function loadFullCalendar(isTeacher) { const list=document.getElementById('calendar-events-list'); let q=_supabase.from('calendar_events').select('*').order('event_date',{ascending:true}); if(!isTeacher){const t=new Date().toISOString().split('T')[0]; q=q.gte('event_date',t);} const {data:ev}=await q; list.innerHTML=''; if(!ev||ev.length===0){list.innerHTML='<p style="text-align:center; color:#888;">Brak.</p>';return;} const mm=["ST","LUT","MAR","KWI","MAJ","CZE","LIP","SIE","WRZ","PAŹ","LIS","GRU"]; const tc={'test':'bg-test','homework':'bg-homework','info':'bg-info'}; const tm={'test':'Sprawdzian','homework':'Zadanie','info':'Info'}; ev.forEach(e=>{ const d=new Date(e.event_date); const div=document.createElement('div'); div.className='event-item'; div.innerHTML=`<div class="event-date-box"><span class="event-day">${d.getDate()}</span><span class="event-month">${mm[d.getMonth()]}</span></div><div class="event-details"><div class="event-title">${e.title}<span class="event-badge ${tc[e.type]}">${tm[e.type]}</span></div><div class="event-meta">${isTeacher?`ID Klasy: ${e.class_id}`:''}</div></div>${isTeacher?`<div class="delete-mini-btn" onclick="deleteCalendarEvent(${e.id})">&times;</div>`:''}`; list.appendChild(div); }); }
-        async function addCalendarEvent() { const cid=document.getElementById('cal-class').value; const d=document.getElementById('cal-date').value; const t=document.getElementById('cal-type').value; const tit=document.getElementById('cal-title').value; if(!cid||!d||!tit)return alert("Wypełnij!"); const {data:{session}}=await _supabase.auth.getSession(); const {error}=await _supabase.from('calendar_events').insert({teacher_id:session.user.id,class_id:cid,title:tit,event_date:d,type:t}); if(error)alert(error.message); else{document.getElementById('cal-title').value=""; loadFullCalendar(true); loadSidebarCalendar();} }
+        async function openCalendarModal() {
+            openModal('calendarModal');
+            const list = document.getElementById('calendar-events-list');
+            const tools = document.getElementById('calendar-teacher-tools');
+            list.innerHTML = 'Ładowanie...';
+
+            if(['admin', 'teacher', 'manager', 'lecturer'].includes(currentUserRole)) {
+                tools.style.display = 'block';
+                const sel = document.getElementById('cal-class');
+                if(sel.options.length <= 1) {
+                    const { data: classes } = await _supabase.from('classes').select('id, name').eq('school_id', currentUserSchoolId).order('name');
+                    if(classes) classes.forEach(c => sel.add(new Option(c.name, c.id)));
+                }
+                loadFullCalendar(true); 
+            } else {
+                tools.style.display = 'none';
+                loadFullCalendar(false);
+            }
+        }
+
+        async function loadFullCalendar(isTeacher) {
+            const list = document.getElementById('calendar-events-list');
+            let query = _supabase.from('calendar_events').select('*').order('event_date', { ascending: true });
+            if(!isTeacher){ const t=new Date().toISOString().split('T')[0]; query=query.gte('event_date', t); }
+            
+            const { data: ev } = await query;
+            list.innerHTML = '';
+            if(!ev||ev.length===0){ list.innerHTML='<p style="text-align:center; color:#888;">Brak.</p>'; return; }
+            
+            const mm=["ST","LUT","MAR","KWI","MAJ","CZE","LIP","SIE","WRZ","PAŹ","LIS","GRU"];
+            const typeClass = { 'test': 'bg-test', 'homework': 'bg-homework', 'info': 'bg-info' };
+            const typeName = { 'test': 'Sprawdzian', 'homework': 'Zadanie', 'info': 'Info' };
+
+            ev.forEach(e=>{ 
+                const d=new Date(e.event_date); 
+                const div=document.createElement('div'); div.className='event-item'; 
+                div.innerHTML=`
+                    <div class="event-date-box">
+                        <span class="event-day">${d.getDate()}</span>
+                        <span class="event-month">${mm[d.getMonth()]}</span>
+                    </div>
+                    <div class="event-details">
+                        <div class="event-title">${e.title}<span class="event-badge ${typeClass[e.type]}">${typeName[e.type]}</span></div>
+                        <div class="event-meta">${isTeacher?`ID Klasy: ${e.class_id}`:''}</div>
+                    </div>
+                    ${isTeacher?`<div class="delete-mini-btn" onclick="deleteCalendarEvent(${e.id})">&times;</div>`:''}
+                `; 
+                list.appendChild(div); 
+            }); 
+        }
+
+        async function addCalendarEvent() {
+            const cid=document.getElementById('cal-class').value; const d=document.getElementById('cal-date').value; const t=document.getElementById('cal-type').value; const tit=document.getElementById('cal-title').value; if(!cid||!d||!tit)return alert("Wypełnij!"); const {data:{session}}=await _supabase.auth.getSession(); const {error}=await _supabase.from('calendar_events').insert({teacher_id:session.user.id,class_id:cid,title:tit,event_date:d,type:t}); if(error)alert(error.message); else{document.getElementById('cal-title').value=""; loadFullCalendar(true); loadSidebarCalendar();} 
+        }
         async function deleteCalendarEvent(id) { if(!confirm("Usunąć?"))return; await _supabase.from('calendar_events').delete().eq('id',id); loadFullCalendar(true); }
 
         // --- INNE FUNKCJE ---
-        async function createNewUser(e) { e.preventDefault(); const btn=document.getElementById('createBtn'); btn.disabled=true; const em=document.getElementById('new-email').value; const pw=document.getElementById('new-password').value; const un=document.getElementById('new-username').value; const ro=document.getElementById('new-role').value; const sid=document.getElementById('new-user-school').value; const cid=document.getElementById('new-user-class').value||null; const tmp=supabase.createClient(supabaseUrl,supabaseKey,{auth:{persistSession:false}}); const {error}=await tmp.auth.signUp({email:em,password:pw,options:{data:{username:un,role:ro,school_id:sid||null,class_id:cid,member_code:generatedMemberCode}}}); if(error)alert(error.message); else {alert("Konto utworzone!"); closeModal('createUserModal'); document.getElementById('createUserForm').reset();} btn.disabled=false; }
+        
+        // POPRAWIONA FUNKCJA CREATE USER (z ID counter fix)
+        async function createNewUser(e) { 
+            e.preventDefault(); 
+            const btn=document.getElementById('createBtn'); 
+            btn.disabled=true; btn.textContent = "Tworzenie...";
+            
+            const em=document.getElementById('new-email').value; 
+            const pw=document.getElementById('new-password').value; 
+            const un=document.getElementById('new-username').value; 
+            const ro=document.getElementById('new-role').value; 
+            const sid=document.getElementById('new-user-school').value; 
+            const cid=document.getElementById('new-user-class').value||null; 
+            
+            const tmp=supabase.createClient(supabaseUrl,supabaseKey,{auth:{persistSession:false}}); 
+            const {error}=await tmp.auth.signUp({
+                email:em, password:pw,
+                options:{data:{username:un,role:ro,school_id:sid||null,class_id:cid,member_code:generatedMemberCode}}
+            }); 
+            
+            if(error) alert(error.message); 
+            else { alert("Konto utworzone!"); closeModal('createUserModal'); document.getElementById('createUserForm').reset(); } 
+            btn.disabled=false; btn.textContent = "Utwórz konto";
+        }
         
         async function openCreateUserModal() { openModal('createUserModal'); await ensureSchoolsCache(); document.getElementById('new-user-level-filter').value = ""; const sSelect = document.getElementById('new-user-school'); sSelect.innerHTML = '<option value="" disabled selected>-- Wybierz typ najpierw --</option>'; sSelect.disabled = true; document.getElementById('class-select-container').style.display = 'none'; document.getElementById('new-email').value=""; }
         function handleRoleChange() { const role = document.getElementById('new-role').value; const sc = document.getElementById('school-select-container'); const cc = document.getElementById('class-select-container'); const em = document.getElementById('new-email'); if (role === 'admin') { sc.style.display = 'none'; em.removeAttribute('readonly'); em.value = ""; em.placeholder = "Email admina"; } else { sc.style.display = 'block'; em.setAttribute('readonly', true); em.placeholder = "Wybierz szkołę..."; cc.style.display = (role === 'student') ? 'block' : 'none'; if(document.getElementById('new-user-school').value) generateEmail(); } }
         function filterNewUserSchools() { const lvl = document.getElementById('new-user-level-filter').value; const s = document.getElementById('new-user-school'); s.innerHTML = '<option value="" disabled selected>-- Wybierz --</option>'; schoolsCache.filter(x => x.level == lvl).forEach(x => s.add(new Option(x.name, x.id))); s.disabled = false; }
         async function loadClassesForSchool(sid) { const c = document.getElementById('new-user-class'); c.innerHTML = '<option>...</option>'; c.disabled = true; const { data } = await _supabase.from('classes').select('id, name').eq('school_id', sid); c.innerHTML = '<option value="">-- Brak --</option>'; if(data) data.forEach(x => c.add(new Option(x.name, x.id))); c.disabled = false; }
-         async function generateEmail() {
-                    const role = document.getElementById('new-role').value;
-                    const schoolId = document.getElementById('new-user-school').value;
-                    const emailInput = document.getElementById('new-email');
         
-                    // Admin zazwyczaj wpisuje własny email, ale jeśli jest przypisany do szkoły, też go policzymy
-                    if (role === 'admin' && !schoolId) return; 
-                    if (!schoolId) return;
-        
-                    emailInput.value = "Generowanie ID...";
-                    
-                    // Pobierz skrót szkoły
-                    const school = schoolsCache.find(s => s.id == schoolId);
-                    const abbr = school ? school.abbreviation : "SZKOLA";
-        
-                    // --- POPRAWIONA LOGIKA LICZNIKA ---
-                    let query = _supabase.from('users')
-                        .select('*', { count: 'exact', head: true })
-                        .eq('school_id', schoolId);
-        
-                    // Podział na dwa worki: Student vs Reszta Świata (Kadra)
-                    if (role === 'student') {
-                        query = query.eq('role', 'student');
-                    } else {
-                        // Zliczamy wszystkich pracowników razem, żeby uniknąć duplikatów ID
-                        query = query.in('role', ['teacher', 'manager', 'lecturer', 'admin']);
-                    }
-        
-                    const { count, error } = await query;
-                    
-                    if (error) {
-                        console.error(error);
-                        emailInput.value = "Błąd licznika";
-                        return;
-                    }
-        
-                    const nextNum = (count || 0) + 1;
-                    generatedMemberCode = nextNum; // Zapisz do zmiennej globalnej (używanej przy createNewUser)
-                    
-                    const padCode = String(nextNum).padStart(4, '0');
-                    const suffix = (role === 'student') ? 'student' : 'kadra';
-                    
-                    emailInput.value = `${padCode}.${abbr}-${suffix}@muczelnia.pl`;
-                }        
-        // --- STUDENT MANAGEMENT (Buttons Styled) ---
-        async function openManageStudentsModal(){ openModal('manageStudentsModal'); await ensureSchoolsCache(); document.getElementById('manage-level-filter').value=""; document.getElementById('manage-school-select').innerHTML='<option disabled selected>Typ...</option>'; document.getElementById('students-table-body').innerHTML=''; document.getElementById('students-table-container').style.display='none'; }
-        function filterManageStudentSchools(){ const lvl=document.getElementById('manage-level-filter').value; const s=document.getElementById('manage-school-select'); s.innerHTML='<option disabled selected>Wybierz</option>'; schoolsCache.filter(x=>x.level==lvl).forEach(x=>s.add(new Option(x.name,x.id))); }
-        
-        async function loadStudentsForSchool(sid){ 
-            const tb=document.getElementById('students-table-body'); 
-            const l=document.getElementById('students-loading'); 
-            const c=document.getElementById('students-table-container'); 
-            const f=document.getElementById('filter-class-select'); 
-            l.style.display='block'; c.style.display='none'; tb.innerHTML=''; 
+        // POPRAWIONA FUNKCJA GENEROWANIA EMAILA (Fix duplikatów 0001)
+        async function generateEmail() { 
+            const r = document.getElementById('new-role').value; 
+            const sid = document.getElementById('new-user-school').value; 
+            const em = document.getElementById('new-email'); 
+            if(r==='admin'||!sid)return; 
+            em.value="..."; 
             
-            const {data:st}=await _supabase.from('users').select('id,username,email,class_id').eq('school_id',sid).eq('role','student'); 
-            const {data:cls}=await _supabase.from('classes').select('id,name').eq('school_id',sid); 
-            f.innerHTML='<option value="all">Wszyscy</option>'; if(cls) cls.forEach(x=>f.add(new Option(x.name,x.id))); 
-            l.style.display='none'; c.style.display='block'; 
+            const s=schoolsCache.find(x=>x.id==sid); 
+            const abbr=s?s.abbreviation:"SC"; 
             
-            if(!st||st.length===0){document.getElementById('no-students-msg').style.display='block';return;} 
-            document.getElementById('no-students-msg').style.display='none'; 
+            // Fix: Licz studentów osobno, kadrę (wszystkich innych) osobno
+            let query = _supabase.from('users').select('*',{count:'exact',head:true}).eq('school_id',sid);
+            if(r==='student') query = query.eq('role', 'student');
+            else query = query.in('role', ['teacher', 'manager', 'lecturer', 'admin']);
             
-            st.forEach(s=>{ 
-                const tr=document.createElement('tr'); tr.dataset.classId=s.class_id||'none'; 
-                const sel=document.createElement('select'); sel.className='class-select-small'; 
-                sel.add(new Option('--','')); 
-                if(cls) cls.forEach(x=>{const o=new Option(x.name,x.id); if(s.class_id===x.id)o.selected=true; sel.add(o);}); 
-                
-                const tdA=document.createElement('td'); 
-                const bS=document.createElement('div'); bS.className='table-action-btn btn-save'; bS.innerHTML='💾'; bS.title='Zapisz klasę';
-                bS.onclick=async()=>{const v=sel.value?parseInt(sel.value):null; await _supabase.from('users').update({class_id:v}).eq('id',s.id); tr.dataset.classId=v||'none'; alert("Zapisano");}; 
-                const bR=document.createElement('div'); bR.className='table-action-btn btn-reset'; bR.innerHTML='🔑'; bR.title='Wyślij reset hasła';
-                bR.onclick=async()=>{if(confirm("Wysłać reset hasła na e-mail?")){await _supabase.auth.resetPasswordForEmail(s.email); alert("Wysłano e-mail.");}}; 
-                const bD=document.createElement('div'); bD.className='table-action-btn btn-delete'; bD.innerHTML='❌'; bD.title='Usuń użytkownika';
-                bD.onclick=async()=>{if(confirm("Usunąć?")){await _supabase.from('users').delete().eq('id',s.id); tr.remove();}}; 
-                
-                tdA.append(bS,bR,bD); 
-                tr.innerHTML=`<td><b>${s.username}</b></td><td>${s.email}</td>`; 
-                const tdC=document.createElement('td'); tdC.appendChild(sel); 
-                tr.append(tdC,tdA); tb.appendChild(tr); 
-            }); 
+            const {count} = await query;
+            const n=(count||0)+1; 
+            generatedMemberCode=n; 
+            em.value = `${String(n).padStart(4,'0')}.${abbr}-${r==='student'?'student':'kadra'}@muczelnia.pl`; 
         }
-
-        function filterStudentsTable(){ const v=document.getElementById('filter-class-select').value; document.querySelectorAll('#students-table-body tr').forEach(r=>{ const cid=r.dataset.classId; if(v==='all'||(v==='none'&&(!cid||cid==='none'))||cid==v) r.style.display=''; else r.style.display='none'; }); }
         
         async function addSchool(e){ e.preventDefault(); const {error}=await _supabase.from('schools').insert({name:document.getElementById('school-name').value, abbreviation:document.getElementById('school-abbr').value, level:document.getElementById('school-level').value, address:document.getElementById('school-address').value}); if(error)alert(error.message); else {alert("Dodano"); closeModal('addSchoolModal'); schoolsCache=[];} }
-        async function openClassModal(){ openModal('addClassModal'); const s=document.getElementById('class-school-select'); const {data}=await _supabase.from('schools').select('id,name'); s.innerHTML='<option value="">Wybiez</option>'; data.forEach(x=>s.add(new Option(x.name,x.id))); }
-        async function addClass(e){ e.preventDefault(); const {error}=await _supabase.from('classes').insert({school_id:document.getElementById('class-school-select').value, name:document.getElementById('class-name').value}); if(error)alert(error.message); else {alert("Dodano"); closeModal('addClassModal');} }
-        async function openManageClassesModal() { openModal('manageClassesModal'); const s=document.getElementById('manage-class-school-select'); document.getElementById('classes-list-container').innerHTML=''; const {data}=await _supabase.from('schools').select('id,name').order('name'); s.innerHTML='<option value="" disabled selected>-- Wybierz --</option>'; data.forEach(x=>s.add(new Option(x.name,x.id))); }
-        async function loadClassesForEdit(sid) { const c=document.getElementById('classes-list-container'); c.innerHTML='Ładowanie...'; const {data:cl,error}=await _supabase.from('classes').select('id,name,package_classes(id,packages(title))').eq('school_id',sid).order('name'); c.innerHTML=''; if(error)return; if(!cl||cl.length===0){c.innerHTML='Brak klas.';return;} cl.forEach(x=>{ const w=document.createElement('div'); w.className='class-edit-item'; const h=document.createElement('div'); h.className='class-row-header'; const i=document.createElement('input'); i.type='text'; i.value=x.name; i.className='edit-input'; i.style.margin='0'; i.style.width='60%'; const a=document.createElement('div'); const bS=document.createElement('button'); bS.textContent='Zapisz'; bS.className='save-mini-btn'; bS.onclick=async()=>{await _supabase.from('classes').update({name:i.value}).eq('id',x.id); alert("OK");}; const bD=document.createElement('span'); bD.textContent='🗑️'; bD.className='delete-mini-btn'; bD.onclick=async()=>{if(confirm("Usunąć?")){await _supabase.from('classes').delete().eq('id',x.id); w.remove();}}; a.append(bS,bD); h.append(i,a); const pC=document.createElement('div'); pC.className='packages-container'; if(x.package_classes&&x.package_classes.length>0){x.package_classes.forEach(pc=>{if(pc.packages){const ch=document.createElement('div'); ch.className='pkg-chip'; ch.innerHTML=`📦 ${pc.packages.title} <span class="pkg-chip-remove" onclick="unlinkPkg(${pc.id},this)">×</span>`; pC.appendChild(ch);}});} else {pC.innerHTML='<small style="color:#888">Brak pakietów</small>';} w.append(h,pC); c.appendChild(w); }); }
-        async function unlinkPkg(id,el){if(confirm("Odpiąć?")){await _supabase.from('package_classes').delete().eq('id',id); el.parentElement.remove();}}
         
         async function openAssignCourseModal(){ 
             openModal('assignCourseModal'); 
             const ss=document.getElementById('assign-school-select'); 
             ss.innerHTML='<option disabled selected>Wybierz Szkołę</option>'; 
-            // Load schools based on role
+            // Admin widzi wszystkie, reszta swoją
             let query = _supabase.from('schools').select('id,name');
             if(currentUserRole !== 'admin') query = query.eq('id', currentUserSchoolId);
-            const {data:s} = await query;
+            
+            const {data:s}=await query;
             if(s) s.forEach(x=>ss.add(new Option(x.name,x.id))); 
             
             document.getElementById('assign-package-select').innerHTML='<option disabled selected>Najpierw Szkoła...</option>';
             document.getElementById('assign-package-select').disabled = true;
         }
+        
         async function assignCourseToClass(e){ e.preventDefault(); const p=document.getElementById('assign-package-select').value; const c=document.getElementById('assign-class-select').value; if(!c)return alert("Klasa!"); const {error}=await _supabase.from('package_classes').insert({package_id:p,class_id:c}); if(error)alert(error.message); else{alert("Przypisano"); closeModal('assignCourseModal');} }
     </script>
 </body>
 </html>
-
-
