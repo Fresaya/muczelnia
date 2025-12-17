@@ -329,7 +329,7 @@
             renderTable(filtered, allClasses);
         }
 
-        function renderTable(studentsList, classesList) {
+function renderTable(studentsList, classesList) {
             const tbody = document.getElementById('students-body');
             tbody.innerHTML = '';
 
@@ -341,21 +341,20 @@
             studentsList.forEach(s => {
                 const tr = document.createElement('tr');
                 
-                // Dropdown klas w wierszu
                 let classOptions = '<option value="">-- Brak --</option>';
                 classesList.forEach(c => {
                     const selected = s.class_id === c.id ? 'selected' : '';
                     classOptions += `<option value="${c.id}" ${selected}>${c.name}</option>`;
                 });
 
-                // Przyciski akcji
                 let actionsHtml = `
                     <div class="table-btn btn-save" title="Zapisz przypisanie klasy" onclick="saveClass('${s.id}', this)">💾</div>
                 `;
 
                 if (currentRole !== 'lecturer') {
                     actionsHtml += `
-                        <div class="table-btn btn-pass" title="Wyślij reset hasła" onclick="resetPass('${s.email}')">🔑</div>
+                        <div class="table-btn btn-pass" title="Ustaw nowe hasło ręcznie" onclick="resetPass('${s.id}', '${s.username}')">🔑</div>
+                        
                         <div class="table-btn btn-del" title="Usuń konto" onclick="deleteUser('${s.id}', this)">❌</div>
                     `;
                 }
@@ -392,11 +391,29 @@
             }
         }
 
-        async function resetPass(email) {
-            if(!confirm(`Czy na pewno wysłać link do resetu hasła na adres: ${email}?`)) return;
-            const { error } = await _supabase.auth.resetPasswordForEmail(email);
-            if(error) alert("Błąd: " + error.message);
-            else alert("Wysłano e-mail z linkiem resetującym.");
+// --- NOWA FUNKCJA RESETU HASŁA (Bez e-maila) ---
+        async function resetPass(userId, username) {
+            const newPassword = prompt(`Podaj nowe hasło dla ucznia ${username}:`, "start123");
+            
+            if (!newPassword) return; // Jeśli anulowano
+
+            if (newPassword.length < 6) {
+                alert("Hasło musi mieć minimum 6 znaków.");
+                return;
+            }
+
+            // Wywołujemy naszą funkcję SQL (RPC)
+            const { error } = await _supabase.rpc('admin_reset_password', {
+                target_user_id: userId,
+                new_password: newPassword
+            });
+
+            if (error) {
+                console.error(error);
+                alert("Błąd: " + error.message);
+            } else {
+                alert(`✅ Hasło zmienione! Przekaż uczniowi: ${newPassword}`);
+            }
         }
 
         async function deleteUser(userId, btnElement) {
