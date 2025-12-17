@@ -13,30 +13,13 @@
         .save-mini-btn { padding: 5px 10px; font-size: 12px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px; }
         .delete-mini-btn { cursor: pointer; color: var(--accent-color); font-size: 18px; margin-left: 10px; }
         
-        /* Stylizowane przyciski w tabelach (Zarządzanie Uczniami) */
-        .table-action-btn {
-            border: 1px solid var(--border-color);
-            background: var(--panel-bg);
-            border-radius: 50%;
-            width: 32px; height: 32px;
-            display: inline-flex; align-items: center; justify-content: center;
-            cursor: pointer;
-            margin: 0 4px;
-            transition: all 0.2s;
-            font-size: 14px;
-        }
-        .table-action-btn:hover { transform: scale(1.1); background: var(--hover-bg); border-color: #bbb; }
-        .btn-save { color: #4CAF50; }
-        .btn-reset { color: #FF9800; }
-        .btn-delete { color: #F44336; }
-
         /* CHIPY PAKIETÓW */
         .packages-container { display: flex; flex-wrap: wrap; gap: 5px; padding-left: 2px; }
         .pkg-chip { display: inline-flex; align-items: center; background-color: rgba(33, 150, 243, 0.1); color: #1565C0; border: 1px solid rgba(33, 150, 243, 0.3); border-radius: 12px; padding: 2px 8px; font-size: 11px; font-weight: 500; }
         .pkg-chip-remove { margin-left: 6px; cursor: pointer; font-weight: bold; color: #1565C0; opacity: 0.6; font-size: 14px; line-height: 1; }
         .pkg-chip-remove:hover { opacity: 1; color: red; }
 
-        /* --- KALENDARZ --- */
+        /* --- KALENDARZ (MODAL) --- */
         .event-item { display: flex; align-items: center; padding: 10px; border-bottom: 1px solid var(--border-color); }
         .event-date-box { 
             background: var(--panel-bg); border: 1px solid var(--border-color); 
@@ -65,8 +48,6 @@
         .empty-sidebar { font-size: 12px; color: var(--text-muted); font-style: italic; }
 
         @media (prefers-color-scheme: dark) {
-            .table-action-btn { background: #333; border-color: #555; }
-            .table-action-btn:hover { background: #444; }
             .pkg-chip { background-color: rgba(33, 150, 243, 0.2); color: #90caf9; border-color: rgba(33, 150, 243, 0.5); }
             .pkg-chip-remove { color: #90caf9; }
             .event-date-box { background: #2a2a2a; border-color: #444; }
@@ -197,7 +178,6 @@
             </div>
 
             <div id="student-sidebar-content" style="display: none;">
-                
                 <div class="sidebar-section">
                     <div class="sidebar-title" onclick="openCalendarModal()" style="cursor:pointer; display:flex; justify-content:space-between;">
                         <span>NADCHODZĄCE</span>
@@ -207,14 +187,12 @@
                         <p class="empty-sidebar">Ładowanie...</p>
                     </div>
                 </div>
-
                 <div class="sidebar-section">
                     <div class="sidebar-title">OSTATNIE OCENY (7 DNI)</div>
                     <div id="sidebar-grades-list">
                         <p class="empty-sidebar">Ładowanie...</p>
                     </div>
                 </div>
-
             </div>
         </aside>
     </div>
@@ -235,7 +213,7 @@
                     <option value="teacher">Nauczyciel</option>
                     <option value="manager">Dziekanat (Manager)</option>
                     <option value="admin">Administrator</option>
-                </select>
+                    <option value="lecturer">Wykładowca</option> </select>
 
                 <div id="school-select-container" style="display: block;">
                     <label>Typ Szkoły</label>
@@ -349,7 +327,6 @@
                 <h3 class="modal-title">Terminarz</h3>
                 <span class="close-modal" onclick="closeModal('calendarModal')">&times;</span>
             </div>
-            
             <div id="calendar-teacher-tools" style="display:none; background:#f9f9f9; padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid #eee;">
                 <h4 style="margin:0 0 10px 0; font-size:14px;">Dodaj Wydarzenie</h4>
                 <div style="display:flex; gap:10px; flex-wrap:wrap;">
@@ -364,7 +341,6 @@
                 <input type="text" id="cal-title" class="edit-input" placeholder="Tytuł (np. Test z Historii)" style="margin-top:10px;">
                 <button class="login-button full-width-btn" style="margin-top:10px;" onclick="addCalendarEvent()">Dodaj do kalendarza</button>
             </div>
-
             <div id="calendar-events-list" style="max-height: 400px; overflow-y: auto;">
                 <p style="text-align:center; color:#888;">Ładowanie wydarzeń...</p>
             </div>
@@ -396,7 +372,7 @@
                 currentUserClassId = profile.class_id;
                 
                 document.getElementById('profile-name-display').textContent = profile.username;
-                const roleMap = { 'student': 'UCZEŃ', 'teacher': 'NAUCZYCIEL', 'manager': 'DZIEKANAT', 'admin': 'ADMIN' };
+                const roleMap = { 'student': 'UCZEŃ', 'teacher': 'NAUCZYCIEL', 'manager': 'MANAGER', 'admin': 'ADMIN', 'lecturer': 'WYKŁADOWCA' };
                 document.getElementById('profile-role-display').textContent = (roleMap[profile.role] || profile.role).toUpperCase();
                 
                 let schoolInfo = "";
@@ -405,16 +381,16 @@
                 document.getElementById('profile-school-display').innerHTML = schoolInfo;
                 document.getElementById('welcome-message').textContent = `Witaj, ${profile.username}!`;
 
-                // --- ROLE VISIBILITY ---
-                if (['admin', 'manager', 'teacher'].includes(currentUserRole)) {
+                // --- WIDOCZNOŚĆ WIDGETÓW ---
+                // Admin, Manager, Teacher, Lecturer - mają dostęp do materiałów/ocen
+                if (['admin', 'manager', 'teacher', 'lecturer'].includes(currentUserRole)) {
                     show('widget-assign-course');
                     show('widget-teacher-results');
                     show('widget-teacher-grades');
-                    show('widget-calendar'); // Nauczyciel widzi duży kalendarz
+                    show('widget-calendar'); 
                     document.getElementById('widget-assign-course').onclick = () => openAssignCourseModal();
                     document.getElementById('widget-calendar').onclick = () => openCalendarModal();
                 } else {
-                    // UCZEŃ: Widgety ucznia + Sidebar
                     show('student-sidebar-content'); 
                     loadSidebarCalendar(); 
                     loadSidebarGrades();
@@ -441,9 +417,21 @@
                     document.getElementById('widget-manage-students').onclick = () => openManageStudentsModal();
                     document.getElementById('widget-manage-classes').onclick = () => openManageClassesModal();
                 }
+
+                // NOWA ROLA: WYKŁADOWCA (Lecturer)
+                // Ma to samo co Manager, ALE nie może tworzyć userów (widget-add-user)
+                if (currentUserRole === 'lecturer') {
+                    // show('widget-add-class'); // Wykładowca zazwyczaj nie tworzy klas, ale może przypisywać
+                    show('widget-manage-students'); // Może przypisywać uczniów do klas
+                    // Ukrywamy widgety dodawania kont
+                    hide('widget-add-user'); 
+                    hide('widget-add-school');
+                    
+                    document.getElementById('widget-manage-students').onclick = () => openManageStudentsModal();
+                }
             }
 
-            // Listeners
+            // Listenery
             document.getElementById('avatarTrigger').addEventListener('click', (e) => { e.stopPropagation(); document.getElementById('profileDropdown').classList.toggle('show'); });
             window.addEventListener('click', () => document.getElementById('profileDropdown').classList.remove('show'));
             document.getElementById('logoutBtn').addEventListener('click', async () => { await _supabase.auth.signOut(); window.location.href = 'login.html'; });
@@ -508,111 +496,30 @@
             }
         }
 
-        // --- SIDEBAR DATA (STUDENT) ---
+        // --- SIDEBAR DATA ---
         async function loadSidebarCalendar() {
             const list = document.getElementById('sidebar-calendar-list');
             if(!currentUserClassId) { list.innerHTML = '<p class="empty-sidebar">Brak klasy.</p>'; return; }
             const today = new Date().toISOString().split('T')[0];
-            const { data } = await _supabase.from('calendar_events')
-                .select('title, event_date')
-                .eq('class_id', currentUserClassId)
-                .gte('event_date', today)
-                .order('event_date', { ascending: true })
-                .limit(3);
-            
+            const { data } = await _supabase.from('calendar_events').select('title, event_date').eq('class_id', currentUserClassId).gte('event_date', today).order('event_date', { ascending: true }).limit(3);
             list.innerHTML = '';
             if(!data || data.length === 0) { list.innerHTML = '<p class="empty-sidebar">Brak wydarzeń.</p>'; return; }
-            
-            data.forEach(e => {
-                const d = new Date(e.event_date);
-                const dateStr = `${d.getDate()}.${d.getMonth()+1}`;
-                list.innerHTML += `
-                    <div class="sidebar-list-item">
-                        <div class="sidebar-list-date">${dateStr}</div>
-                        <div class="sidebar-list-content">${e.title}</div>
-                    </div>`;
-            });
+            data.forEach(e => { const d = new Date(e.event_date); const dateStr = `${d.getDate()}.${d.getMonth()+1}`; list.innerHTML += `<div class="sidebar-list-item"><div class="sidebar-list-date">${dateStr}</div><div class="sidebar-list-content">${e.title}</div></div>`; });
         }
-
         async function loadSidebarGrades() {
             const list = document.getElementById('sidebar-grades-list');
             const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
             const { data: { session } } = await _supabase.auth.getSession();
-            const { data: grades } = await _supabase.from('grades')
-                .select('grade, packages(title)')
-                .eq('user_id', session.user.id)
-                .gte('created_at', weekAgo)
-                .order('created_at', { ascending: false })
-                .limit(5);
-
+            const { data: grades } = await _supabase.from('grades').select('grade, packages(title)').eq('user_id', session.user.id).gte('created_at', weekAgo).order('created_at', { ascending: false }).limit(5);
             list.innerHTML = '';
             if(!grades || grades.length === 0) { list.innerHTML = '<p class="empty-sidebar">Brak nowych ocen.</p>'; return; }
-
-            grades.forEach(g => {
-                const pkgTitle = g.packages ? g.packages.title : 'Inne';
-                list.innerHTML += `
-                    <div class="sidebar-list-item">
-                        <div class="sidebar-grade-circle">${g.grade}</div>
-                        <div class="sidebar-list-content" style="font-size:12px; display:flex; align-items:center;">${pkgTitle}</div>
-                    </div>`;
-            });
+            grades.forEach(g => { const pkgTitle = g.packages ? g.packages.title : 'Inne'; list.innerHTML += `<div class="sidebar-list-item"><div class="sidebar-grade-circle">${g.grade}</div><div class="sidebar-list-content" style="font-size:12px; display:flex; align-items:center;">${pkgTitle}</div></div>`; });
         }
 
         // --- FULL CALENDAR MODAL ---
-        async function openCalendarModal() {
-            openModal('calendarModal');
-            const list = document.getElementById('calendar-events-list');
-            const tools = document.getElementById('calendar-teacher-tools');
-            list.innerHTML = 'Ładowanie...';
-
-            if(['admin', 'teacher', 'manager'].includes(currentUserRole)) {
-                tools.style.display = 'block';
-                const sel = document.getElementById('cal-class');
-                if(sel.options.length <= 1) {
-                    const { data: classes } = await _supabase.from('classes').select('id, name').eq('school_id', currentUserSchoolId).order('name');
-                    if(classes) classes.forEach(c => sel.add(new Option(c.name, c.id)));
-                }
-                loadFullCalendar(true); 
-            } else {
-                tools.style.display = 'none';
-                loadFullCalendar(false);
-            }
-        }
-
-        async function loadFullCalendar(isTeacher) {
-            const list = document.getElementById('calendar-events-list');
-            let query = _supabase.from('calendar_events').select('*').order('event_date', { ascending: true });
-            if(!isTeacher){ const t=new Date().toISOString().split('T')[0]; query=query.gte('event_date', t); }
-            
-            const { data: ev } = await query;
-            list.innerHTML = '';
-            if(!ev||ev.length===0){ list.innerHTML='<p style="text-align:center; color:#888;">Brak.</p>'; return; }
-            
-            const mm=["ST","LUT","MAR","KWI","MAJ","CZE","LIP","SIE","WRZ","PAŹ","LIS","GRU"];
-            const typeClass = { 'test': 'bg-test', 'homework': 'bg-homework', 'info': 'bg-info' };
-            const typeName = { 'test': 'Sprawdzian', 'homework': 'Zadanie', 'info': 'Info' };
-
-            ev.forEach(e=>{ 
-                const d=new Date(e.event_date); 
-                const div=document.createElement('div'); div.className='event-item'; 
-                div.innerHTML=`
-                    <div class="event-date-box">
-                        <span class="event-day">${d.getDate()}</span>
-                        <span class="event-month">${mm[d.getMonth()]}</span>
-                    </div>
-                    <div class="event-details">
-                        <div class="event-title">${e.title}<span class="event-badge ${typeClass[e.type]}">${typeName[e.type]}</span></div>
-                        <div class="event-meta">${isTeacher?`ID Klasy: ${e.class_id}`:''}</div>
-                    </div>
-                    ${isTeacher?`<div class="delete-mini-btn" onclick="deleteCalendarEvent(${e.id})">&times;</div>`:''}
-                `; 
-                list.appendChild(div); 
-            }); 
-        }
-
-        async function addCalendarEvent() {
-            const cid=document.getElementById('cal-class').value; const d=document.getElementById('cal-date').value; const t=document.getElementById('cal-type').value; const tit=document.getElementById('cal-title').value; if(!cid||!d||!tit)return alert("Wypełnij!"); const {data:{session}}=await _supabase.auth.getSession(); const {error}=await _supabase.from('calendar_events').insert({teacher_id:session.user.id,class_id:cid,title:tit,event_date:d,type:t}); if(error)alert(error.message); else{document.getElementById('cal-title').value=""; loadFullCalendar(true); loadSidebarCalendar();} 
-        }
+        async function openCalendarModal() { openModal('calendarModal'); const list=document.getElementById('calendar-events-list'); const tools=document.getElementById('calendar-teacher-tools'); list.innerHTML='Ładowanie...'; if(['admin', 'teacher', 'manager', 'lecturer'].includes(currentUserRole)) { tools.style.display='block'; const sel=document.getElementById('cal-class'); if(sel.options.length<=1){const {data}=await _supabase.from('classes').select('id,name').eq('school_id',currentUserSchoolId).order('name');if(data)data.forEach(c=>sel.add(new Option(c.name,c.id)));} loadFullCalendar(true); } else { tools.style.display='none'; loadFullCalendar(false); } }
+        async function loadFullCalendar(isTeacher) { const list=document.getElementById('calendar-events-list'); let q=_supabase.from('calendar_events').select('*').order('event_date',{ascending:true}); if(!isTeacher){const t=new Date().toISOString().split('T')[0]; q=q.gte('event_date',t);} const {data:ev}=await q; list.innerHTML=''; if(!ev||ev.length===0){list.innerHTML='<p style="text-align:center; color:#888;">Brak.</p>';return;} const mm=["ST","LUT","MAR","KWI","MAJ","CZE","LIP","SIE","WRZ","PAŹ","LIS","GRU"]; const tc={'test':'bg-test','homework':'bg-homework','info':'bg-info'}; const tm={'test':'Sprawdzian','homework':'Zadanie','info':'Info'}; ev.forEach(e=>{ const d=new Date(e.event_date); const div=document.createElement('div'); div.className='event-item'; div.innerHTML=`<div class="event-date-box"><span class="event-day">${d.getDate()}</span><span class="event-month">${mm[d.getMonth()]}</span></div><div class="event-details"><div class="event-title">${e.title}<span class="event-badge ${tc[e.type]}">${tm[e.type]}</span></div><div class="event-meta">${isTeacher?`ID Klasy: ${e.class_id}`:''}</div></div>${isTeacher?`<div class="delete-mini-btn" onclick="deleteCalendarEvent(${e.id})">&times;</div>`:''}`; list.appendChild(div); }); }
+        async function addCalendarEvent() { const cid=document.getElementById('cal-class').value; const d=document.getElementById('cal-date').value; const t=document.getElementById('cal-type').value; const tit=document.getElementById('cal-title').value; if(!cid||!d||!tit)return alert("Wypełnij!"); const {data:{session}}=await _supabase.auth.getSession(); const {error}=await _supabase.from('calendar_events').insert({teacher_id:session.user.id,class_id:cid,title:tit,event_date:d,type:t}); if(error)alert(error.message); else{document.getElementById('cal-title').value=""; loadFullCalendar(true); loadSidebarCalendar();} }
         async function deleteCalendarEvent(id) { if(!confirm("Usunąć?"))return; await _supabase.from('calendar_events').delete().eq('id',id); loadFullCalendar(true); }
 
         // --- INNE FUNKCJE ---
@@ -624,15 +531,8 @@
         async function loadClassesForSchool(sid) { const c = document.getElementById('new-user-class'); c.innerHTML = '<option>...</option>'; c.disabled = true; const { data } = await _supabase.from('classes').select('id, name').eq('school_id', sid); c.innerHTML = '<option value="">-- Brak --</option>'; if(data) data.forEach(x => c.add(new Option(x.name, x.id))); c.disabled = false; }
         async function generateEmail() { const r = document.getElementById('new-role').value; const sid = document.getElementById('new-user-school').value; const em = document.getElementById('new-email'); if(r==='admin'||!sid)return; em.value="..."; const s=schoolsCache.find(x=>x.id==sid); const abbr=s?s.abbreviation:"SC"; const {count}=await _supabase.from('users').select('*',{count:'exact',head:true}).eq('school_id',sid).eq('role',r); const n=(count||0)+1; generatedMemberCode=n; em.value = `${String(n).padStart(4,'0')}.${abbr}-${r==='student'?'student':'kadra'}@muczelnia.pl`; }
         
-        // --- BUTTONS FOR STUDENTS TABLE (Styled) ---
-        async function openManageStudentsModal(){ 
-            openModal('manageStudentsModal'); 
-            await ensureSchoolsCache(); 
-            document.getElementById('manage-level-filter').value=""; 
-            document.getElementById('manage-school-select').innerHTML='<option disabled selected>Typ...</option>'; 
-            document.getElementById('students-table-body').innerHTML=''; 
-            document.getElementById('students-table-container').style.display='none'; 
-        }
+        // --- STUDENT MANAGEMENT (Buttons Styled) ---
+        async function openManageStudentsModal(){ openModal('manageStudentsModal'); await ensureSchoolsCache(); document.getElementById('manage-level-filter').value=""; document.getElementById('manage-school-select').innerHTML='<option disabled selected>Typ...</option>'; document.getElementById('students-table-body').innerHTML=''; document.getElementById('students-table-container').style.display='none'; }
         function filterManageStudentSchools(){ const lvl=document.getElementById('manage-level-filter').value; const s=document.getElementById('manage-school-select'); s.innerHTML='<option disabled selected>Wybierz</option>'; schoolsCache.filter(x=>x.level==lvl).forEach(x=>s.add(new Option(x.name,x.id))); }
         
         async function loadStudentsForSchool(sid){ 
@@ -657,14 +557,10 @@
                 if(cls) cls.forEach(x=>{const o=new Option(x.name,x.id); if(s.class_id===x.id)o.selected=true; sel.add(o);}); 
                 
                 const tdA=document.createElement('td'); 
-                
-                // Styled Buttons
                 const bS=document.createElement('div'); bS.className='table-action-btn btn-save'; bS.innerHTML='💾'; bS.title='Zapisz klasę';
                 bS.onclick=async()=>{const v=sel.value?parseInt(sel.value):null; await _supabase.from('users').update({class_id:v}).eq('id',s.id); tr.dataset.classId=v||'none'; alert("Zapisano");}; 
-                
                 const bR=document.createElement('div'); bR.className='table-action-btn btn-reset'; bR.innerHTML='🔑'; bR.title='Wyślij reset hasła';
-                bR.onclick=async()=>{if(confirm("Wysłać reset hasła?")){await _supabase.auth.resetPasswordForEmail(s.email); alert("Wysłano e-mail.");}}; 
-
+                bR.onclick=async()=>{if(confirm("Wysłać reset hasła na e-mail?")){await _supabase.auth.resetPasswordForEmail(s.email); alert("Wysłano e-mail.");}}; 
                 const bD=document.createElement('div'); bD.className='table-action-btn btn-delete'; bD.innerHTML='❌'; bD.title='Usuń użytkownika';
                 bD.onclick=async()=>{if(confirm("Usunąć?")){await _supabase.from('users').delete().eq('id',s.id); tr.remove();}}; 
                 
@@ -686,11 +582,14 @@
         
         async function openAssignCourseModal(){ 
             openModal('assignCourseModal'); 
-            const {data:s}=await _supabase.from('schools').select('id,name'); 
             const ss=document.getElementById('assign-school-select'); 
             ss.innerHTML='<option disabled selected>Wybierz Szkołę</option>'; 
-            s.forEach(x=>ss.add(new Option(x.name,x.id))); 
-            // Resetuj pakiety
+            // Load schools based on role
+            let query = _supabase.from('schools').select('id,name');
+            if(currentUserRole !== 'admin') query = query.eq('id', currentUserSchoolId);
+            const {data:s} = await query;
+            if(s) s.forEach(x=>ss.add(new Option(x.name,x.id))); 
+            
             document.getElementById('assign-package-select').innerHTML='<option disabled selected>Najpierw Szkoła...</option>';
             document.getElementById('assign-package-select').disabled = true;
         }
