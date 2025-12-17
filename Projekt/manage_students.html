@@ -25,7 +25,7 @@
             flex-direction: column;
             gap: 5px;
             flex: 1;
-            min-width: 200px;
+            min-width: 150px; /* Zmniejszamy min-width żeby zmieścić 3 selecty */
         }
 
         .tool-group label {
@@ -144,13 +144,22 @@
                         <option value="all">Wszystkie</option>
                     </select>
                 </div>
-                <div class="tool-group" style="flex: 2;">
+                
+                <div class="tool-group" style="flex: 1.5;">
                     <label>2. Szkoła</label>
                     <select id="filter-school" class="edit-input" style="margin:0;" disabled>
                         <option value="" disabled selected>Najpierw wybierz poziom...</option>
                     </select>
                 </div>
+
                 <div class="tool-group">
+                    <label>3. Filtruj Klasę</label>
+                    <select id="filter-class" class="edit-input" style="margin:0;" disabled>
+                        <option value="all" selected>Wszystkie Klasy</option>
+                    </select>
+                </div>
+
+                <div class="tool-group" style="flex: 1.5;">
                     <label>Szukaj Ucznia</label>
                     <input type="text" id="search-student" class="edit-input" style="margin:0;" placeholder="Imię, nazwisko...">
                 </div>
@@ -187,7 +196,8 @@
 
         let schoolsCache = [];
         let currentRole = null;
-        let allStudents = []; // Do wyszukiwania lokalnego
+        let allStudents = []; // Wszystkie dane pobrane z bazy
+        let allClasses = []; // Wszystkie klasy w wybranej szkole
 
         document.addEventListener('DOMContentLoaded', async () => {
             const { data: { session } } = await _supabase.auth.getSession();
@@ -206,33 +216,32 @@
             // Listenery
             document.getElementById('filter-level').addEventListener('change', filterSchoolsByLevel);
             document.getElementById('filter-school').addEventListener('change', function() { loadStudents(this.value); });
-            document.getElementById('search-student').addEventListener('input', filterStudentsLocal);
+            
+            // Listenery Filtrowania Lokalnego (Klasa + Search)
+            document.getElementById('filter-class').addEventListener('change', applyFilters);
+            document.getElementById('search-student').addEventListener('input', applyFilters);
         });
 
         async function loadSchools(user) {
             let query = _supabase.from('schools').select('id, name, level').order('name');
             
-            // Jeśli nie admin, widzi tylko swoją szkołę
             if (currentRole !== 'admin') {
                 query = query.eq('id', user.school_id);
-                // Dla nie-admina od razu ustawiamy filtry
                 const { data } = await query;
                 if(data && data.length > 0) {
                     schoolsCache = data;
                     const s = data[0];
-                    // Ustaw selecty "na sztywno"
                     const lvlSelect = document.getElementById('filter-level');
                     lvlSelect.value = s.level;
-                    lvlSelect.disabled = true; // Nie może zmienić poziomu
+                    lvlSelect.disabled = true; 
                     
                     const schSelect = document.getElementById('filter-school');
                     schSelect.innerHTML = `<option value="${s.id}">${s.name}</option>`;
-                    schSelect.disabled = true; // Nie może zmienić szkoły
+                    schSelect.disabled = true; 
                     
-                    loadStudents(s.id); // Od razu ładuj
+                    loadStudents(s.id); 
                 }
             } else {
-                // Admin pobiera wszystko do cache
                 const { data } = await query;
                 schoolsCache = data || [];
             }
@@ -242,12 +251,8 @@
             const lvl = document.getElementById('filter-level').value;
             const sSelect = document.getElementById('filter-school');
             sSelect.innerHTML = '<option value="" disabled selected>-- Wybierz Szkołę --</option>';
-            
             const filtered = (lvl === 'all') ? schoolsCache : schoolsCache.filter(s => s.level == lvl);
-            
-            filtered.forEach(s => {
-                sSelect.add(new Option(s.name, s.id));
-            });
+            filtered.forEach(s => { sSelect.add(new Option(s.name, s.id)); });
             sSelect.disabled = false;
         }
 
@@ -255,7 +260,7 @@
             const tbody = document.getElementById('students-body');
             tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Ładowanie listy...</td></tr>';
 
-            // Pobierz uczniów
+            // 1. Pobierz uczniów
             const { data: students, error } = await _supabase
                 .from('users')
                 .select('id, username, email, class_id')
@@ -263,7 +268,7 @@
                 .eq('role', 'student')
                 .order('username');
 
-            // Pobierz klasy dla tej szkoły (do dropdownów)
+            // 2. Pobierz klasy dla tej szkoły (do dropdownów)
             const { data: classes } = await _supabase
                 .from('classes')
                 .select('id, name')
@@ -272,8 +277,56 @@
 
             if (error) { alert("Błąd: " + error.message); return; }
             
-            allStudents = students || []; // Zapisz do wyszukiwania
-            renderTable(allStudents, classes || []);
+            allStudents = students || [];
+            allClasses = classes || [];
+
+            // 3. Wypełnij Filtr Klas na górze
+            populateClassFilter(allClasses);
+
+            // 4. Renderuj
+            applyFilters();
+        }
+
+        function populateClassFilter(classesList) {
+            const classFilter = document.getElementById('filter-class');
+            classFilter.innerHTML = '<option value="all">Wszystkie Klasy</option>';
+            classFilter.innerHTML += '<option value="none">Bez Klasy (Nieprzypisani)</option>'; // Opcja dla studentów bez klasy
+            
+            if(classesList.length > 0) {
+                classesList.forEach(c => {
+                    classFilter.add(new Option(c.name, c.id));
+                });
+                classFilter.disabled = false;
+            } else {
+                classFilter.disabled = true;
+            }
+        }
+
+        // --- GŁÓWNA FUNKCJA FILTRUJĄCA ---
+        function applyFilters() {
+            const classVal = document.getElementById('filter-class').value;
+            const searchVal = document.getElementById('search-student').value.toLowerCase();
+
+            const filtered = allStudents.filter(s => {
+                // 1. Filtr klasy
+                let matchClass = true;
+                if (classVal === 'all') {
+                    matchClass = true;
+                } else if (classVal === 'none') {
+                    matchClass = (s.class_id === null);
+                } else {
+                    matchClass = (s.class_id == classVal);
+                }
+
+                // 2. Filtr wyszukiwarki
+                const name = s.username ? s.username.toLowerCase() : "";
+                const email = s.email ? s.email.toLowerCase() : "";
+                const matchSearch = name.includes(searchVal) || email.includes(searchVal);
+
+                return matchClass && matchSearch;
+            });
+
+            renderTable(filtered, allClasses);
         }
 
         function renderTable(studentsList, classesList) {
@@ -281,30 +334,29 @@
             tbody.innerHTML = '';
 
             if (studentsList.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">Brak uczniów w tej szkole.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">Brak uczniów spełniających kryteria.</td></tr>';
                 return;
             }
 
             studentsList.forEach(s => {
                 const tr = document.createElement('tr');
                 
-                // Dropdown klas
-                let classOptions = '<option value="">-- Brak Klasy --</option>';
+                // Dropdown klas w wierszu
+                let classOptions = '<option value="">-- Brak --</option>';
                 classesList.forEach(c => {
                     const selected = s.class_id === c.id ? 'selected' : '';
                     classOptions += `<option value="${c.id}" ${selected}>${c.name}</option>`;
                 });
 
-                // Przyciski akcji (Zależnie od roli)
+                // Przyciski akcji
                 let actionsHtml = `
-                    <button class="table-btn btn-save" title="Zapisz przypisanie klasy" onclick="saveClass('${s.id}', this)">💾</button>
+                    <div class="table-btn btn-save" title="Zapisz przypisanie klasy" onclick="saveClass('${s.id}', this)">💾</div>
                 `;
 
-                // Wykładowca (Lecturer) nie może resetować haseł ani usuwać
                 if (currentRole !== 'lecturer') {
                     actionsHtml += `
-                        <button class="table-btn btn-pass" title="Wyślij reset hasła" onclick="resetPass('${s.email}')">🔑</button>
-                        <button class="table-btn btn-del" title="Usuń konto" onclick="deleteUser('${s.id}', this)">❌</button>
+                        <div class="table-btn btn-pass" title="Wyślij reset hasła" onclick="resetPass('${s.email}')">🔑</div>
+                        <div class="table-btn btn-del" title="Usuń konto" onclick="deleteUser('${s.id}', this)">❌</div>
                     `;
                 }
 
@@ -332,7 +384,12 @@
             const { error } = await _supabase.from('users').update({ class_id: newClassId }).eq('id', userId);
             
             if (error) alert("Błąd zapisu: " + error.message);
-            else alert("Zapisano zmianę klasy.");
+            else {
+                // Aktualizujemy dane lokalnie, żeby filtry działały bez przeładowania strony
+                const student = allStudents.find(s => s.id === userId);
+                if(student) student.class_id = newClassId;
+                alert("Zapisano zmianę klasy.");
+            }
         }
 
         async function resetPass(email) {
@@ -344,33 +401,13 @@
 
         async function deleteUser(userId, btnElement) {
             if(!confirm("Czy na pewno chcesz trwale usunąć tego ucznia?")) return;
-            // Używamy RPC (jeśli masz funkcję delete_user) lub delete na public.users (jeśli trigger działa)
-            // Przyjmujemy standardowe delete
             const { error } = await _supabase.from('users').delete().eq('id', userId);
             if(error) alert("Błąd: " + error.message);
             else {
+                // Usuń z lokalnej listy i odśwież
+                allStudents = allStudents.filter(s => s.id !== userId);
                 btnElement.closest('tr').remove();
             }
-        }
-
-        // --- WYSZUKIWARKA LOKALNA ---
-        function filterStudentsLocal() {
-            const term = document.getElementById('search-student').value.toLowerCase();
-            const rows = document.querySelectorAll('#students-body tr');
-            
-            rows.forEach(row => {
-                // Jeśli to wiersz "Brak danych" lub "Ładowanie", pomiń
-                if(row.cells.length < 4) return;
-
-                const name = row.cells[0].textContent.toLowerCase();
-                const email = row.cells[1].textContent.toLowerCase();
-                
-                if (name.includes(term) || email.includes(term)) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
         }
     </script>
 </body>
