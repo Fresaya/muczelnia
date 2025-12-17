@@ -13,13 +13,30 @@
         .save-mini-btn { padding: 5px 10px; font-size: 12px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px; }
         .delete-mini-btn { cursor: pointer; color: var(--accent-color); font-size: 18px; margin-left: 10px; }
         
+        /* Stylizowane przyciski w tabelach (Zarządzanie Uczniami) */
+        .table-action-btn {
+            border: 1px solid var(--border-color);
+            background: var(--panel-bg);
+            border-radius: 50%;
+            width: 32px; height: 32px;
+            display: inline-flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            margin: 0 4px;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+        .table-action-btn:hover { transform: scale(1.1); background: var(--hover-bg); border-color: #bbb; }
+        .btn-save { color: #4CAF50; }
+        .btn-reset { color: #FF9800; }
+        .btn-delete { color: #F44336; }
+
         /* CHIPY PAKIETÓW */
         .packages-container { display: flex; flex-wrap: wrap; gap: 5px; padding-left: 2px; }
         .pkg-chip { display: inline-flex; align-items: center; background-color: rgba(33, 150, 243, 0.1); color: #1565C0; border: 1px solid rgba(33, 150, 243, 0.3); border-radius: 12px; padding: 2px 8px; font-size: 11px; font-weight: 500; }
         .pkg-chip-remove { margin-left: 6px; cursor: pointer; font-weight: bold; color: #1565C0; opacity: 0.6; font-size: 14px; line-height: 1; }
         .pkg-chip-remove:hover { opacity: 1; color: red; }
 
-        /* --- KALENDARZ (MODAL) --- */
+        /* --- KALENDARZ --- */
         .event-item { display: flex; align-items: center; padding: 10px; border-bottom: 1px solid var(--border-color); }
         .event-date-box { 
             background: var(--panel-bg); border: 1px solid var(--border-color); 
@@ -36,40 +53,20 @@
         .bg-homework { background: #FF9800; } 
         .bg-info { background: #2196F3; } 
 
-        /* --- SIDEBAR LISTY (POPRAWIONE UKŁADANIE PIONOWE) --- */
-        
-        #student-sidebar-content {
-            display: flex;
-            flex-direction: column; /* WYMUSZA PION */
-            gap: 25px; /* Odstęp między sekcjami */
-            width: 100%;
-        }
-
-        .sidebar-section { 
-            width: 100%;
-            display: block;
-        }
-        
-        /* Linia oddzielająca tylko dla drugiej sekcji (Oceny) */
-        .sidebar-section + .sidebar-section {
-            border-top: 1px solid var(--border-color);
-            padding-top: 25px;
-        }
-
+        /* --- SIDEBAR LISTY --- */
+        #student-sidebar-content { display: flex; flex-direction: column; gap: 25px; width: 100%; }
+        .sidebar-section { width: 100%; display: block; }
+        .sidebar-section + .sidebar-section { border-top: 1px solid var(--border-color); padding-top: 25px; }
         .sidebar-title { font-size: 12px; text-transform: uppercase; color: var(--text-muted); font-weight: bold; margin-bottom: 15px; letter-spacing: 1px; }
-        
         .sidebar-list-item { display: flex; align-items: center; margin-bottom: 12px; font-size: 14px; }
         .sidebar-list-date { font-weight: bold; color: var(--accent-color); margin-right: 10px; font-size: 12px; min-width: 35px; }
         .sidebar-list-content { flex: 1; color: var(--text-main); line-height: 1.3; }
-        
-        .sidebar-grade-circle { 
-            width: 28px; height: 28px; border-radius: 50%; background: var(--hover-bg); 
-            border: 2px solid var(--border-color); display: flex; align-items: center; 
-            justify-content: center; font-weight: bold; font-size: 12px; margin-right: 10px; color: var(--text-main);
-        }
+        .sidebar-grade-circle { width: 28px; height: 28px; border-radius: 50%; background: var(--hover-bg); border: 2px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; margin-right: 10px; color: var(--text-main); }
         .empty-sidebar { font-size: 12px; color: var(--text-muted); font-style: italic; }
 
         @media (prefers-color-scheme: dark) {
+            .table-action-btn { background: #333; border-color: #555; }
+            .table-action-btn:hover { background: #444; }
             .pkg-chip { background-color: rgba(33, 150, 243, 0.2); color: #90caf9; border-color: rgba(33, 150, 243, 0.5); }
             .pkg-chip-remove { color: #90caf9; }
             .event-date-box { background: #2a2a2a; border-color: #444; }
@@ -418,8 +415,8 @@
                     document.getElementById('widget-calendar').onclick = () => openCalendarModal();
                 } else {
                     // UCZEŃ: Widgety ucznia + Sidebar
-                    show('student-sidebar-content'); // Pokaż sidebar
-                    loadSidebarCalendar(); // Ładuj sidebar
+                    show('student-sidebar-content'); 
+                    loadSidebarCalendar(); 
                     loadSidebarGrades();
                 }
 
@@ -466,14 +463,35 @@
             document.getElementById('filter-class-select').addEventListener('change', filterStudentsTable);
             document.getElementById('manage-class-school-select').addEventListener('change', function() { loadClassesForEdit(this.value); });
 
+            // ASSIGN COURSE LOGIC (New Filtered)
             document.getElementById('assign-school-select').addEventListener('change', async function() {
                 const sid = parseInt(this.value); 
                 const cSelect = document.getElementById('assign-class-select');
+                const pSelect = document.getElementById('assign-package-select'); // Pakiet select
+                
                 cSelect.disabled = true; cSelect.innerHTML = '<option>Ładowanie...</option>';
-                const { data } = await _supabase.from('classes').select('id, name').eq('school_id', sid).order('name');
+                pSelect.disabled = true; pSelect.innerHTML = '<option>Ładowanie...</option>';
+
+                // 1. Get School Level first
+                const { data: school } = await _supabase.from('schools').select('level').eq('id', sid).single();
+                
+                // 2. Load Classes
+                const { data: classes } = await _supabase.from('classes').select('id, name').eq('school_id', sid).order('name');
                 cSelect.innerHTML = '<option value="" disabled selected>-- Wybierz Klasę --</option>';
-                if (data && data.length > 0) { data.forEach(c => cSelect.add(new Option(c.name, c.id))); cSelect.disabled = false; }
-                else { cSelect.innerHTML = '<option value="" disabled selected>Brak klas</option>'; }
+                if (classes && classes.length > 0) { 
+                    classes.forEach(c => cSelect.add(new Option(c.name, c.id))); 
+                    cSelect.disabled = false; 
+                } else { cSelect.innerHTML = '<option value="" disabled selected>Brak klas</option>'; }
+
+                // 3. Load Packages Filtered by Level
+                if(school) {
+                    const { data: pkgs } = await _supabase.from('packages').select('id, title').eq('level', school.level);
+                    pSelect.innerHTML = '<option value="" disabled selected>-- Wybierz Pakiet --</option>';
+                    if(pkgs && pkgs.length > 0) {
+                        pkgs.forEach(p => pSelect.add(new Option(p.title, p.id)));
+                        pSelect.disabled = false;
+                    } else { pSelect.innerHTML = '<option disabled>Brak pakietów dla tego poziomu</option>'; }
+                }
             });
         });
 
@@ -605,17 +623,77 @@
         function filterNewUserSchools() { const lvl = document.getElementById('new-user-level-filter').value; const s = document.getElementById('new-user-school'); s.innerHTML = '<option value="" disabled selected>-- Wybierz --</option>'; schoolsCache.filter(x => x.level == lvl).forEach(x => s.add(new Option(x.name, x.id))); s.disabled = false; }
         async function loadClassesForSchool(sid) { const c = document.getElementById('new-user-class'); c.innerHTML = '<option>...</option>'; c.disabled = true; const { data } = await _supabase.from('classes').select('id, name').eq('school_id', sid); c.innerHTML = '<option value="">-- Brak --</option>'; if(data) data.forEach(x => c.add(new Option(x.name, x.id))); c.disabled = false; }
         async function generateEmail() { const r = document.getElementById('new-role').value; const sid = document.getElementById('new-user-school').value; const em = document.getElementById('new-email'); if(r==='admin'||!sid)return; em.value="..."; const s=schoolsCache.find(x=>x.id==sid); const abbr=s?s.abbreviation:"SC"; const {count}=await _supabase.from('users').select('*',{count:'exact',head:true}).eq('school_id',sid).eq('role',r); const n=(count||0)+1; generatedMemberCode=n; em.value = `${String(n).padStart(4,'0')}.${abbr}-${r==='student'?'student':'kadra'}@muczelnia.pl`; }
+        
+        // --- BUTTONS FOR STUDENTS TABLE (Styled) ---
+        async function openManageStudentsModal(){ 
+            openModal('manageStudentsModal'); 
+            await ensureSchoolsCache(); 
+            document.getElementById('manage-level-filter').value=""; 
+            document.getElementById('manage-school-select').innerHTML='<option disabled selected>Typ...</option>'; 
+            document.getElementById('students-table-body').innerHTML=''; 
+            document.getElementById('students-table-container').style.display='none'; 
+        }
+        function filterManageStudentSchools(){ const lvl=document.getElementById('manage-level-filter').value; const s=document.getElementById('manage-school-select'); s.innerHTML='<option disabled selected>Wybierz</option>'; schoolsCache.filter(x=>x.level==lvl).forEach(x=>s.add(new Option(x.name,x.id))); }
+        
+        async function loadStudentsForSchool(sid){ 
+            const tb=document.getElementById('students-table-body'); 
+            const l=document.getElementById('students-loading'); 
+            const c=document.getElementById('students-table-container'); 
+            const f=document.getElementById('filter-class-select'); 
+            l.style.display='block'; c.style.display='none'; tb.innerHTML=''; 
+            
+            const {data:st}=await _supabase.from('users').select('id,username,email,class_id').eq('school_id',sid).eq('role','student'); 
+            const {data:cls}=await _supabase.from('classes').select('id,name').eq('school_id',sid); 
+            f.innerHTML='<option value="all">Wszyscy</option>'; if(cls) cls.forEach(x=>f.add(new Option(x.name,x.id))); 
+            l.style.display='none'; c.style.display='block'; 
+            
+            if(!st||st.length===0){document.getElementById('no-students-msg').style.display='block';return;} 
+            document.getElementById('no-students-msg').style.display='none'; 
+            
+            st.forEach(s=>{ 
+                const tr=document.createElement('tr'); tr.dataset.classId=s.class_id||'none'; 
+                const sel=document.createElement('select'); sel.className='class-select-small'; 
+                sel.add(new Option('--','')); 
+                if(cls) cls.forEach(x=>{const o=new Option(x.name,x.id); if(s.class_id===x.id)o.selected=true; sel.add(o);}); 
+                
+                const tdA=document.createElement('td'); 
+                
+                // Styled Buttons
+                const bS=document.createElement('div'); bS.className='table-action-btn btn-save'; bS.innerHTML='💾'; bS.title='Zapisz klasę';
+                bS.onclick=async()=>{const v=sel.value?parseInt(sel.value):null; await _supabase.from('users').update({class_id:v}).eq('id',s.id); tr.dataset.classId=v||'none'; alert("Zapisano");}; 
+                
+                const bR=document.createElement('div'); bR.className='table-action-btn btn-reset'; bR.innerHTML='🔑'; bR.title='Wyślij reset hasła';
+                bR.onclick=async()=>{if(confirm("Wysłać reset hasła?")){await _supabase.auth.resetPasswordForEmail(s.email); alert("Wysłano e-mail.");}}; 
+
+                const bD=document.createElement('div'); bD.className='table-action-btn btn-delete'; bD.innerHTML='❌'; bD.title='Usuń użytkownika';
+                bD.onclick=async()=>{if(confirm("Usunąć?")){await _supabase.from('users').delete().eq('id',s.id); tr.remove();}}; 
+                
+                tdA.append(bS,bR,bD); 
+                tr.innerHTML=`<td><b>${s.username}</b></td><td>${s.email}</td>`; 
+                const tdC=document.createElement('td'); tdC.appendChild(sel); 
+                tr.append(tdC,tdA); tb.appendChild(tr); 
+            }); 
+        }
+
+        function filterStudentsTable(){ const v=document.getElementById('filter-class-select').value; document.querySelectorAll('#students-table-body tr').forEach(r=>{ const cid=r.dataset.classId; if(v==='all'||(v==='none'&&(!cid||cid==='none'))||cid==v) r.style.display=''; else r.style.display='none'; }); }
+        
         async function addSchool(e){ e.preventDefault(); const {error}=await _supabase.from('schools').insert({name:document.getElementById('school-name').value, abbreviation:document.getElementById('school-abbr').value, level:document.getElementById('school-level').value, address:document.getElementById('school-address').value}); if(error)alert(error.message); else {alert("Dodano"); closeModal('addSchoolModal'); schoolsCache=[];} }
         async function openClassModal(){ openModal('addClassModal'); const s=document.getElementById('class-school-select'); const {data}=await _supabase.from('schools').select('id,name'); s.innerHTML='<option value="">Wybiez</option>'; data.forEach(x=>s.add(new Option(x.name,x.id))); }
         async function addClass(e){ e.preventDefault(); const {error}=await _supabase.from('classes').insert({school_id:document.getElementById('class-school-select').value, name:document.getElementById('class-name').value}); if(error)alert(error.message); else {alert("Dodano"); closeModal('addClassModal');} }
-        async function openManageStudentsModal(){ openModal('manageStudentsModal'); await ensureSchoolsCache(); document.getElementById('manage-level-filter').value=""; document.getElementById('manage-school-select').innerHTML='<option disabled selected>Typ...</option>'; document.getElementById('students-table-body').innerHTML=''; document.getElementById('students-table-container').style.display='none'; }
-        function filterManageStudentSchools(){ const lvl=document.getElementById('manage-level-filter').value; const s=document.getElementById('manage-school-select'); s.innerHTML='<option disabled selected>Wybierz</option>'; schoolsCache.filter(x=>x.level==lvl).forEach(x=>s.add(new Option(x.name,x.id))); }
-        async function loadStudentsForSchool(sid){ const tb=document.getElementById('students-table-body'); const l=document.getElementById('students-loading'); const c=document.getElementById('students-table-container'); const f=document.getElementById('filter-class-select'); l.style.display='block'; c.style.display='none'; tb.innerHTML=''; const {data:st}=await _supabase.from('users').select('id,username,email,class_id').eq('school_id',sid).eq('role','student'); const {data:cls}=await _supabase.from('classes').select('id,name').eq('school_id',sid); f.innerHTML='<option value="all">Wszyscy</option>'; if(cls) cls.forEach(x=>f.add(new Option(x.name,x.id))); l.style.display='none'; c.style.display='block'; if(!st||st.length===0){document.getElementById('no-students-msg').style.display='block';return;} document.getElementById('no-students-msg').style.display='none'; st.forEach(s=>{ const tr=document.createElement('tr'); tr.dataset.classId=s.class_id||'none'; const sel=document.createElement('select'); sel.className='class-select-small'; sel.add(new Option('--','')); if(cls) cls.forEach(x=>{const o=new Option(x.name,x.id); if(s.class_id===x.id)o.selected=true; sel.add(o);}); const tdA=document.createElement('td'); const bS=document.createElement('button'); bS.textContent='💾'; bS.className='action-icon'; bS.style.background='transparent'; bS.style.border='none'; bS.onclick=async()=>{const v=sel.value?parseInt(sel.value):null; await _supabase.from('users').update({class_id:v}).eq('id',s.id); tr.dataset.classId=v||'none'; alert("Zapisano");}; const bD=document.createElement('span'); bD.textContent='❌'; bD.className='action-icon'; bD.style.color='red'; bD.onclick=async()=>{if(confirm("Usunąć?")){await _supabase.from('users').delete().eq('id',s.id); tr.remove();}}; tdA.append(bS,bD); tr.innerHTML=`<td><b>${s.username}</b></td><td>${s.email}</td>`; const tdC=document.createElement('td'); tdC.appendChild(sel); tr.append(tdC,tdA); tb.appendChild(tr); }); }
-        function filterStudentsTable(){ const v=document.getElementById('filter-class-select').value; document.querySelectorAll('#students-table-body tr').forEach(r=>{ const cid=r.dataset.classId; if(v==='all'||(v==='none'&&(!cid||cid==='none'))||cid==v) r.style.display=''; else r.style.display='none'; }); }
         async function openManageClassesModal() { openModal('manageClassesModal'); const s=document.getElementById('manage-class-school-select'); document.getElementById('classes-list-container').innerHTML=''; const {data}=await _supabase.from('schools').select('id,name').order('name'); s.innerHTML='<option value="" disabled selected>-- Wybierz --</option>'; data.forEach(x=>s.add(new Option(x.name,x.id))); }
         async function loadClassesForEdit(sid) { const c=document.getElementById('classes-list-container'); c.innerHTML='Ładowanie...'; const {data:cl,error}=await _supabase.from('classes').select('id,name,package_classes(id,packages(title))').eq('school_id',sid).order('name'); c.innerHTML=''; if(error)return; if(!cl||cl.length===0){c.innerHTML='Brak klas.';return;} cl.forEach(x=>{ const w=document.createElement('div'); w.className='class-edit-item'; const h=document.createElement('div'); h.className='class-row-header'; const i=document.createElement('input'); i.type='text'; i.value=x.name; i.className='edit-input'; i.style.margin='0'; i.style.width='60%'; const a=document.createElement('div'); const bS=document.createElement('button'); bS.textContent='Zapisz'; bS.className='save-mini-btn'; bS.onclick=async()=>{await _supabase.from('classes').update({name:i.value}).eq('id',x.id); alert("OK");}; const bD=document.createElement('span'); bD.textContent='🗑️'; bD.className='delete-mini-btn'; bD.onclick=async()=>{if(confirm("Usunąć?")){await _supabase.from('classes').delete().eq('id',x.id); w.remove();}}; a.append(bS,bD); h.append(i,a); const pC=document.createElement('div'); pC.className='packages-container'; if(x.package_classes&&x.package_classes.length>0){x.package_classes.forEach(pc=>{if(pc.packages){const ch=document.createElement('div'); ch.className='pkg-chip'; ch.innerHTML=`📦 ${pc.packages.title} <span class="pkg-chip-remove" onclick="unlinkPkg(${pc.id},this)">×</span>`; pC.appendChild(ch);}});} else {pC.innerHTML='<small style="color:#888">Brak pakietów</small>';} w.append(h,pC); c.appendChild(w); }); }
         async function unlinkPkg(id,el){if(confirm("Odpiąć?")){await _supabase.from('package_classes').delete().eq('id',id); el.parentElement.remove();}}
-        async function openAssignCourseModal(){ openModal('assignCourseModal'); const {data:s}=await _supabase.from('schools').select('id,name'); const ss=document.getElementById('assign-school-select'); ss.innerHTML='<option disabled selected>Wybierz</option>'; s.forEach(x=>ss.add(new Option(x.name,x.id))); const {data:p}=await _supabase.from('packages').select('id,title'); const ps=document.getElementById('assign-package-select'); ps.innerHTML='<option disabled selected>Wybierz</option>'; p.forEach(x=>ps.add(new Option(x.title,x.id))); }
+        
+        async function openAssignCourseModal(){ 
+            openModal('assignCourseModal'); 
+            const {data:s}=await _supabase.from('schools').select('id,name'); 
+            const ss=document.getElementById('assign-school-select'); 
+            ss.innerHTML='<option disabled selected>Wybierz Szkołę</option>'; 
+            s.forEach(x=>ss.add(new Option(x.name,x.id))); 
+            // Resetuj pakiety
+            document.getElementById('assign-package-select').innerHTML='<option disabled selected>Najpierw Szkoła...</option>';
+            document.getElementById('assign-package-select').disabled = true;
+        }
         async function assignCourseToClass(e){ e.preventDefault(); const p=document.getElementById('assign-package-select').value; const c=document.getElementById('assign-class-select').value; if(!c)return alert("Klasa!"); const {error}=await _supabase.from('package_classes').insert({package_id:p,class_id:c}); if(error)alert(error.message); else{alert("Przypisano"); closeModal('assignCourseModal');} }
     </script>
 </body>
