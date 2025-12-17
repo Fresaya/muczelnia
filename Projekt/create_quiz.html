@@ -5,89 +5,123 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>mUczelnia - Kreator Quizu</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* (Style analogiczne do create_course - skrócone dla czytelności) */
+        .editor-tabs { display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+        .tab-btn { background: none; border: none; font-size: 14px; font-weight: 600; color: var(--text-muted); cursor: pointer; padding: 5px 10px; border-radius: 5px; transition: 0.2s; }
+        .tab-btn:hover { color: var(--text-main); background: var(--hover-bg); }
+        .tab-btn.active { color: #9C27B0; background: rgba(156, 39, 176, 0.1); }
+        .edit-area { min-height: 200px; font-family: sans-serif; background: var(--panel-bg); color: var(--text-main); border: 1px solid var(--border-color); width: 100%; box-sizing: border-box; padding: 10px; border-radius: 8px;}
+        .quiz-editor-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .correct-radio { width: 20px; height: 20px; cursor: pointer; accent-color: #4CAF50; }
+        .lesson-item { cursor: grab; user-select: none; display: flex; justify-content: space-between; align-items: center; color: var(--text-main);}
+        .lesson-item:active { cursor: grabbing; }
+        .big-add-btn { display: inline-block; margin-top: 20px; padding: 15px 30px; border: 2px dashed #9C27B0; color: #9C27B0; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 16px; background: var(--panel-bg); }
+        .big-add-btn:hover { background: rgba(156, 39, 176, 0.05); }
+    </style>
 </head>
 <body>
 
     <div class="course-layout">
         <aside class="course-sidebar" id="course-sidebar">
             <div class="sidebar-header">
-                <!-- FIX: Powrót do panelu admina -->
-                <a href="admin_content.html" class="back-btn">← Anuluj</a>
+                <a href="#" onclick="goBack(event)" class="back-btn">← Wróć</a>
                 <h3 style="margin:0; font-size:16px; margin-left: 10px;">Pytania</h3>
             </div>
-            
             <ul class="lesson-list" id="editor-question-list"></ul>
-
             <div class="add-lesson-btn" onclick="addNewQuestion()">+ Nowe Pytanie</div>
         </aside>
 
         <main class="course-content">
             <div class="lesson-card">
-                <!-- SETTINGS -->
-                <div style="border-bottom: 2px solid #eee; margin-bottom: 30px; padding-bottom: 20px;">
-                    <label style="font-size: 12px; color: #888; text-transform: uppercase; font-weight: bold;">Nazwa Quizu</label>
+                <div style="border-bottom: 2px solid var(--border-color); margin-bottom: 30px; padding-bottom: 20px;">
+                    <label style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: bold;">Nazwa Quizu</label>
                     <input type="text" id="quiz-title-input" class="edit-input title-input" placeholder="Np. Sprawdzian z Historii" oninput="updateQuizState()">
-                    <textarea id="quiz-desc-input" class="edit-input" style="min-height: 60px; margin-top:10px;" placeholder="Opis..." oninput="updateQuizState()"></textarea>
-
-                    <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px solid #e0e0e0;">
-                        <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #555;">Ustawienia Egzaminu</h4>
+                    <textarea id="quiz-desc-input" class="edit-input" style="min-height: 60px; margin-top:10px;" placeholder="Instrukcje..." oninput="updateQuizState()"></textarea>
+                    
+                    <div style="background: var(--hover-bg); padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px solid var(--border-color);">
+                        <h4 style="margin: 0 0 10px 0; font-size: 14px; color: var(--text-main);">Ustawienia Egzaminu</h4>
                         <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-                            
                             <div>
-                                <label style="font-size: 12px; font-weight: bold; display: block;">Limit czasu na pytanie</label>
-                                <select id="quiz-time-limit" class="edit-input" style="width: 150px; background: #fff;">
+                                <label style="font-size: 12px; font-weight: bold; display: block; color: var(--text-muted);">Czas (min/pytanie)</label>
+                                <select id="quiz-time-limit" class="edit-input" style="width: 150px;">
                                     <option value="0">Brak limitu</option>
                                     <option value="1" selected>1 minuta</option>
                                     <option value="2">2 minuty</option>
                                     <option value="5">5 minut</option>
-                                    <option value="10">10 minut</option>
                                 </select>
                             </div>
-                    
                             <div>
-                                <label style="font-size: 12px; font-weight: bold; display: block;">Limit podejść</label>
-                                <select id="quiz-attempt-limit" class="edit-input" style="width: 150px; background: #fff;">
+                                <label style="font-size: 12px; font-weight: bold; display: block; color: var(--text-muted);">Limit podejść</label>
+                                <select id="quiz-attempt-limit" class="edit-input" style="width: 150px;">
                                     <option value="0">Bez limitu</option>
                                     <option value="1" selected>1 raz</option>
-                                    <option value="2">2 razy</option>
                                     <option value="3">3 razy</option>
-                                    <option value="5">5 razy</option>
                                 </select>
                             </div>
-                    
                             <div style="display: flex; align-items: center; margin-top: 15px;">
                                 <input type="checkbox" id="quiz-randomize" style="width: 18px; height: 18px; margin-right: 8px;" checked>
-                                <label for="quiz-randomize" style="font-size: 14px; cursor: pointer;">Losuj kolejność odpowiedzi</label>
+                                <label for="quiz-randomize" style="font-size: 14px; cursor: pointer; color: var(--text-main);">Losuj kolejność</label>
                             </div>
                         </div>
                     </div>
-                    
                 </div>
 
-                <!-- QUESTION EDITOR -->
                 <div id="active-question-editor" style="display: none;">
-                    <h2 style="color: var(--accent-color);">Edycja Pytania</h2>
-                    <label style="font-size: 12px; color: #888; text-transform: uppercase; font-weight: bold;">Treść Pytania</label>
-                    <input type="text" id="question-text-input" class="edit-input title-input" style="font-size:18px;" placeholder="Treść..." oninput="updateQuestionState()">
-                    
-                    <div style="margin-top: 20px; background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #eee;">
-                        <h3 style="margin-top:0; font-size:16px;">Odpowiedzi</h3>
-                        <div id="answers-container"></div>
+                    <div class="editor-tabs">
+                        <button class="tab-btn active" id="tab-edit" onclick="toggleMode('edit')">✏️ Edycja</button>
+                        <button class="tab-btn" id="tab-preview" onclick="toggleMode('preview')">👁️ Podgląd</button>
                     </div>
+
+                    <div id="mode-edit">
+                        <textarea id="question-text-input" class="edit-area" placeholder="Treść pytania..." oninput="updateQuestionState()" style="height:100px; margin-bottom:20px; font-size:16px; font-weight:bold;"></textarea>
+                        <label style="font-size:12px; color:var(--text-muted); font-weight:bold; display:block; margin-bottom:10px;">ODPOWIEDZI (Zaznacz poprawną):</label>
+                        <div id="answers-container"></div>
+                        <button class="login-button" style="width:auto; padding:5px 15px; margin-top:10px; font-size:12px;" onclick="addAnswerChoice()">+ Dodaj opcję</button>
+                    </div>
+
+                    <div id="mode-preview" style="display:none; padding:20px;"></div>
                 </div>
-                <div id="no-selection-msg" style="text-align: center; color: #888; padding: 50px;">
-                    <span id="loading-msg">Ładowanie...</span>
+
+                <div id="no-selection-msg" style="text-align: center; color: var(--text-muted); padding: 40px;">
+                    <h3>Edytor Pytań</h3>
+                    <p>Wybierz pytanie z listy.</p>
+                    <div class="big-add-btn" onclick="addNewQuestion()">+ Nowe Pytanie</div>
                 </div>
             </div>
         </main>
     </div>
 
-    <button class="save-course-fab" onclick="handleSaveClick()" id="preSaveBtn" style="background-color: #9C27B0;">
-        <span>💾 Zapisz Zmiany</span>
-    </button>
+    <div class="bottom-bar">
+        <button class="save-button" id="preSaveBtn" style="background:#9C27B0;" onclick="handleSaveClick()">💾 Zapisz Quiz</button>
+    </div>
 
-    <!-- PACKAGE MODAL -->
-    <div class="modal-overlay" id="packageModal"><div class="modal-window"><div class="modal-header"><h3 class="modal-title">Zapisz</h3><span class="close-modal" onclick="closeModal()">&times;</span></div><div style="margin-bottom: 20px;"><label style="display:block; margin-bottom:10px;"><input type="radio" name="pkgOption" value="new" checked onchange="togglePkgInputs()"> Nowy Pakiet</label><div id="new-pkg-inputs" style="padding-left: 20px;"><input type="text" id="new-pkg-name" class="edit-input" placeholder="Nazwa"><select id="new-pkg-level" class="edit-input"><option value="1">Podstawowa</option><option value="2">Średnia</option><option value="3">Wyższa</option></select></div><label style="display:block; margin-top:15px;"><input type="radio" name="pkgOption" value="existing" onchange="togglePkgInputs()"> Istniejący</label><div id="existing-pkg-inputs" style="padding-left: 20px; display:none;"><select id="existing-pkg-select" class="edit-input"></select></div></div><button class="login-button full-width-btn" onclick="saveQuizToDB(true)" id="finalSaveBtn">Zapisz</button></div></div>
+    <div class="modal-overlay" id="packageModal">
+        <div class="modal-window">
+            <h3>Przypisz do Pakietu</h3>
+            <div style="margin: 15px 0;">
+                <label><input type="radio" name="pkgOption" value="existing" checked onclick="togglePkgInputs()"> Istniejący</label>
+                <br>
+                <label><input type="radio" name="pkgOption" value="new" onclick="togglePkgInputs()"> Nowy</label>
+            </div>
+            <div id="existing-pkg-inputs">
+                <select id="existing-pkg-select" class="edit-input" style="width: 100%;"><option>Ładowanie...</option></select>
+            </div>
+            <div id="new-pkg-inputs" style="display: none;">
+                <input type="text" id="new-pkg-name" class="edit-input" placeholder="Nazwa pakietu" style="width: 100%;">
+                <textarea id="new-pkg-desc" class="edit-input" placeholder="Opis pakietu" style="width: 100%; margin-top: 10px;"></textarea>
+                <select id="new-pkg-level" class="edit-input" style="width: 100%; margin-top: 10px;">
+                    <option value="1">Poziom: Podstawowy</option>
+                    <option value="2">Poziom: Średni</option>
+                    <option value="3">Poziom: Wyższy</option>
+                </select>
+            </div>
+            <div style="margin-top: 20px; text-align: right;">
+                <button class="login-button" style="background: #ccc; color: #333; width: auto;" onclick="closeModal()">Anuluj</button>
+                <button class="login-button" style="width: auto; background:#9C27B0;" id="finalSaveBtn" onclick="saveQuizToDB(true)">Zapisz</button>
+            </div>
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
@@ -100,132 +134,169 @@
 
         let quizData = { title: "", description: "", author_id: null };
         let questions = []; 
-        let activeQuestionId = null;
-        let deletedQuestionIds = [];
+        let activeQId = null;
+        let deletedQIds = [];
 
         document.addEventListener('DOMContentLoaded', async () => {
             const { data: { session } } = await _supabase.auth.getSession();
             if (!session) { window.location.href = 'login.html'; return; }
             quizData.author_id = session.user.id;
-            
-            const { data: profile } = await _supabase.from('users').select('role').eq('id', session.user.id).single();
-            if(profile.role !== 'admin') { alert("Tylko admin."); window.location.href='dashboard.html'; return; }
 
-            if (editId) {
-                document.title = "Edycja Quizu";
-                await loadQuizData(editId);
-            } else {
-                document.getElementById('no-selection-msg').innerHTML = "Kliknij <b>+ Nowe Pytanie</b>.";
-            }
+            const { data: profile } = await _supabase.from('users').select('role').eq('id', session.user.id).single();
+            if (!profile || !['admin', 'manager', 'teacher', 'lecturer'].includes(profile.role)) { alert("Brak uprawnień."); window.location.href = 'dashboard.html'; return; }
+
+            if (editId) await loadQuizData(editId);
         });
 
-        // --- LOAD DATA ---
         async function loadQuizData(id) {
             const { data: course } = await _supabase.from('courses').select('*').eq('id', id).single();
+            if (!course) return;
             quizData.title = course.title;
             quizData.description = course.description;
             document.getElementById('quiz-title-input').value = course.title;
             document.getElementById('quiz-desc-input').value = course.description || "";
             document.getElementById('quiz-time-limit').value = course.time_limit || 1;
             document.getElementById('quiz-attempt-limit').value = course.attempt_limit || 1;
-            document.getElementById('quiz-randomize').checked = course.randomize_answers ?? true; // domyślnie true
+            document.getElementById('quiz-randomize').checked = course.randomize_answers ?? true;
 
-            const { data: lessons } = await _supabase.from('lessons').select('id, title, order_index').eq('course_id', id).order('order_index');
-            
+            const { data: lessons } = await _supabase.from('lessons')
+                .select(`id, title, order_index, lesson_components ( content_text_blocks ( content ) ), lesson_answers ( answer_text, is_correct )`)
+                .eq('course_id', id).order('order_index');
+
             if (lessons) {
-                // Fetch answers for ALL lessons in parallel for efficiency
-                const lessonIds = lessons.map(l => l.id);
-                const { data: allAnswers } = await _supabase.from('lesson_answers').select('*').in('lesson_id', lessonIds);
-
-                lessons.forEach(l => {
-                    const ans = allAnswers.filter(a => a.lesson_id === l.id);
-                    
-                    const formattedAnswers = [
-                        { text: "", isCorrect: false }, { text: "", isCorrect: false },
-                        { text: "", isCorrect: false }, { text: "", isCorrect: false }
-                    ];
-                    
-                    if (ans) {
-                        ans.forEach((a, i) => { if (i < 4) formattedAnswers[i] = { text: a.answer_text, isCorrect: a.is_correct }; });
-                    }
-
-                    questions.push({
-                        id: l.id,
-                        title: l.title,
-                        answers: formattedAnswers
-                    });
-                });
-                
+                questions = lessons.map(l => ({
+                    id: l.id,
+                    title: l.lesson_components?.[0]?.content_text_blocks?.content || "",
+                    answers: l.lesson_answers.map(a => ({ text: a.answer_text, isCorrect: a.is_correct }))
+                }));
                 renderSidebar();
-                selectQuestion(questions[0].id); // Auto-select first
-            } else {
-                document.getElementById('no-selection-msg').innerHTML = "Ten quiz jest pusty.";
+                if(questions.length > 0) selectQuestion(questions[0].id);
             }
         }
 
-        // --- UI LOGIC ---
-        function addNewQuestion() {
-            const id = 'new-' + Date.now();
-            questions.push({ id, title: "Pytanie " + (questions.length + 1), answers: [{text:"",isCorrect:true},{text:"",isCorrect:false},{text:"",isCorrect:false},{text:"",isCorrect:false}] });
-            renderSidebar(); selectQuestion(id);
-        }
-
         function renderSidebar() {
-            const list = document.getElementById('editor-question-list'); list.innerHTML = '';
+            const list = document.getElementById('editor-question-list');
+            list.innerHTML = '';
             questions.forEach((q, index) => {
                 const li = document.createElement('li');
-                li.className = `lesson-item ${q.id === activeQuestionId ? 'active' : ''}`;
-                li.innerHTML = `<span>${index + 1}. ${q.title}</span> <span style="color:red; cursor:pointer;" onclick="removeQuestion(event, '${q.id}')">&times;</span>`;
-                li.onclick = () => selectQuestion(q.id);
+                li.className = `lesson-item ${q.id === activeQId ? 'active' : ''}`;
+                li.innerHTML = `<span>${index + 1}. ${q.title.substring(0, 20) || 'Pytanie'}...</span><span style="color:var(--accent-color); cursor:pointer;" onclick="removeQuestion(event,'${q.id}')">&times;</span>`;
+                li.onclick = (e) => { if(e.target.innerText !== '×') selectQuestion(q.id); };
                 list.appendChild(li);
             });
         }
 
-        function selectQuestion(id) {
-            activeQuestionId = id;
-            document.getElementById('no-selection-msg').style.display = 'none';
-            document.getElementById('active-question-editor').style.display = 'block';
-            const q = questions.find(item => item.id === id);
-            document.getElementById('question-text-input').value = q.title;
-            renderAnswerInputs(q); renderSidebar();
+        function addNewQuestion() {
+            const id = 'new-' + Date.now();
+            questions.push({ id, title: "", answers: [{text:"", isCorrect:false}, {text:"", isCorrect:false}] });
+            renderSidebar(); selectQuestion(id);
         }
 
-        function renderAnswerInputs(q) {
-            const c = document.getElementById('answers-container'); c.innerHTML = '';
+        function selectQuestion(id) {
+            activeQId = id;
+            document.getElementById('no-selection-msg').style.display = 'none';
+            document.getElementById('active-question-editor').style.display = 'block';
+            toggleMode('edit');
+            
+            const q = questions.find(x => x.id === id);
+            document.getElementById('question-text-input').value = q.title;
+            renderAnswers(q);
+            renderSidebar();
+        }
+
+        function renderAnswers(q) {
+            const c = document.getElementById('answers-container');
+            c.innerHTML = '';
             q.answers.forEach((ans, idx) => {
-                const div = document.createElement('div'); div.className = 'quiz-editor-row';
-                const rad = document.createElement('input'); rad.type='radio'; rad.name='corr'; rad.className='correct-radio'; rad.checked=ans.isCorrect;
-                rad.onchange=()=>{ q.answers.forEach(a=>a.isCorrect=false); q.answers[idx].isCorrect=true; };
-                const inp = document.createElement('input'); inp.type='text'; inp.className='edit-input'; inp.value=ans.text; inp.placeholder=`Odp ${idx+1}`;
-                inp.oninput=(e)=>{ q.answers[idx].text=e.target.value; };
-                div.appendChild(rad); div.appendChild(inp); c.appendChild(div);
+                const row = document.createElement('div');
+                row.className = 'quiz-editor-row';
+                row.innerHTML = `
+                    <input type="radio" name="correctAns" class="correct-radio" ${ans.isCorrect ? 'checked' : ''} onchange="setCorrect(${idx})">
+                    <input type="text" class="edit-input" value="${ans.text}" oninput="updateAnsText(${idx}, this.value)" placeholder="Odpowiedź ${idx+1}" style="flex:1;">
+                    <span style="color:red; cursor:pointer;" onclick="removeAns(${idx})">&times;</span>
+                `;
+                c.appendChild(row);
             });
         }
 
-        function removeQuestion(e, id) {
-            e.stopPropagation();
-            if(!confirm("Usunąć?")) return;
-            if (typeof id === 'number' || (typeof id === 'string' && !id.startsWith('new-'))) {
-                deletedQuestionIds.push(id);
-            }
-            questions = questions.filter(q => q.id != id);
-            if (activeQuestionId == id) { activeQuestionId = null; document.getElementById('active-question-editor').style.display = 'none'; document.getElementById('no-selection-msg').style.display = 'block'; }
+        function addAnswerChoice() {
+            if(!activeQId) return;
+            const q = questions.find(x => x.id === activeQId);
+            q.answers.push({text:"", isCorrect:false});
+            renderAnswers(q);
+        }
+
+        function removeAns(idx) {
+            const q = questions.find(x => x.id === activeQId);
+            q.answers.splice(idx, 1);
+            renderAnswers(q);
+        }
+
+        function setCorrect(idx) {
+            const q = questions.find(x => x.id === activeQId);
+            q.answers.forEach((a, i) => a.isCorrect = (i === idx));
+        }
+
+        function updateAnsText(idx, val) {
+            const q = questions.find(x => x.id === activeQId);
+            q.answers[idx].text = val;
+        }
+
+        function updateQuestionState() {
+            if(!activeQId) return;
+            const q = questions.find(x => x.id === activeQId);
+            q.title = document.getElementById('question-text-input').value;
             renderSidebar();
         }
 
         function updateQuizState() { quizData.title = document.getElementById('quiz-title-input').value; quizData.description = document.getElementById('quiz-desc-input').value; }
-        function updateQuestionState() { if(activeQuestionId) { questions.find(q=>q.id===activeQuestionId).title = document.getElementById('question-text-input').value; renderSidebar(); } }
+
+        function removeQuestion(e, id) {
+            e.stopPropagation();
+            if(!confirm("Usunąć pytanie?")) return;
+            if(!id.startsWith('new-')) deletedQIds.push(id);
+            questions = questions.filter(q => q.id !== id);
+            if(activeQId == id) { activeQId = null; document.getElementById('active-question-editor').style.display='none'; document.getElementById('no-selection-msg').style.display='block'; }
+            renderSidebar();
+        }
+
+        function toggleMode(mode) {
+            const edit = document.getElementById('mode-edit');
+            const prev = document.getElementById('mode-preview');
+            document.getElementById('tab-edit').classList.toggle('active', mode==='edit');
+            document.getElementById('tab-preview').classList.toggle('active', mode==='preview');
+            
+            if(mode === 'edit') { edit.style.display='block'; prev.style.display='none'; }
+            else {
+                edit.style.display='none'; prev.style.display='block';
+                const q = questions.find(x => x.id === activeQId);
+                let html = `<h3>${q.title || '???'}</h3>`;
+                q.answers.forEach(a => {
+                    html += `<div style="padding:10px; border:1px solid #eee; margin:5px; border-radius:5px; background:${a.isCorrect ? '#E8F5E9' : '#fff'};">${a.text}</div>`;
+                });
+                prev.innerHTML = html;
+            }
+        }
 
         function handleSaveClick() {
-            if (!quizData.title) return alert("Podaj nazwę!");
+            if (!quizData.title) return alert("Podaj nazwę quizu!");
             if (questions.length === 0) return alert("Dodaj pytania!");
             if (editId) saveQuizToDB(false);
             else { document.getElementById('packageModal').classList.add('active'); openPackageModal(); }
         }
 
-        async function openPackageModal() { document.getElementById('packageModal').classList.add('active'); document.getElementById('new-pkg-name').value = quizData.title + " (Pakiet)"; const s = document.getElementById('existing-pkg-select'); s.innerHTML='<option>Ładowanie...</option>'; const {data}=await _supabase.from('packages').select('*').order('created_at',{ascending:false}); s.innerHTML='<option value="" disabled selected>-- Wybierz --</option>'; data.forEach(p=>s.add(new Option(p.title,p.id))); }
+        async function openPackageModal() {
+            const s = document.getElementById('existing-pkg-select'); s.innerHTML = '<option>Ładowanie...</option>';
+            const { data } = await _supabase.from('packages').select('*').order('created_at', { ascending: false });
+            s.innerHTML = '<option value="" disabled selected>-- Wybierz --</option>';
+            data.forEach(p => s.add(new Option(p.title, p.id)));
+        }
         function closeModal() { document.getElementById('packageModal').classList.remove('active'); }
-        function togglePkgInputs() { const n=document.querySelector('input[name="pkgOption"]:checked').value==='new'; document.getElementById('new-pkg-inputs').style.display=n?'block':'none'; document.getElementById('existing-pkg-inputs').style.display=n?'none':'block'; }
+        function togglePkgInputs() { 
+            const n = document.querySelector('input[name="pkgOption"]:checked').value === 'new';
+            document.getElementById('new-pkg-inputs').style.display = n ? 'block' : 'none';
+            document.getElementById('existing-pkg-inputs').style.display = n ? 'none' : 'block';
+        }
 
         async function saveQuizToDB(isNew) {
             const btn = isNew ? document.getElementById('finalSaveBtn') : document.getElementById('preSaveBtn');
@@ -233,22 +304,20 @@
 
             try {
                 let courseId = editId;
-
                 if (isNew) {
                     let packageId = null;
                     const pkgOpt = document.querySelector('input[name="pkgOption"]:checked').value;
                     if (pkgOpt === 'new') {
-                        const { data: newPkg } = await _supabase.from('packages').insert({ title: document.getElementById('new-pkg-name').value, level: document.getElementById('new-pkg-level').value }).select().single();
-                        packageId = newPkg.id;
+                        const { data: pkg } = await _supabase.from('packages').insert({ 
+                            title: document.getElementById('new-pkg-name').value, 
+                            description: document.getElementById('new-pkg-desc').value, // OPIS
+                            level: document.getElementById('new-pkg-level').value 
+                        }).select().single();
+                        packageId = pkg.id;
                     } else { packageId = document.getElementById('existing-pkg-select').value; }
 
-                    const { data: newC, error } = await _supabase.from('courses').insert({ 
-                        title: quizData.title, 
-                        description: quizData.description, 
-                        author_id: quizData.author_id, 
-                        type: 'quiz', 
-                        package_id: packageId,
-                        // NOWE POLA
+                    const { data: newC, error } = await _supabase.from('courses').insert({
+                        title: quizData.title, description: quizData.description, author_id: quizData.author_id, type: 'quiz', package_id: packageId,
                         time_limit: document.getElementById('quiz-time-limit').value,
                         attempt_limit: document.getElementById('quiz-attempt-limit').value,
                         randomize_answers: document.getElementById('quiz-randomize').checked
@@ -257,43 +326,39 @@
                     courseId = newC.id;
                 } else {
                     await _supabase.from('courses').update({ 
-                        title: quizData.title, 
-                        description: quizData.description,
-                        // NOWE POLA
+                        title: quizData.title, description: quizData.description,
                         time_limit: document.getElementById('quiz-time-limit').value,
                         attempt_limit: document.getElementById('quiz-attempt-limit').value,
                         randomize_answers: document.getElementById('quiz-randomize').checked
                     }).eq('id', courseId);
                 }
 
-                if (deletedQuestionIds.length > 0) {
-                    await _supabase.from('lessons').delete().in('id', deletedQuestionIds);
-                }
+                if (deletedQIds.length > 0) await _supabase.from('lessons').delete().in('id', deletedQIds);
 
                 for (let i = 0; i < questions.length; i++) {
                     const q = questions[i];
                     let lessonId = q.id;
-                    const isTemp = String(q.id).startsWith('new-');
-
-                    if (isTemp) {
-                        const { data: savedLesson } = await _supabase.from('lessons').insert({ course_id: courseId, title: q.title, order_index: i + 1 }).select().single();
-                        lessonId = savedLesson.id;
-                        const { data: content } = await _supabase.from('content_text_blocks').insert({ content: "Pytanie" }).select().single();
-                        await _supabase.from('lesson_components').insert({ lesson_id: lessonId, order_index: 1, component_type: 'text', content_text_block_id: content.id });
+                    if (String(q.id).startsWith('new-')) {
+                        const { data: l } = await _supabase.from('lessons').insert({ course_id: courseId, title: q.title, order_index: i+1 }).select().single();
+                        lessonId = l.id;
+                        const { data: c } = await _supabase.from('content_text_blocks').insert({ content: "Pytanie" }).select().single();
+                        await _supabase.from('lesson_components').insert({ lesson_id: lessonId, order_index: 1, component_type: 'text', content_text_block_id: c.id });
                     } else {
-                        await _supabase.from('lessons').update({ title: q.title, order_index: i + 1 }).eq('id', lessonId);
+                        await _supabase.from('lessons').update({ title: q.title, order_index: i+1 }).eq('id', lessonId);
                         await _supabase.from('lesson_answers').delete().eq('lesson_id', lessonId);
                     }
-
-                    const answersPayload = q.answers.filter(a => a.text).map(a => ({ lesson_id: lessonId, answer_text: a.text, is_correct: a.isCorrect }));
-                    if (answersPayload.length > 0) await _supabase.from('lesson_answers').insert(answersPayload);
+                    const ansPayload = q.answers.filter(a => a.text).map(a => ({ lesson_id: lessonId, answer_text: a.text, is_correct: a.isCorrect }));
+                    if (ansPayload.length > 0) await _supabase.from('lesson_answers').insert(ansPayload);
                 }
-
                 alert("✅ Zapisano pomyślnie!");
                 window.location.href = 'admin_content.html';
-
             } catch (err) { alert("Błąd: " + err.message); } 
-            finally { btn.disabled = false; btn.innerHTML = isNew ? "Zapisz" : "💾 Zapisz Zmiany"; }
+            finally { btn.disabled = false; btn.innerHTML = isNew ? "Zapisz" : "💾 Zapisz Quiz"; }
+        }
+
+        function goBack(e) {
+            if(e) e.preventDefault();
+            if (window.history.length > 1) window.history.back(); else window.location.href = 'admin_content.html';
         }
     </script>
 </body>
