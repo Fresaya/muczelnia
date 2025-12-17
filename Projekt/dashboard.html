@@ -119,11 +119,11 @@
                     <p class="course-meta">Edycja i Usuwanie</p>
                 </div>
 
-                <div id="widget-manage-students" class="widget-tile" style="display: none; border: 2px dashed #FF9800; cursor: pointer;">
+                <a href="manage_students.html" id="widget-manage-students" class="widget-tile" style="display: none; border: 2px dashed #FF9800; text-decoration: none; color: inherit;">
                     <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23FF9800%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2%22></path><circle cx=%229%22 cy=%227%22 r=%224%22></circle><path d=%22M23 21v-2a4 4 0 0 0-3-3.87%22></path><path d=%22M16 3.13a4 4 0 0 1 0 7.75%22></path></svg>');"></div>
                     <h3 style="color: #FF9800;">Zarządzaj Uczniami</h3>
                     <p class="course-meta">Edycja i Usuwanie</p>
-                </div>
+                </a>
 
                 <div id="widget-assign-course" class="widget-tile" style="display: none; border: 2px dashed #9C27B0; cursor: pointer;">
                     <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%239C27B0%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M4 19.5A2.5 2.5 0 0 1 6.5 17H20%22></path><path d=%22M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z%22></path><path d=%22M12 11h5%22></path><path d=%22M12 8h5%22></path></svg>');"></div>
@@ -403,7 +403,6 @@
                     document.getElementById('widget-add-user').onclick = () => openCreateUserModal();
                     document.getElementById('widget-add-school').onclick = () => openModal('addSchoolModal');
                     document.getElementById('widget-add-class').onclick = () => openClassModal();
-                    document.getElementById('widget-manage-students').onclick = () => openManageStudentsModal();
                     document.getElementById('widget-manage-classes').onclick = () => openManageClassesModal();
                 }
 
@@ -597,3 +596,4 @@
     </script>
 </body>
 </html>
+
