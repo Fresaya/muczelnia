@@ -224,7 +224,9 @@
             if (!session) { window.location.href = 'login.html'; return; }
 
             const { data: user } = await _supabase.from('users').select('role, school_id').eq('id', session.user.id).single();
-            if (!['admin', 'manager', 'lecturer'].includes(user.role)) {
+            
+            // Dodano 'teacher' do listy uprawnionych
+            if (!['admin', 'manager', 'lecturer', 'teacher'].includes(user.role)) {
                 alert("Brak uprawnień."); window.location.href = 'dashboard.html'; return;
             }
             currentRole = user.role;
@@ -233,8 +235,8 @@
             
             // Listener zmiany szkoły
             document.getElementById('school-select').addEventListener('change', async function() {
-                await loadPackagesForSchoolLevel(this.value); // Najpierw pobierz pakiety dla poziomu tej szkoły
-                loadClasses(this.value); // Potem pobierz klasy
+                await loadPackagesForSchoolLevel(this.value); 
+                loadClasses(this.value); 
             });
         });
 
@@ -258,21 +260,25 @@
                     sSelect.appendChild(opt);
                 });
 
-                // Jeśli user ma tylko jedną szkołę, wybierz ją automatycznie
+                // POPRAWKA: Jeśli user ma jedną szkołę, wybieramy ją I WYMUSZAMY ŁADOWANIE DANYCH
                 if (schools.length === 1) {
-                    sSelect.value = schools[0].id;
+                    const singleSchool = schools[0];
+                    sSelect.value = singleSchool.id;
                     sSelect.disabled = true; // Zablokuj zmianę
-                    sSelect.dispatchEvent(new Event('change'));
+                    
+                    // Ręcznie wywołujemy funkcje ładujące, bo 'change' może nie zadziałać przy programowym ustawieniu
+                    await loadPackagesForSchoolLevel(singleSchool.id);
+                    loadClasses(singleSchool.id);
                 }
             }
         }
 
         // Pobiera pakiety pasujące do POZIOMU wybranej szkoły
         async function loadPackagesForSchoolLevel(schoolId) {
-            // Znajdź poziom szkoły w selectcie (bez zapytania do bazy, bo mamy to w cache selecta)
+            // Znajdź poziom szkoły w selectcie
             const select = document.getElementById('school-select');
             const selectedOption = select.options[select.selectedIndex];
-            const level = selectedOption.dataset.level;
+            const level = selectedOption ? selectedOption.dataset.level : null;
 
             if (!level) return;
 
@@ -304,8 +310,8 @@
             if (error) { console.error(error); grid.innerHTML = '<p>Błąd ładowania.</p>'; return; }
             grid.innerHTML = '';
 
-            if (classes.length === 0) {
-                grid.innerHTML = '<p style="grid-column:1/-1; text-align:center; color:#888;">Brak klas. Dodaj nową!</p>';
+            if (!classes || classes.length === 0) {
+                grid.innerHTML = '<p style="grid-column:1/-1; text-align:center; color:#888;">Brak klas w tej szkole. Dodaj nową powyżej!</p>';
                 return;
             }
 
@@ -407,7 +413,6 @@
         async function updateClassName(classId, newName) {
             const { error } = await _supabase.from('classes').update({ name: newName }).eq('id', classId);
             if (error) alert("Błąd: " + error.message);
-            // else alert("Nazwa zmieniona"); // Opcjonalne, żeby nie klikać OK ciągle
         }
 
         async function deleteClass(classId) {
