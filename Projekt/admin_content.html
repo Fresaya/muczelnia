@@ -210,7 +210,7 @@
             });
         }
 
-        function renderLoose() {
+function renderLoose() {
             const container = document.getElementById('loose-container');
             container.innerHTML = '';
 
@@ -233,13 +233,29 @@
                         </h4>
                         <p>${l.description || 'Bez opisu'}</p>
                     </div>
-                    <div style="display:flex; gap:10px;">
+                    <div style="display:flex; gap:10px; align-items: center;">
                         <button class="login-button" style="width:auto; padding:5px 15px; font-size:12px;" onclick="window.location.href='${l.type === 'quiz' ? 'create_quiz.html' : 'create_course.html'}?id=${l.id}'">Edytuj</button>
-                        <button class="login-button" style="width:auto; padding:5px 15px; font-size:12px; background:var(--accent-color);" onclick="openAssignModal('${l.id}', '${l.title}')">📦 Dołącz do pakietu</button>
+                        
+                        <button class="login-button" style="width:auto; padding:5px 15px; font-size:12px; background:var(--accent-color);" onclick="openAssignModal('${l.id}', '${l.title}')">📦 Dołącz</button>
+                        
+                        <button class="mini-btn" style="color:white; background:#F44336; border-color:#F44336; height: 30px; font-weight:bold;" onclick="deleteLooseItem('${l.id}')">Usuń</button>
                     </div>
                 `;
                 container.appendChild(div);
             });
+        }
+
+        // --- DODAJ TĘ FUNKCJĘ GDZIEŚ W SKRYPCIE ---
+        async function deleteLooseItem(id) {
+            if(!confirm("UWAGA: Czy na pewno usunąć ten element bezpowrotnie?")) return;
+            
+            const { error } = await _supabase.from('courses').delete().eq('id', id);
+            
+            if(error) alert("Błąd: " + error.message);
+            else {
+                // Odśwież widok
+                loadContent();
+            }
         }
 
         // --- SCENARIUSZ 1: Z poziomu luźnych (Assign to Package) ---
