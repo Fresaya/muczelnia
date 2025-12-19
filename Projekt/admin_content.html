@@ -4,29 +4,36 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>mUczelnia - Baza Treści</title>
-    <link rel="stylesheet" href="style.css">
-    <style>
-        .search-bar-container { margin-bottom: 30px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;}
-        .search-input { flex-grow: 1; padding: 12px 20px; border-radius: 50px; border: 1px solid var(--border-color); font-size: 16px; outline: none; background: var(--panel-bg); color: var(--text-main); }
+    <link rel="stylesheet" href="style.css"> <style>
+        /* --- STYLE DEDYKOWANE DLA TEJ STRONY --- */
+        .content-tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; }
+        .tab-btn { background: none; border: none; font-size: 16px; font-weight: 600; color: var(--text-muted); cursor: pointer; padding: 10px 20px; border-radius: 8px; transition: 0.2s; }
+        .tab-btn:hover { background: var(--hover-bg); color: var(--text-main); }
+        .tab-btn.active { background: rgba(33, 150, 243, 0.1); color: #2196F3; }
+
+        /* GRID PAKIETÓW */
+        .packages-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px; }
+        .package-card { background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; }
+        .pkg-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+        .pkg-title { font-weight: bold; font-size: 18px; margin: 0; }
+        .pkg-desc { font-size: 13px; color: var(--text-muted); margin: 5px 0 0 0; }
+        .pkg-content-list { list-style: none; padding: 0; margin: 0; flex: 1; }
+        .pkg-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px dashed var(--border-color); font-size: 14px; }
+        .pkg-item:last-child { border-bottom: none; }
         
-        .action-icon-btn {
-            position: absolute; top: 10px; width: 30px; height: 30px; border-radius: 50%; 
-            display: flex; align-items: center; justify-content: center; font-size: 14px; 
-            cursor: pointer; background: rgba(255,255,255,0.9); box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            transition: transform 0.2s; z-index: 2;
-        }
-        .action-icon-btn:hover { transform: scale(1.1); }
-        .edit-icon { right: 45px; color: #333; }
-        .delete-icon { right: 10px; color: #F44336; }
+        /* Akcje wewnątrz pakietu */
+        .pkg-actions { margin-top: 15px; padding-top: 10px; border-top: 1px solid var(--border-color); display: flex; gap: 10px; justify-content: flex-end; }
+        .mini-btn { font-size: 12px; padding: 4px 8px; border-radius: 4px; cursor: pointer; border: 1px solid var(--border-color); background: var(--bg-color); }
+        .btn-add-loose { color: #4CAF50; border-color: #4CAF50; background: rgba(76, 175, 80, 0.1); }
 
-        /* Breadcrumbs (Nawigacja ścieżkowa) */
-        .breadcrumbs { font-size: 14px; color: #888; margin-bottom: 20px; display: flex; align-items: center; gap: 5px; }
-        .breadcrumb-item { cursor: pointer; text-decoration: underline; }
-        .breadcrumb-item:hover { color: var(--accent-color); }
-        .breadcrumb-current { font-weight: bold; color: var(--text-main); text-decoration: none; cursor: default; }
-
-        /* Styl kafelka folderu */
-        .folder-tile { border-left: 5px solid #FFC107; } /* Żółty pasek dla folderów */
+        /* LISTA LUŹNYCH ELEMENTÓW */
+        .loose-list { display: flex; flex-direction: column; gap: 10px; }
+        .loose-item { background: var(--panel-bg); border: 1px solid var(--border-color); padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .loose-info h4 { margin: 0; font-size: 16px; }
+        .loose-info p { margin: 5px 0 0 0; font-size: 12px; color: var(--text-muted); }
+        .type-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; font-weight: bold; margin-left: 10px; }
+        .badge-course { background: rgba(33, 150, 243, 0.1); color: #2196F3; }
+        .badge-quiz { background: rgba(156, 39, 176, 0.1); color: #9C27B0; }
     </style>
 </head>
 <body>
@@ -46,51 +53,59 @@
             <div class="welcome-header">
                 <div>
                     <a href="dashboard.html" style="text-decoration:none; color:var(--text-muted); font-size:14px;">← Wróć do pulpitu</a>
-                    <h1>Zarządzanie Treścią</h1>
-                    <p>Przeglądaj pakiety i zarządzaj materiałami.</p>
+                    <h1>Baza Treści</h1>
+                    <p>Zarządzaj pakietami, kursami i quizami.</p>
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <button class="login-button" style="width:auto; background:var(--accent-color);" onclick="window.location.href='create_course.html'">+ Nowy Kurs</button>
+                    <button class="login-button" style="width:auto; background:#9C27B0;" onclick="window.location.href='create_quiz.html'">+ Nowy Quiz</button>
                 </div>
             </div>
 
-            <div class="breadcrumbs" id="breadcrumbs" style="display:none;">
-                <span class="breadcrumb-item" onclick="showPackagesView()">Pakiety</span>
-                <span>/</span>
-                <span class="breadcrumb-current" id="current-folder-name">...</span>
+            <div class="content-tabs">
+                <button class="tab-btn active" onclick="switchTab('packages')">📦 Pakiety</button>
+                <button class="tab-btn" onclick="switchTab('loose')">📄 Luźne Elementy (<span id="loose-count">0</span>)</button>
             </div>
 
-            <div class="search-bar-container">
-                <input type="text" class="search-input" id="search-input" placeholder="Szukaj..." oninput="handleSearch()">
-                <button class="login-button" id="add-pkg-btn" style="width: auto; margin:0;" onclick="openEditPackage(null)">+ Nowy Pakiet</button>
-            </div>
-
-            <div class="dashboard-grid" id="content-grid">
+            <div id="view-packages" class="view-section">
+                <div id="packages-container" class="packages-grid">
+                    <p>Ładowanie pakietów...</p>
                 </div>
+            </div>
+
+            <div id="view-loose" class="view-section" style="display:none;">
+                <div id="loose-container" class="loose-list">
+                    <p>Ładowanie elementów...</p>
+                </div>
+            </div>
         </main>
     </div>
 
-    <div class="modal-overlay" id="editPackageModal">
+    <div class="modal-overlay" id="assignModal">
         <div class="modal-window">
-            <div class="modal-header">
-                <h3 class="modal-title" id="pkg-modal-title">Edycja Pakietu</h3>
-                <span class="close-modal" onclick="closeModal('editPackageModal')">&times;</span>
+            <h3>Przypisz do Pakietu</h3>
+            <p>Wybierz pakiet dla: <b id="assign-item-name">...</b></p>
+            <select id="assign-package-select" class="edit-input">
+                <option>Ładowanie...</option>
+            </select>
+            <div style="text-align:right; margin-top:15px;">
+                <button class="login-button" style="background:#ccc; width:auto; color:#333;" onclick="closeModal('assignModal')">Anuluj</button>
+                <button class="login-button" style="width:auto;" onclick="confirmAssign()">Zapisz</button>
             </div>
-            <form id="pkgForm">
-                <input type="hidden" id="edit-pkg-id">
-                
-                <label>Nazwa Pakietu</label>
-                <input type="text" id="edit-pkg-title" class="edit-input" required>
-                
-                <label>Opis Pakietu</label>
-                <textarea id="edit-pkg-desc" class="edit-input" style="min-height: 80px;" placeholder="Krótki opis..."></textarea>
-                
-                <label>Poziom</label>
-                <select id="edit-pkg-level" class="edit-input">
-                    <option value="1">Podstawowy</option>
-                    <option value="2">Średni</option>
-                    <option value="3">Wyższy</option>
-                </select>
+        </div>
+    </div>
 
-                <button type="submit" class="login-button full-width-btn" style="margin-top: 15px;">Zapisz Zmiany</button>
-            </form>
+    <div class="modal-overlay" id="importModal">
+        <div class="modal-window">
+            <h3>Dodaj element do pakietu</h3>
+            <p>Wybierz element, który chcesz przenieść do: <b id="import-pkg-name">...</b></p>
+            <select id="import-loose-select" class="edit-input">
+                <option>Ładowanie...</option>
+            </select>
+            <div style="text-align:right; margin-top:15px;">
+                <button class="login-button" style="background:#ccc; width:auto; color:#333;" onclick="closeModal('importModal')">Anuluj</button>
+                <button class="login-button" style="width:auto;" onclick="confirmImport()">Dodaj</button>
+            </div>
         </div>
     </div>
 
@@ -100,236 +115,209 @@
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg'; 
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        // Dane w pamięci
-        let allPackages = [];
-        let allCourses = []; // Kursy i Quizy razem
+        let packagesData = [];
+        let looseData = [];
         
-        // Stan widoku
-        let currentView = 'packages'; // 'packages' lub 'items'
-        let currentPackageId = null; // ID wybranego pakietu lub 'null' dla luźnych
+        let selectedItemId = null;   // ID kursu przy przypisywaniu
+        let selectedPackageId = null; // ID pakietu przy imporcie
 
         document.addEventListener('DOMContentLoaded', async () => {
             const { data: { session } } = await _supabase.auth.getSession();
             if (!session) { window.location.href = 'login.html'; return; }
             
-            await fetchAllData();
-            showPackagesView(); // Startowy widok
-
-            document.getElementById('pkgForm').addEventListener('submit', savePackage);
-        });
-
-        async function fetchAllData() {
-            const grid = document.getElementById('content-grid');
-            grid.innerHTML = '<p style="padding:20px;">Ładowanie danych...</p>';
-
-            // Pobierz pakiety
-            const { data: pkgs } = await _supabase.from('packages').select('*').order('title');
-            allPackages = pkgs || [];
-
-            // Pobierz kursy/quizy
-            const { data: courses } = await _supabase.from('courses').select('id, title, type, package_id').order('created_at', { ascending: false });
-            allCourses = courses || [];
-        }
-
-        // --- WIDOK 1: PAKIETY ---
-        function showPackagesView() {
-            currentView = 'packages';
-            currentPackageId = null;
-            
-            // UI Update
-            document.getElementById('breadcrumbs').style.display = 'none';
-            document.getElementById('add-pkg-btn').style.display = 'block';
-            document.getElementById('search-input').value = '';
-            document.getElementById('search-input').placeholder = "Szukaj pakietu...";
-
-            renderPackagesGrid(allPackages);
-        }
-
-        function renderPackagesGrid(packagesToRender) {
-            const grid = document.getElementById('content-grid');
-            grid.innerHTML = '';
-
-            // 1. Kafel "Luźne elementy" (Dla kursów bez pakietu)
-            const looseCount = allCourses.filter(c => c.package_id === null).length;
-            const looseTile = document.createElement('div');
-            looseTile.className = 'widget-tile';
-            looseTile.style.borderLeft = "5px solid #999";
-            looseTile.onclick = () => openFolder(null, "Luźne elementy");
-            looseTile.innerHTML = `
-                <div style="font-size:40px; margin-bottom:10px; opacity:0.5;">📁</div>
-                <h3>Luźne elementy</h3>
-                <p style="color:#666; font-size:13px;">Nieprzypisane: ${looseCount}</p>
-            `;
-            grid.appendChild(looseTile);
-
-            // 2. Kafelki Pakietów
-            packagesToRender.forEach(pkg => {
-                const count = allCourses.filter(c => c.package_id === pkg.id).length;
-                
-                const tile = document.createElement('div');
-                tile.className = 'widget-tile folder-tile';
-                tile.style.position = 'relative';
-                
-                // Kliknięcie w kafel otwiera folder
-                tile.onclick = () => openFolder(pkg.id, pkg.title);
-
-                tile.innerHTML = `
-                    <div class="action-icon-btn edit-icon" onclick="event.stopPropagation(); openEditPackage(${pkg.id})" title="Edytuj Pakiet">✏️</div>
-                    <div class="action-icon-btn delete-icon" onclick="event.stopPropagation(); deletePackage(${pkg.id})" title="Usuń Pakiet">🗑️</div>
-                    
-                    <div style="font-size:40px; margin-bottom:10px;">📦</div>
-                    <h3>${pkg.title}</h3>
-                    <p style="color:#666; font-size:13px;">Elementów: ${count}</p>
-                    <p style="color:#999; font-size:11px;">Poziom: ${pkg.level}</p>
-                `;
-                grid.appendChild(tile);
-            });
-        }
-
-        // --- WIDOK 2: ZAWARTOŚĆ FOLDERU ---
-        function openFolder(pkgId, pkgName) {
-            currentView = 'items';
-            currentPackageId = pkgId;
-
-            // UI Update
-            document.getElementById('breadcrumbs').style.display = 'flex';
-            document.getElementById('current-folder-name').textContent = pkgName;
-            document.getElementById('add-pkg-btn').style.display = 'none'; // Nie dodajemy pakietów będąc w pakiecie
-            document.getElementById('search-input').value = '';
-            document.getElementById('search-input').placeholder = "Szukaj w tym folderze...";
-
-            renderItemsGrid();
-        }
-
-        function renderItemsGrid() {
-            const grid = document.getElementById('content-grid');
-            grid.innerHTML = '';
-
-            // Filtrujemy kursy należące do wybranego pakietu (lub luźne)
-            let items = allCourses.filter(c => c.package_id === currentPackageId);
-            
-            // Obsługa wyszukiwarki wewnątrz folderu
-            const search = document.getElementById('search-input').value.toLowerCase();
-            if(search) {
-                items = items.filter(c => c.title.toLowerCase().includes(search));
+            // Tylko admin, manager, lecturer może tu być
+            const { data: user } = await _supabase.from('users').select('role').eq('id', session.user.id).single();
+            if(!['admin', 'manager', 'lecturer'].includes(user.role)) {
+                alert("Brak uprawnień"); window.location.href='dashboard.html'; return;
             }
 
-            if (items.length === 0) {
-                grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:#888;">Ten folder jest pusty.</div>';
+            loadContent();
+        });
+
+        async function loadContent() {
+            // 1. Pobierz Pakiety + ich kursy
+            const { data: pkgs } = await _supabase
+                .from('packages')
+                .select(`*, courses(id, title, type)`)
+                .order('created_at', { ascending: false });
+            packagesData = pkgs || [];
+
+            // 2. Pobierz Luźne (gdzie package_id is null)
+            const { data: loose } = await _supabase
+                .from('courses')
+                .select('*')
+                .is('package_id', null)
+                .order('created_at', { ascending: false });
+            looseData = loose || [];
+
+            // Update licznika w zakładce
+            document.getElementById('loose-count').textContent = looseData.length;
+
+            renderPackages();
+            renderLoose();
+        }
+
+        function switchTab(tab) {
+            document.getElementById('view-packages').style.display = tab === 'packages' ? 'block' : 'none';
+            document.getElementById('view-loose').style.display = tab === 'loose' ? 'block' : 'none';
+            
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        function renderPackages() {
+            const container = document.getElementById('packages-container');
+            container.innerHTML = '';
+
+            if (packagesData.length === 0) {
+                container.innerHTML = '<p>Brak pakietów.</p>';
                 return;
             }
 
-            items.forEach(c => {
-                const isQuiz = c.type === 'quiz';
-                const editUrl = isQuiz ? `create_quiz.html?id=${c.id}` : `create_course.html?id=${c.id}`;
-                const icon = isQuiz ? '📝' : '📚';
-                const color = isQuiz ? '#9C27B0' : '#f04a4a';
-
-                const tile = document.createElement('div');
-                tile.className = 'widget-tile';
-                tile.style.cursor = 'pointer';
-                tile.onclick = () => window.location.href = editUrl; // Kliknięcie edytuje kurs
+            packagesData.forEach(p => {
+                const card = document.createElement('div');
+                card.className = 'package-card';
                 
-                tile.innerHTML = `
-                    <div class="action-icon-btn delete-icon" onclick="event.stopPropagation(); deleteContent(${c.id}, '${c.type}')" title="Usuń">🗑️</div>
-                    
-                    <div style="font-size:40px; margin-bottom:10px;">${icon}</div>
-                    <h3 style="color:${color}">${c.title}</h3>
-                    <p style="color:#ccc; font-size:12px;">${isQuiz ? 'Quiz' : 'Kurs'}</p>
+                let coursesHtml = '<ul class="pkg-content-list">';
+                if (p.courses && p.courses.length > 0) {
+                    p.courses.forEach(c => {
+                        const icon = c.type === 'quiz' ? '📝' : '📘';
+                        coursesHtml += `
+                            <li class="pkg-item">
+                                <span>${icon} ${c.title}</span>
+                                <span class="mini-btn" style="color:red; border-color:red;" onclick="detachCourse('${c.id}')" title="Wyrzuć do luźnych">×</span>
+                            </li>`;
+                    });
+                } else {
+                    coursesHtml += '<li class="pkg-item" style="color:#aaa;">Pusty pakiet</li>';
+                }
+                coursesHtml += '</ul>';
+
+                card.innerHTML = `
+                    <div class="pkg-header">
+                        <div>
+                            <h3 class="pkg-title">${p.title}</h3>
+                            <p class="pkg-desc">${p.description || 'Brak opisu'}</p>
+                        </div>
+                        <span class="mini-btn" style="color:red; border-color:red;" onclick="deletePackage('${p.id}')">Usuń</span>
+                    </div>
+                    ${coursesHtml}
+                    <div class="pkg-actions">
+                        <button class="mini-btn btn-add-loose" onclick="openImportModal('${p.id}', '${p.title}')">+ Dodaj z luźnych</button>
+                    </div>
                 `;
-                grid.appendChild(tile);
+                container.appendChild(card);
             });
         }
 
-        // --- OBSŁUGA SZUKANIA ---
-        function handleSearch() {
-            const term = document.getElementById('search-input').value.toLowerCase();
+        function renderLoose() {
+            const container = document.getElementById('loose-container');
+            container.innerHTML = '';
+
+            if (looseData.length === 0) {
+                container.innerHTML = '<p style="text-align:center; padding:20px; color:#888;">Brak luźnych elementów. Wszystko jest w pakietach!</p>';
+                return;
+            }
+
+            looseData.forEach(l => {
+                const div = document.createElement('div');
+                div.className = 'loose-item';
+                const typeLabel = l.type === 'quiz' ? 'QUIZ' : 'KURS';
+                const typeClass = l.type === 'quiz' ? 'badge-quiz' : 'badge-course';
+
+                div.innerHTML = `
+                    <div class="loose-info">
+                        <h4 style="display:flex; align-items:center;">
+                            ${l.title} 
+                            <span class="type-badge ${typeClass}">${typeLabel}</span>
+                        </h4>
+                        <p>${l.description || 'Bez opisu'}</p>
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <button class="login-button" style="width:auto; padding:5px 15px; font-size:12px;" onclick="window.location.href='${l.type === 'quiz' ? 'create_quiz.html' : 'create_course.html'}?id=${l.id}'">Edytuj</button>
+                        <button class="login-button" style="width:auto; padding:5px 15px; font-size:12px; background:var(--accent-color);" onclick="openAssignModal('${l.id}', '${l.title}')">📦 Dołącz do pakietu</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // --- SCENARIUSZ 1: Z poziomu luźnych (Assign to Package) ---
+        function openAssignModal(courseId, title) {
+            selectedItemId = courseId;
+            document.getElementById('assign-item-name').innerText = title;
+            const sel = document.getElementById('assign-package-select');
+            sel.innerHTML = '<option value="" disabled selected>-- Wybierz pakiet --</option>';
             
-            if (currentView === 'packages') {
-                // Filtruj pakiety
-                const filteredPkgs = allPackages.filter(p => p.title.toLowerCase().includes(term));
-                renderPackagesGrid(filteredPkgs);
-            } else {
-                // Filtruj elementy wewnątrz folderu
-                renderItemsGrid();
+            packagesData.forEach(p => {
+                sel.add(new Option(p.title, p.id));
+            });
+            
+            document.getElementById('assignModal').classList.add('active');
+        }
+
+        async function confirmAssign() {
+            const pkgId = document.getElementById('assign-package-select').value;
+            if(!pkgId || !selectedItemId) return;
+
+            const { error } = await _supabase.from('courses').update({ package_id: pkgId }).eq('id', selectedItemId);
+            if(error) alert(error.message);
+            else {
+                document.getElementById('assignModal').classList.remove('active');
+                loadContent(); // Odśwież widok
             }
         }
 
-        // --- FUNKCJE CRUD (PAKIETY) ---
-        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        // --- SCENARIUSZ 2: Z poziomu pakietu (Import Loose) ---
+        function openImportModal(pkgId, pkgTitle) {
+            selectedPackageId = pkgId;
+            document.getElementById('import-pkg-name').innerText = pkgTitle;
+            const sel = document.getElementById('import-loose-select');
+            sel.innerHTML = '';
+
+            if (looseData.length === 0) {
+                sel.innerHTML = '<option disabled>Brak luźnych elementów do dodania</option>';
+            } else {
+                sel.innerHTML = '<option value="" disabled selected>-- Wybierz element --</option>';
+                looseData.forEach(l => {
+                    sel.add(new Option(`[${l.type.toUpperCase()}] ${l.title}`, l.id));
+                });
+            }
+
+            document.getElementById('importModal').classList.add('active');
+        }
+
+        async function confirmImport() {
+            const courseId = document.getElementById('import-loose-select').value;
+            if(!courseId || !selectedPackageId) return;
+
+            const { error } = await _supabase.from('courses').update({ package_id: selectedPackageId }).eq('id', courseId);
+            if(error) alert(error.message);
+            else {
+                document.getElementById('importModal').classList.remove('active');
+                loadContent();
+            }
+        }
+
+        // --- ODPINANIE (Wyrzucenie do luźnych) ---
+        async function detachCourse(courseId) {
+            if(!confirm("Czy na pewno odpiąć ten element od pakietu? Trafi on do sekcji 'Luźne'.")) return;
+            const { error } = await _supabase.from('courses').update({ package_id: null }).eq('id', courseId);
+            if(error) alert(error.message);
+            else loadContent();
+        }
+
+        // --- USUWANIE PAKIETU ---
+        async function deletePackage(pkgId) {
+            if(!confirm("Usunąć pakiet? Kursy wewnątrz NIE zostaną usunięte, tylko przeniesione do 'Luźnych'.")) return;
+            
+            // Dzięki CASCADE/SET NULL w bazie, kursy same się "odepną" (set null)
+            const { error } = await _supabase.from('packages').delete().eq('id', pkgId);
+            if(error) alert(error.message);
+            else loadContent();
+        }
+
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
-
-        async function openEditPackage(id) {
-            openModal('editPackageModal');
-            const titleInput = document.getElementById('edit-pkg-title');
-            const descInput = document.getElementById('edit-pkg-desc');
-            const levelInput = document.getElementById('edit-pkg-level');
-            const idInput = document.getElementById('edit-pkg-id');
-
-            if (id) {
-                document.getElementById('pkg-modal-title').innerText = "Edycja Pakietu";
-                idInput.value = id;
-                const pkg = allPackages.find(p => p.id === id);
-                titleInput.value = pkg.title;
-                descInput.value = pkg.description || "";
-                levelInput.value = pkg.level;
-            } else {
-                document.getElementById('pkg-modal-title').innerText = "Nowy Pakiet";
-                idInput.value = "";
-                titleInput.value = "";
-                descInput.value = "";
-                levelInput.value = "1";
-            }
-        }
-
-        async function savePackage(e) {
-            e.preventDefault();
-            const id = document.getElementById('edit-pkg-id').value;
-            const title = document.getElementById('edit-pkg-title').value;
-            const desc = document.getElementById('edit-pkg-desc').value;
-            const level = document.getElementById('edit-pkg-level').value;
-
-            let error;
-            if (id) { // UPDATE
-                const { error: err } = await _supabase.from('packages').update({ title, description: desc, level }).eq('id', id);
-                error = err;
-            } else { // INSERT
-                const { error: err } = await _supabase.from('packages').insert({ title, description: desc, level });
-                error = err;
-            }
-
-            if (error) alert("Błąd: " + error.message);
-            else {
-                closeModal('editPackageModal');
-                await fetchAllData();
-                showPackagesView();
-            }
-        }
-
-        async function deletePackage(id) {
-            if(!confirm("Usunąć ten pakiet? Kursy wewnątrz NIE zostaną usunięte, ale trafią do 'Luźnych elementów'.")) return;
-            // Odepnij kursy najpierw (dla bezpieczeństwa, choć w bazie może być SET NULL)
-            await _supabase.from('courses').update({ package_id: null }).eq('package_id', id);
-            
-            const { error } = await _supabase.from('packages').delete().eq('id', id);
-            if(error) alert("Błąd: " + error.message);
-            else {
-                await fetchAllData();
-                showPackagesView();
-            }
-        }
-
-        // --- FUNKCJE CRUD (TREŚĆ) ---
-        async function deleteContent(id, type) {
-            if(!confirm(`Usunąć trwale ten ${type === 'quiz' ? 'quiz' : 'kurs'}?`)) return;
-            const { error } = await _supabase.from('courses').delete().eq('id', id);
-            if (error) alert("Błąd: " + error.message);
-            else {
-                // Usuń lokalnie i przerysuj
-                allCourses = allCourses.filter(c => c.id !== id);
-                renderItemsGrid();
-            }
-        }
     </script>
 </body>
 </html>
