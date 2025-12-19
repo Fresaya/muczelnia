@@ -84,17 +84,41 @@
         </aside>
 
         <main class="main-content">
-            <div class="welcome-header">
+<div class="welcome-header">
                 <div>
                     <a href="dashboard.html" style="text-decoration:none; color:var(--text-muted); font-size:14px;">← Wróć do pulpitu</a>
                     <h1>Baza Treści</h1>
                     <p>Zarządzaj pakietami, kursami i quizami.</p>
                 </div>
-                <div style="display:flex; gap:10px;">
+                <div style="display:flex; gap:10px; flex-wrap: wrap;">
+                    <button class="login-button" style="width:auto; background:#2196F3;" onclick="openCreatePackageModal()">+ Nowy Pakiet</button>
+                    
                     <button class="login-button" style="width:auto; background:var(--accent-color);" onclick="window.location.href='create_course.html'">+ Nowy Kurs</button>
                     <button class="login-button" style="width:auto; background:#9C27B0;" onclick="window.location.href='create_quiz.html'">+ Nowy Quiz</button>
                 </div>
-                
+    <div class="modal-overlay" id="createPackageModal">
+        <div class="modal-window">
+            <h3>Utwórz Nowy Pakiet</h3>
+            
+            <label style="font-size:12px; font-weight:bold; color:#555;">Nazwa Pakietu</label>
+            <input type="text" id="new-standalone-pkg-title" class="edit-input" placeholder="np. Fizyka - Dział 1">
+            
+            <label style="font-size:12px; font-weight:bold; color:#555;">Opis (Opcjonalnie)</label>
+            <textarea id="new-standalone-pkg-desc" class="edit-input" placeholder="Krótki opis zawartości..."></textarea>
+            
+            <label style="font-size:12px; font-weight:bold; color:#555;">Poziom Nauczania</label>
+            <select id="new-standalone-pkg-level" class="edit-input">
+                <option value="1">Szkoła Podstawowa</option>
+                <option value="2">Szkoła Średnia</option>
+                <option value="3">Szkoła Wyższa</option>
+            </select>
+
+            <div style="text-align:right; margin-top:15px;">
+                <button class="login-button" style="background:#ccc; width:auto; color:#333;" onclick="closeModal('createPackageModal')">Anuluj</button>
+                <button class="login-button" style="width:auto;" onclick="createStandalonePackage()">Utwórz</button>
+            </div>
+        </div>
+    </div>
             </div>
             <div class="search-bar-container">
                 <div class="search-icon-input">
@@ -407,6 +431,43 @@
             const { error } = await _supabase.from('packages').delete().eq('id', pkgId);
             if(error) alert(error.message);
             else loadContent();
+        }
+        // --- TWORZENIE SAMEGO PAKIETU ---
+
+        function openCreatePackageModal() {
+            // Wyczyść pola przed otwarciem
+            document.getElementById('new-standalone-pkg-title').value = '';
+            document.getElementById('new-standalone-pkg-desc').value = '';
+            document.getElementById('new-standalone-pkg-level').value = '1';
+            
+            document.getElementById('createPackageModal').classList.add('active');
+        }
+
+        async function createStandalonePackage() {
+            const title = document.getElementById('new-standalone-pkg-title').value;
+            const desc = document.getElementById('new-standalone-pkg-desc').value;
+            const level = document.getElementById('new-standalone-pkg-level').value;
+
+            if (!title) return alert("Podaj nazwę pakietu!");
+
+            const { error } = await _supabase.from('packages').insert({
+                title: title,
+                description: desc,
+                level: level
+            });
+
+            if (error) {
+                alert("Błąd: " + error.message);
+            } else {
+                alert("Pakiet utworzony!");
+                closeModal('createPackageModal');
+                loadContent(); // Odśwież listę, żeby zobaczyć nowy pakiet
+                
+                // Opcjonalnie: Przełącz na zakładkę pakietów, jeśli jesteś na luźnych
+                switchTab('packages');
+                const btnPkg = document.querySelector("button[onclick=\"switchTab('packages')\"]");
+                if(btnPkg) btnPkg.click();
+            }
         }
 
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
