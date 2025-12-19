@@ -34,6 +34,40 @@
         .type-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; font-weight: bold; margin-left: 10px; }
         .badge-course { background: rgba(33, 150, 243, 0.1); color: #2196F3; }
         .badge-quiz { background: rgba(156, 39, 176, 0.1); color: #9C27B0; }
+
+        /* --- STYL WYSZUKIWARKI --- */
+        .search-bar-container {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .search-icon-input {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .search-icon-input input {
+            width: 100%;
+            padding: 10px 10px 10px 35px; /* Miejsce na ikonę */
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-color);
+            color: var(--text-main);
+            font-size: 14px;
+        }
+        
+        .search-icon-input::before {
+            content: '🔍';
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 14px;
+            opacity: 0.5;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
@@ -59,6 +93,12 @@
                 <div style="display:flex; gap:10px;">
                     <button class="login-button" style="width:auto; background:var(--accent-color);" onclick="window.location.href='create_course.html'">+ Nowy Kurs</button>
                     <button class="login-button" style="width:auto; background:#9C27B0;" onclick="window.location.href='create_quiz.html'">+ Nowy Quiz</button>
+                </div>
+                
+            </div>
+            <div class="search-bar-container">
+                <div class="search-icon-input">
+                    <input type="text" id="global-search" placeholder="Szukaj pakietu, kursu lub quizu..." oninput="filterContent()">
                 </div>
             </div>
 
@@ -164,17 +204,39 @@
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             event.target.classList.add('active');
         }
+// 1. Dodaj tę funkcję (wywoływaną przy wpisywaniu)
+        function filterContent() {
+            // Po prostu przerysowujemy widok - funkcje renderujące same pobiorą wartość z inputa
+            renderPackages();
+            renderLoose();
+        }
 
+        // 2. Zaktualizowana funkcja renderPackages (z filtrowaniem)
         function renderPackages() {
             const container = document.getElementById('packages-container');
             container.innerHTML = '';
+            
+            // Pobierz frazę wyszukiwania
+            const searchTerm = document.getElementById('global-search').value.toLowerCase();
 
-            if (packagesData.length === 0) {
-                container.innerHTML = '<p>Brak pakietów.</p>';
+            // Filtrowanie
+            const filtered = packagesData.filter(p => {
+                // Szukamy w tytule pakietu
+                const matchTitle = p.title.toLowerCase().includes(searchTerm);
+                // Szukamy w opisie pakietu
+                const matchDesc = p.description && p.description.toLowerCase().includes(searchTerm);
+                // Szukamy w tytułach kursów WEWNĄTRZ pakietu (Smart search!)
+                const matchInner = p.courses && p.courses.some(c => c.title.toLowerCase().includes(searchTerm));
+
+                return matchTitle || matchDesc || matchInner;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<p>Nie znaleziono pakietów pasujących do wyszukiwania.</p>';
                 return;
             }
 
-            packagesData.forEach(p => {
+            filtered.forEach(p => {
                 const card = document.createElement('div');
                 card.className = 'package-card';
                 
@@ -182,6 +244,7 @@
                 if (p.courses && p.courses.length > 0) {
                     p.courses.forEach(c => {
                         const icon = c.type === 'quiz' ? '📝' : '📘';
+                        // Podświetlenie (opcjonalne): Jeśli to ten kurs pasuje do wyszukiwania, można by go wyróżnić, ale na razie wystarczy wyświetlić
                         coursesHtml += `
                             <li class="pkg-item">
                                 <span>${icon} ${c.title}</span>
@@ -210,16 +273,31 @@
             });
         }
 
-function renderLoose() {
+        // 3. Zaktualizowana funkcja renderLoose (z filtrowaniem)
+        function renderLoose() {
             const container = document.getElementById('loose-container');
             container.innerHTML = '';
 
-            if (looseData.length === 0) {
-                container.innerHTML = '<p style="text-align:center; padding:20px; color:#888;">Brak luźnych elementów. Wszystko jest w pakietach!</p>';
+            const searchTerm = document.getElementById('global-search').value.toLowerCase();
+
+            // Filtrowanie
+            const filtered = looseData.filter(l => {
+                const matchTitle = l.title.toLowerCase().includes(searchTerm);
+                const matchDesc = l.description && l.description.toLowerCase().includes(searchTerm);
+                return matchTitle || matchDesc;
+            });
+
+            if (filtered.length === 0) {
+                // Jeśli baza jest pusta vs jeśli wyszukiwanie nic nie dało
+                if (looseData.length === 0) {
+                    container.innerHTML = '<p style="text-align:center; padding:20px; color:#888;">Brak luźnych elementów. Wszystko jest w pakietach!</p>';
+                } else {
+                    container.innerHTML = '<p style="text-align:center; padding:20px; color:#888;">Brak elementów pasujących do wyszukiwania.</p>';
+                }
                 return;
             }
 
-            looseData.forEach(l => {
+            filtered.forEach(l => {
                 const div = document.createElement('div');
                 div.className = 'loose-item';
                 const typeLabel = l.type === 'quiz' ? 'QUIZ' : 'KURS';
@@ -235,9 +313,7 @@ function renderLoose() {
                     </div>
                     <div style="display:flex; gap:10px; align-items: center;">
                         <button class="login-button" style="width:auto; padding:5px 15px; font-size:12px;" onclick="window.location.href='${l.type === 'quiz' ? 'create_quiz.html' : 'create_course.html'}?id=${l.id}'">Edytuj</button>
-                        
                         <button class="login-button" style="width:auto; padding:5px 15px; font-size:12px; background:var(--accent-color);" onclick="openAssignModal('${l.id}', '${l.title}')">📦 Dołącz</button>
-                        
                         <button class="mini-btn" style="color:white; background:#F44336; border-color:#F44336; height: 30px; font-weight:bold;" onclick="deleteLooseItem('${l.id}')">Usuń</button>
                     </div>
                 `;
