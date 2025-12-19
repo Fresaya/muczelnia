@@ -24,6 +24,54 @@
         .drag-handle { margin-right: 10px; color: var(--text-muted); cursor: grab; }
         .big-add-btn { display: inline-block; margin-top: 20px; padding: 15px 30px; border: 2px dashed var(--accent-color); color: var(--accent-color); border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 16px; background: var(--panel-bg); }
         .big-add-btn:hover { background: rgba(240, 74, 74, 0.05); transform: scale(1.02); }
+        /* --- STYL DOLNEGO PASKA (DODAJ TO DO <STYLE>) --- */
+        .bottom-bar {
+            position: fixed;       /* Przyklej do ekranu */
+            bottom: 0;
+            right: 0;
+            width: 100%;           /* Szerokość ekranu */
+            background: var(--panel-bg);
+            border-top: 1px solid var(--border-color);
+            padding: 15px 40px;
+            display: flex;
+            justify-content: flex-end; /* Przycisk po prawej */
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.1);
+            z-index: 1000;         /* Zawsze na wierzchu */
+            box-sizing: border-box;
+        }
+
+        /* Odsunięcie treści, żeby pasek jej nie zasłaniał */
+        .course-content {
+            padding-bottom: 80px; /* Margines na dole strony */
+        }
+
+        /* Wygląd samego przycisku */
+        .save-button {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .save-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(240, 74, 74, 0.4);
+        }
+
+        .save-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
         @media (prefers-color-scheme: dark) {
             .editor-toolbar { background-color: #2a2a2a; border-color: #444; }
             .tool-btn { background-color: #333; border-color: #444; color: #e0e0e0; }
