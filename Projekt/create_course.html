@@ -42,7 +42,17 @@
 
         /* Odsunięcie treści, żeby pasek jej nie zasłaniał */
         .course-content {
-            padding-bottom: 80px; /* Margines na dole strony */
+            /* KLUCZOWA ZMIANA: Odsunięcie od lewej o szerokość sidebara */
+            margin-left: 250px; 
+            
+            /* Odsunięcie od dołu, żeby treść nie wchodziła pod pasek "Zapisz" */
+            padding-bottom: 100px; 
+            
+            padding: 30px; /* Standardowy odstęp wewnętrzny */
+            
+            /* Upewniamy się, że szerokość jest liczona poprawnie */
+            box-sizing: border-box; 
+            width: calc(100% - 250px); /* Reszta szerokości ekranu */
         }
 
         /* Wygląd samego przycisku */
