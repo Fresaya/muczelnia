@@ -40,20 +40,6 @@
             box-sizing: border-box;
         }
 
-        /* Odsunięcie treści, żeby pasek jej nie zasłaniał */
-        .course-content {
-            /* KLUCZOWA ZMIANA: Odsunięcie od lewej o szerokość sidebara */
-            margin-left: 250px; 
-            
-            /* Odsunięcie od dołu, żeby treść nie wchodziła pod pasek "Zapisz" */
-            padding-bottom: 100px; 
-            
-            padding: 30px; /* Standardowy odstęp wewnętrzny */
-            
-            /* Upewniamy się, że szerokość jest liczona poprawnie */
-            box-sizing: border-box; 
-            width: calc(100% - 250px); /* Reszta szerokości ekranu */
-        }
 
         /* Wygląd samego przycisku */
         .save-button {
@@ -82,39 +68,76 @@
             transform: none;
             box-shadow: none;
         }
+        /* --- UKŁAD GŁÓWNY (FLEXBOX) --- */
+        
+        /* 1. Kontener na całą stronę (bez paska dolnego) */
+        .course-layout {
+            display: flex;           /* Układ: Pasek obok Treści */
+            height: calc(100vh - 70px); /* Wysokość ekranu MINUS dolny pasek */
+            width: 100%;
+            overflow: hidden;        /* Ukryj paski przewijania całego okna */
+            margin-top: 0;           /* Upewnij się, że nie ma marginesów */
+        }
+
+        /* 2. Pasek Boczny (Zwykły element, nie fixed) */
         .course-sidebar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 250px;
-            /* KLUCZOWA ZMIANA: Wysokość ekranu MINUS wysokość dolnego paska */
-            height: calc(100vh - 70px); 
+            width: 260px;            /* Sztywna szerokość */
+            min-width: 260px;        /* Nie ściskaj go */
             background: var(--panel-bg);
             border-right: 1px solid var(--border-color);
             display: flex;
-            flex-direction: column; /* Układ pionowy */
-            z-index: 50; /* Mniej niż dolny pasek (1000), ale nad treścią */
+            flex-direction: column;
+            height: 100%;            /* Wypełnij wysokość kontenera */
+            z-index: 10;
         }
 
-        /* Dodatkowo upewnij się, że lista się przewija, a przycisk jest zawsze widoczny */
+        /* Lista lekcji przewija się wewnątrz paska */
         .lesson-list {
-            flex: 1; /* Zajmuje całe wolne miejsce */
-            overflow-y: auto; /* Przewija się, jeśli lista jest długa */
+            flex: 1;                 /* Zajmij wolne miejsce */
+            overflow-y: auto;        /* Przewijaj, jeśli długa lista */
             padding: 0;
             margin: 0;
+            list-style: none;
         }
 
         .add-lesson-btn {
-            padding: 15px;
+            padding: 20px;
             text-align: center;
             background: var(--hover-bg);
             cursor: pointer;
             font-weight: bold;
             color: var(--accent-color);
             border-top: 1px solid var(--border-color);
-            transition: 0.2s;
-            flex-shrink: 0; /* Nie zgniataj przycisku */
+            flex-shrink: 0;          /* Przycisk zawsze widoczny na dole */
         }
+
+        /* 3. Główna Treść (Prawa strona) */
+        .course-content {
+            flex: 1;                 /* Zajmij całą resztę szerokości */
+            background-color: var(--bg-color); /* Tło pod kartą */
+            overflow-y: auto;        /* Przewijaj treść, nie pasek boczny */
+            padding: 40px;           /* Odstęp dookoła */
+            
+            /* Wyśrodkowanie zawartości (Centrowanie) */
+            display: flex;
+            justify-content: center; 
+            align-items: flex-start; 
+        }
+
+        /* 4. Karta Edycji (Biała kartka na środku) */
+        .lesson-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 40px;
+            width: 100%;
+            max-width: 850px;        /* Maksymalna szerokość (żeby nie była za szeroka) */
+            box-shadow: var(--shadow);
+            margin-bottom: 50px;     /* Luz na dole przy przewijaniu */
+        }
+
+        /* Dodatkowo upewnij się, że lista się przewija, a przycisk jest zawsze widoczny */
+
         
         .add-lesson-btn:hover {
             background: rgba(33, 150, 243, 0.1);
