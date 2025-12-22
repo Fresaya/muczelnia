@@ -66,6 +66,43 @@
             transform: none;
             box-shadow: none;
         }
+        .course-sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 250px;
+            /* KLUCZOWA ZMIANA: Wysokość ekranu MINUS wysokość dolnego paska */
+            height: calc(100vh - 70px); 
+            background: var(--panel-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column; /* Układ pionowy */
+            z-index: 50; /* Mniej niż dolny pasek (1000), ale nad treścią */
+        }
+
+        /* Dodatkowo upewnij się, że lista się przewija, a przycisk jest zawsze widoczny */
+        .lesson-list {
+            flex: 1; /* Zajmuje całe wolne miejsce */
+            overflow-y: auto; /* Przewija się, jeśli lista jest długa */
+            padding: 0;
+            margin: 0;
+        }
+
+        .add-lesson-btn {
+            padding: 15px;
+            text-align: center;
+            background: var(--hover-bg);
+            cursor: pointer;
+            font-weight: bold;
+            color: var(--accent-color);
+            border-top: 1px solid var(--border-color);
+            transition: 0.2s;
+            flex-shrink: 0; /* Nie zgniataj przycisku */
+        }
+        
+        .add-lesson-btn:hover {
+            background: rgba(33, 150, 243, 0.1);
+        }
     </style>
 </head>
 <body>
