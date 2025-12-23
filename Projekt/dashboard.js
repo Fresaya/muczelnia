@@ -12,6 +12,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const { data: { session } } = await _supabase.auth.getSession();
     if (!session) { window.location.href = 'login.html'; return; }
 
+    // --- NOWE: Czyszczenie starych eventów (SQL RPC) ---
+    // Wymaga funkcji w bazie: create function delete_old_events()...
+    try { await _supabase.rpc('delete_old_events'); } catch (e) { console.log("Brak funkcji RPC, pomijam czyszczenie."); }
+
     const userId = session.user.id;
     const { data: profile } = await _supabase.from('users').select('username, role, school_id, class_id, schools(name), classes(name)').eq('id', userId).single();
 
@@ -48,7 +52,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Pokaż widgety ucznia
             show('widget-student-courses');
             show('widget-student-grades');
-            show('widget-student-calendar'); // <--- DODAJ TĘ LINIĘ
+            show('widget-student-calendar'); // <--- DODANY KAFELEK KALENDARZA DLA UCZNIA
+            document.getElementById('widget-student-calendar').onclick = () => openCalendarModal();
         }
 
         if (currentUserRole === 'admin') {
@@ -139,8 +144,10 @@ async function loadSidebarCalendar() {
     const list = document.getElementById('sidebar-calendar-list');
     if(!currentUserClassId) { list.innerHTML = '<p class="empty-sidebar">Brak klasy.</p>'; return; }
     const today = new Date().toISOString().split('T')[0];
+    
+    // Zmieniono: pobieranie subject_name
     const { data } = await _supabase.from('calendar_events')
-        .select('title, event_date')
+        .select('title, event_date, subject_name')
         .eq('class_id', currentUserClassId)
         .gte('event_date', today)
         .order('event_date', { ascending: true })
@@ -152,10 +159,12 @@ async function loadSidebarCalendar() {
     data.forEach(e => {
         const d = new Date(e.event_date);
         const dateStr = `${d.getDate()}.${d.getMonth()+1}`;
+        const subj = e.subject_name ? `<b>${e.subject_name}:</b> ` : ''; // Formatowanie przedmiotu
+
         list.innerHTML += `
             <div class="sidebar-list-item">
                 <div class="sidebar-list-date">${dateStr}</div>
-                <div class="sidebar-list-content">${e.title}</div>
+                <div class="sidebar-list-content">${subj}${e.title}</div>
             </div>`;
     });
 }
@@ -191,13 +200,23 @@ async function openCalendarModal() {
     const tools = document.getElementById('calendar-teacher-tools');
     list.innerHTML = 'Ładowanie...';
 
+    // Resetowanie pól formularza
+    if(document.getElementById('cal-subject-select')) {
+        document.getElementById('cal-subject-select').innerHTML = '<option value="" disabled selected>-- Najpierw klasa --</option>';
+        document.getElementById('cal-subject-select').disabled = true;
+        document.getElementById('cal-subject-manual').style.display = 'none';
+        document.getElementById('cal-subject-manual').value = '';
+    }
+
     if(['admin', 'teacher', 'manager', 'lecturer'].includes(currentUserRole)) {
         tools.style.display = 'block';
         const sel = document.getElementById('cal-class');
-        if(sel.options.length <= 1) {
-            const { data: classes } = await _supabase.from('classes').select('id, name').eq('school_id', currentUserSchoolId).order('name');
-            if(classes) classes.forEach(c => sel.add(new Option(c.name, c.id)));
-        }
+        // Resetowanie selecta klas przy każdym otwarciu
+        sel.innerHTML = '<option value="">Wybierz klasę...</option>';
+        
+        const { data: classes } = await _supabase.from('classes').select('id, name').eq('school_id', currentUserSchoolId).order('name');
+        if(classes) classes.forEach(c => sel.add(new Option(c.name, c.id)));
+        
         loadFullCalendar(true); 
     } else {
         tools.style.display = 'none';
@@ -208,38 +227,136 @@ async function openCalendarModal() {
 async function loadFullCalendar(isTeacher) {
     const list = document.getElementById('calendar-events-list');
     let query = _supabase.from('calendar_events').select('*').order('event_date', { ascending: true });
-    if(!isTeacher){ const t=new Date().toISOString().split('T')[0]; query=query.gte('event_date', t); }
+    
+    // Jeśli to uczeń, filtrujemy po jego klasie
+    if(!isTeacher) { 
+        const t = new Date().toISOString().split('T')[0]; 
+        query = query.eq('class_id', currentUserClassId).gte('event_date', t); 
+    }
     
     const { data: ev } = await query;
     list.innerHTML = '';
-    if(!ev||ev.length===0){ list.innerHTML='<p style="text-align:center; color:#888;">Brak.</p>'; return; }
+    if(!ev || ev.length === 0){ list.innerHTML='<p style="text-align:center; color:#888;">Brak.</p>'; return; }
     
     const mm=["ST","LUT","MAR","KWI","MAJ","CZE","LIP","SIE","WRZ","PAŹ","LIS","GRU"];
     const typeClass = { 'test': 'bg-test', 'homework': 'bg-homework', 'info': 'bg-info' };
     const typeName = { 'test': 'Sprawdzian', 'homework': 'Zadanie', 'info': 'Info' };
 
-    ev.forEach(e=>{ 
-        const d=new Date(e.event_date); 
-        const div=document.createElement('div'); div.className='event-item'; 
-        div.innerHTML=`
+    ev.forEach(e => { 
+        const d = new Date(e.event_date); 
+        const div = document.createElement('div'); div.className = 'event-item'; 
+        
+        // Wyświetlanie przedmiotu
+        const subjectDisplay = e.subject_name ? `<span style="display:block; font-size:11px; color:var(--accent-color); font-weight:bold; text-transform:uppercase; margin-bottom:2px;">${e.subject_name}</span>` : '';
+
+        div.innerHTML = `
             <div class="event-date-box">
                 <span class="event-day">${d.getDate()}</span>
                 <span class="event-month">${mm[d.getMonth()]}</span>
             </div>
             <div class="event-details">
+                ${subjectDisplay}
                 <div class="event-title">${e.title}<span class="event-badge ${typeClass[e.type]}">${typeName[e.type]}</span></div>
-                <div class="event-meta">${isTeacher?`ID Klasy: ${e.class_id}`:''}</div>
+                <div class="event-meta">${isTeacher ? `ID Klasy: ${e.class_id}` : ''}</div>
             </div>
-            ${isTeacher?`<div class="delete-mini-btn" onclick="deleteCalendarEvent(${e.id})">&times;</div>`:''}
+            ${isTeacher ? `<div class="delete-mini-btn" onclick="deleteCalendarEvent(${e.id})">&times;</div>` : ''}
         `; 
         list.appendChild(div); 
     }); 
 }
 
-async function addCalendarEvent() {
-    const cid=document.getElementById('cal-class').value; const d=document.getElementById('cal-date').value; const t=document.getElementById('cal-type').value; const tit=document.getElementById('cal-title').value; if(!cid||!d||!tit)return alert("Wypełnij!"); const {data:{session}}=await _supabase.auth.getSession(); const {error}=await _supabase.from('calendar_events').insert({teacher_id:session.user.id,class_id:cid,title:tit,event_date:d,type:t}); if(error)alert(error.message); else{document.getElementById('cal-title').value=""; loadFullCalendar(true); loadSidebarCalendar();} 
+// --- NOWE FUNKCJE KALENDARZA (OBSŁUGA PRZEDMIOTÓW) ---
+
+async function loadSubjectsForCalendar(classId) {
+    const subjSelect = document.getElementById('cal-subject-select');
+    const manualInput = document.getElementById('cal-subject-manual');
+    
+    subjSelect.innerHTML = '<option>Ładowanie...</option>';
+    subjSelect.disabled = true;
+    manualInput.style.display = 'none';
+    manualInput.value = '';
+
+    if (!classId) {
+        subjSelect.innerHTML = '<option value="" disabled selected>-- Najpierw klasa --</option>';
+        return;
+    }
+
+    // Pobierz pakiety przypisane do tej klasy
+    const { data: links } = await _supabase.from('package_classes').select('package_id').eq('class_id', classId);
+    
+    subjSelect.innerHTML = '<option value="" disabled selected>-- Wybierz Przedmiot --</option>';
+    
+    if (links && links.length > 0) {
+        const pkgIds = links.map(l => l.package_id);
+        const { data: packages } = await _supabase.from('packages').select('id, title').in('id', pkgIds);
+        
+        if (packages) {
+            packages.forEach(p => {
+                subjSelect.add(new Option(p.title, p.title)); // Value to nazwa przedmiotu
+            });
+        }
+    }
+
+    subjSelect.add(new Option("Inny (wpisz ręcznie)...", "custom"));
+    subjSelect.disabled = false;
 }
-async function deleteCalendarEvent(id) { if(!confirm("Usunąć?"))return; await _supabase.from('calendar_events').delete().eq('id',id); loadFullCalendar(true); }
+
+function toggleManualSubject(value) {
+    const manualInput = document.getElementById('cal-subject-manual');
+    if (value === 'custom') {
+        manualInput.style.display = 'block';
+        manualInput.focus();
+    } else {
+        manualInput.style.display = 'none';
+    }
+}
+
+async function addCalendarEvent() {
+    const cid = document.getElementById('cal-class').value; 
+    const d = document.getElementById('cal-date').value; 
+    const t = document.getElementById('cal-type').value; 
+    const tit = document.getElementById('cal-title').value; 
+
+    // Pobieranie przedmiotu
+    const subjSelect = document.getElementById('cal-subject-select').value;
+    const subjManual = document.getElementById('cal-subject-manual').value;
+    
+    let finalSubject = null;
+    if (subjSelect === 'custom') {
+        finalSubject = subjManual;
+    } else {
+        finalSubject = subjSelect;
+    }
+
+    if(!cid || !d || !tit || !finalSubject) return alert("Wypełnij wszystkie pola (klasę, datę, przedmiot i opis)!"); 
+    
+    const {data:{session}} = await _supabase.auth.getSession(); 
+    
+    const {error} = await _supabase.from('calendar_events').insert({
+        teacher_id: session.user.id,
+        class_id: cid,
+        title: tit,
+        subject_name: finalSubject,
+        event_date: d,
+        type: t
+    }); 
+    
+    if(error) alert(error.message); 
+    else {
+        // Reset formularza
+        document.getElementById('cal-title').value = ""; 
+        document.getElementById('cal-subject-manual').value = "";
+        // Odśwież widok
+        loadFullCalendar(true); 
+        loadSidebarCalendar();
+    } 
+}
+
+async function deleteCalendarEvent(id) { 
+    if(!confirm("Usunąć?")) return; 
+    await _supabase.from('calendar_events').delete().eq('id',id); 
+    loadFullCalendar(true); 
+}
 
 // --- INNE FUNKCJE ---
 
