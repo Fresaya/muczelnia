@@ -55,6 +55,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             show('widget-student-grades');
             show('widget-student-calendar'); // <--- DODANY KAFELEK KALENDARZA DLA UCZNIA
             document.getElementById('widget-student-calendar').onclick = () => openCalendarModal();
+            show('widget-student-behavior');
         }
 
         if (currentUserRole === 'admin') {
