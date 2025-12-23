@@ -6,6 +6,16 @@
     <title>mUczelnia - Pulpit</title>
     <link rel="stylesheet" href="style.css">
     <style>
+        /* --- POPRAWKA DLA KALENDARZA (DARK MODE) --- */
+        #calendar-teacher-tools {
+            background: var(--panel-bg) !important; /* Wymuszenie koloru tła z motywu */
+            color: var(--text-main) !important;
+            border: 1px solid var(--border-color) !important;
+        }
+        
+        #calendar-teacher-tools h4 {
+            color: var(--text-main);
+        }
         /* --- STYL DLA KAFELKÓW I SIDEBARA --- */
         .packages-container { display: flex; flex-wrap: wrap; gap: 5px; padding-left: 2px; }
         .pkg-chip { display: inline-flex; align-items: center; background-color: rgba(33, 150, 243, 0.1); color: #1565C0; border: 1px solid rgba(33, 150, 243, 0.3); border-radius: 12px; padding: 2px 8px; font-size: 11px; font-weight: 500; }
@@ -273,19 +283,35 @@
                 <h3 class="modal-title">Terminarz</h3>
                 <span class="close-modal" onclick="closeModal('calendarModal')">&times;</span>
             </div>
-            <div id="calendar-teacher-tools" style="display:none; background:#f9f9f9; padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid #eee;">
+            <div id="calendar-teacher-tools" style="display:none; padding:15px; border-radius:8px; margin-bottom:20px;">
                 <h4 style="margin:0 0 10px 0; font-size:14px;">Dodaj Wydarzenie</h4>
-                <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                    <select id="cal-class" class="edit-input" style="flex:1; min-width:150px;"><option>Wybierz klasę...</option></select>
-                    <input type="date" id="cal-date" class="edit-input" style="width:140px;">
-                    <select id="cal-type" class="edit-input" style="width:120px;">
-                        <option value="test">Sprawdzian</option>
-                        <option value="homework">Zadanie</option>
-                        <option value="info">Info</option>
-                    </select>
+                
+                <div style="display:flex; flex-direction: column; gap: 10px;">
+                    <div style="display:flex; gap:10px;">
+                        <select id="cal-class" class="edit-input" style="flex:1;" onchange="loadSubjectsForCalendar(this.value)">
+                            <option value="">Wybierz klasę...</option>
+                        </select>
+                        <input type="date" id="cal-date" class="edit-input" style="width:140px;">
+                    </div>
+
+                    <div style="display:flex; gap:10px;">
+                        <select id="cal-subject-select" class="edit-input" style="flex:1;" onchange="toggleManualSubject(this.value)">
+                            <option value="" disabled selected>-- Najpierw klasa --</option>
+                        </select>
+                        <input type="text" id="cal-subject-manual" class="edit-input" placeholder="Wpisz nazwę przedmiotu..." style="flex:1; display:none;">
+                    </div>
+
+                    <div style="display:flex; gap:10px;">
+                        <select id="cal-type" class="edit-input" style="width:130px;">
+                            <option value="test">Sprawdzian</option>
+                            <option value="homework">Zadanie</option>
+                            <option value="info">Info</option>
+                        </select>
+                        <input type="text" id="cal-title" class="edit-input" placeholder="Opis (np. Dział 3 - Ułamki)" style="flex:1;">
+                    </div>
+
+                    <button class="login-button full-width-btn" style="margin-top:5px;" onclick="addCalendarEvent()">Dodaj do kalendarza</button>
                 </div>
-                <input type="text" id="cal-title" class="edit-input" placeholder="Tytuł (np. Test z Historii)" style="margin-top:10px;">
-                <button class="login-button full-width-btn" style="margin-top:10px;" onclick="addCalendarEvent()">Dodaj do kalendarza</button>
             </div>
             <div id="calendar-events-list" style="max-height: 400px; overflow-y: auto;">
                 <p style="text-align:center; color:#888;">Ładowanie wydarzeń...</p>
@@ -297,4 +323,5 @@
     <script src="dashboard.js"></script>
 </body>
 </html>
+
 
