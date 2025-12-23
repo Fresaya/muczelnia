@@ -35,14 +35,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             show('widget-assign-course');
             show('widget-teacher-results');
             show('widget-teacher-grades');
-            show('widget-calendar'); 
+            show('widget-calendar'); // To jest kalendarz dla nauczyciela (edycja)
+            
             document.getElementById('widget-assign-course').onclick = () => openAssignCourseModal();
             document.getElementById('widget-calendar').onclick = () => openCalendarModal();
         } else {
-            // UCZEŃ
+            // --- SEKCJA UCZNIA ---
             show('student-sidebar-content'); 
             loadSidebarCalendar(); 
             loadSidebarGrades();
+            
+            // Pokaż widgety ucznia
+            show('widget-student-courses');
+            show('widget-student-grades');
+            show('widget-student-calendar'); // <--- DODAJ TĘ LINIĘ
         }
 
         if (currentUserRole === 'admin') {
