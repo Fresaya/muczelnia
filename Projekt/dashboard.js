@@ -49,6 +49,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             show('student-sidebar-content'); 
             loadSidebarCalendar(); 
             loadSidebarGrades();
+            loadSidebarRemarks();
             
             // Pokaż widgety ucznia
             show('widget-student-courses');
@@ -430,3 +431,42 @@ async function openAssignCourseModal(){
 }
 
 async function assignCourseToClass(e){ e.preventDefault(); const p=document.getElementById('assign-package-select').value; const c=document.getElementById('assign-class-select').value; if(!c)return alert("Klasa!"); const {error}=await _supabase.from('package_classes').insert({package_id:p,class_id:c}); if(error)alert(error.message); else{alert("Przypisano"); closeModal('assignCourseModal');} }
+
+async function loadSidebarRemarks() {
+    const list = document.getElementById('sidebar-remarks-list');
+    const { data: { session } } = await _supabase.auth.getSession();
+    
+    // Pobierz 3 ostatnie uwagi
+    const { data: remarks } = await _supabase.from('remarks')
+        .select('category, subject_name, created_at')
+        .eq('student_id', session.user.id)
+        .order('created_at', { ascending: false })
+        .limit(3);
+
+    list.innerHTML = '';
+    if (!remarks || remarks.length === 0) { 
+        list.innerHTML = '<p class="empty-sidebar">Brak uwag.</p>'; 
+        return; 
+    }
+
+    const icons = { 'positive': '👍', 'negative': '⚠️', 'neutral': 'ℹ️' };
+
+    remarks.forEach(r => {
+        // Formatowanie daty (np. 12.05)
+        const d = new Date(r.created_at);
+        const dateStr = `${d.getDate()}.${d.getMonth() + 1}`;
+        
+        // Używamy tych samych klas co w ocenach, żeby wyglądało spójnie
+        // Zamiast oceny w kółku, wyświetlimy ikonę
+        list.innerHTML += `
+            <div class="sidebar-list-item">
+                <div class="sidebar-grade-circle" style="background:transparent; border:none; font-size:18px; width:25px;">
+                    ${icons[r.category]}
+                </div>
+                <div class="sidebar-list-content">
+                    <span style="font-size:11px; color:#888;">${dateStr}</span><br>
+                    ${r.subject_name}
+                </div>
+            </div>`;
+    });
+}
