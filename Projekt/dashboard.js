@@ -40,6 +40,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             show('widget-teacher-results');
             show('widget-teacher-grades');
             show('widget-calendar'); // To jest kalendarz dla nauczyciela (edycja)
+            show('widget-teacher-behavior')
             
             document.getElementById('widget-assign-course').onclick = () => openAssignCourseModal();
             document.getElementById('widget-calendar').onclick = () => openCalendarModal();
