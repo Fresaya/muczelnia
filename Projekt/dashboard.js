@@ -77,6 +77,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             show('widget-manage-students');
             hide('widget-add-user'); 
             hide('widget-add-school');
+            show('widget-admin-content'); // Baza treści
+            show('widget-create-course'); // Tworzenie kursu
+            show('widget-create-quiz');   // Tworzenie quizu
         }
     }
 
