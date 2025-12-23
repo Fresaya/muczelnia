@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mUczelnia - Moje Zachowanie</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* --- STYLE DLA PUNKTACJI --- */
+        .score-banner {
+            background: var(--panel-bg);
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+            display: none; /* Domyślnie ukryte, JS pokaże jeśli trzeba */
+        }
+        
+        .score-circle {
+            width: 100px; height: 100px;
+            border-radius: 50%;
+            border: 4px solid var(--accent-color);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 36px; font-weight: bold;
+            margin: 0 auto 10px auto;
+            color: var(--text-main);
+        }
+
+        /* --- LISTA UWAG --- */
+        .history-container {
+            background: var(--panel-bg);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .remark-card {
+            border-bottom: 1px solid var(--border-color);
+            padding: 15px 0;
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+        }
+        .remark-card:last-child { border-bottom: none; }
+
+        .remark-icon {
+            font-size: 24px;
+            background: var(--bg-color);
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .remark-details { flex: 1; }
+        .remark-header { display: flex; justify-content: space-between; margin-bottom: 5px; }
+        .remark-subject { font-weight: bold; font-size: 14px; color: var(--text-main); }
+        .remark-date { font-size: 12px; color: var(--text-muted); }
+        .remark-text { font-size: 14px; color: var(--text-main); line-height: 1.4; }
+        
+        .pts-badge {
+            font-size: 12px; font-weight: bold; padding: 2px 6px; border-radius: 4px; margin-left: 10px;
+        }
+        .pts-pos { color: #4CAF50; background: rgba(76, 175, 80, 0.1); }
+        .pts-neg { color: #F44336; background: rgba(244, 67, 54, 0.1); }
+
+    </style>
+</head>
+<body>
+
+    <div class="layout-wrapper">
+        <aside class="sidebar-left">
+            <div class="top-section">
+                <div class="brand-area"><a href="dashboard.html" class="logo-text"><span>m</span>Uczelnia</a></div>
+                <ul class="nav-menu">
+                    <li class="nav-item"><a href="dashboard.html" class="nav-link"><span>Pulpit</span></a></li>
+                    <li class="nav-item"><a href="#" class="nav-link active"><span>Zachowanie</span></a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="welcome-header">
+                <div>
+                    <a href="dashboard.html" style="text-decoration:none; color:var(--text-muted); font-size:14px;">← Wróć do pulpitu</a>
+                    <h1>Moje Zachowanie</h1>
+                    <p>Historia uwag i punktacja.</p>
+                </div>
+            </div>
+
+            <div id="score-banner" class="score-banner">
+                <div class="score-circle" id="score-val">...</div>
+                <h3 style="margin:0;">Twoje Punkty Zachowania</h3>
+                <p style="color:var(--text-muted); font-size:13px; margin-top:5px;">Startowa pula: 100 pkt</p>
+            </div>
+
+            <div class="history-container">
+                <h3 style="margin-top:0; border-bottom:1px solid var(--border-color); padding-bottom:15px; margin-bottom:15px;">Dziennik Zdarzeń</h3>
+                <div id="remarks-list">
+                    <p style="text-align:center; padding:30px; color:#888;">Ładowanie danych...</p>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg'; 
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (!session) { window.location.href = 'login.html'; return; }
+
+            const userId = session.user.id;
+            
+            // Pobierz dane usera ORAZ poziom szkoły
+            const { data: user } = await _supabase
+                .from('users')
+                .select('behavior_points, schools(level)')
+                .eq('id', userId)
+                .single();
+
+            if(user) {
+                renderScore(user);
+                loadRemarks(userId);
+            }
+        });
+
+        function renderScore(user) {
+            const level = user.schools ? user.schools.level : 1;
+            
+            // Jeśli to nie jest podstawówka (level != 1), pokaż punkty
+            if (level != 1) {
+                const banner = document.getElementById('score-banner');
+                const val = document.getElementById('score-val');
+                
+                banner.style.display = 'block';
+                val.textContent = user.behavior_points;
+
+                // Kolorowanie kółka
+                if (user.behavior_points < 50) val.style.borderColor = '#F44336'; // Czerwony
+                else if (user.behavior_points > 100) val.style.borderColor = '#4CAF50'; // Zielony
+                else val.style.borderColor = '#2196F3'; // Niebieski (standard)
+            }
+        }
+
+        async function loadRemarks(userId) {
+            const list = document.getElementById('remarks-list');
+            
+            const { data: remarks } = await _supabase
+                .from('remarks')
+                .select('*')
+                .eq('student_id', userId)
+                .order('created_at', { ascending: false });
+
+            list.innerHTML = '';
+            
+            if (!remarks || remarks.length === 0) {
+                list.innerHTML = '<p style="text-align:center; padding:30px; color:#888;">Brak uwag w dzienniku. Tak trzymaj! 👍</p>';
+                return;
+            }
+
+            const icons = { 'positive': '🏆', 'negative': '⚠️', 'neutral': 'ℹ️' };
+            const labels = { 'positive': 'Pochwała', 'negative': 'Uwaga', 'neutral': 'Info' };
+
+            remarks.forEach(r => {
+                const date = new Date(r.created_at).toLocaleDateString();
+                
+                let pointsBadge = '';
+                if(r.points > 0) pointsBadge = `<span class="pts-badge pts-pos">+${r.points}</span>`;
+                if(r.points < 0) pointsBadge = `<span class="pts-badge pts-neg">${r.points}</span>`;
+
+                const div = document.createElement('div');
+                div.className = 'remark-card';
+                div.innerHTML = `
+                    <div class="remark-icon">${icons[r.category]}</div>
+                    <div class="remark-details">
+                        <div class="remark-header">
+                            <span class="remark-subject">${r.subject_name} ${pointsBadge}</span>
+                            <span class="remark-date">${date}</span>
+                        </div>
+                        <div class="remark-text">
+                            <strong>${labels[r.category]}:</strong> ${r.description}
+                        </div>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+    </script>
+</body>
+</html>
