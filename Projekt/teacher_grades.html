@@ -6,16 +6,54 @@
     <title>mUczelnia - Dziennik Nauczyciela</title>
     <link rel="stylesheet" href="style.css">
     <style>
+        /* --- STYL ZAKŁADEK --- */
         .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); }
-        .tab { padding: 10px 20px; cursor: pointer; border-bottom: 2px solid transparent; font-weight: bold; color: var(--text-muted); }
+        .tab { padding: 10px 20px; cursor: pointer; border-bottom: 2px solid transparent; font-weight: bold; color: var(--text-muted); transition: 0.2s; }
+        .tab:hover { color: var(--text-main); background: var(--hover-bg); }
         .tab.active { border-color: var(--accent-color); color: var(--accent-color); }
         
-        .panel { display: none; }
+        .panel { display: none; animation: fadeIn 0.3s ease; }
         .panel.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        .grade-form-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; align-items: flex-end; }
-        .grade-form-group { flex: 1; min-width: 150px; }
-        .grade-form-group label { display: block; font-size: 12px; margin-bottom: 5px; color: var(--text-muted); }
+        /* --- NOWY STYL FORMULARZA (GRID - Naprawa nakładania się) --- */
+        .grade-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: var(--shadow);
+            max-width: 800px; /* Ograniczenie szerokości dla czytelności */
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* Dwie kolumny */
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1; /* Rozciągnij na całą szerokość */
+        }
+
+        .form-group label {
+            font-size: 12px;
+            font-weight: bold;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .edit-input {
+            width: 100%; /* Wypełnij kontener */
+            box-sizing: border-box; /* Nie wychodź poza ramki */
+        }
     </style>
 </head>
 <body>
@@ -33,7 +71,7 @@
         <main class="main-content">
             <div class="welcome-header">
                 <div>
-                    <a href="dashboard.html" style="text-decoration:none; color:var(--text-muted);">← Wróć</a>
+                    <a href="dashboard.html" style="text-decoration:none; color:var(--text-muted); font-size:14px;">← Wróć</a>
                     <h1>Dziennik Ocen</h1>
                 </div>
             </div>
@@ -44,25 +82,26 @@
             </div>
 
             <div id="panel-manual" class="panel active">
-                <div class="widget-tile" style="cursor:default; display:block;">
-                    <h3>Nowa Ocena</h3>
-                    <div class="grade-form-row">
-                        <div class="grade-form-group">
-                            <label>Klasa</label>
+                <div class="grade-card">
+                    <h3 style="margin-top:0; border-bottom:1px solid var(--border-color); padding-bottom:10px; margin-bottom:20px;">Nowa Ocena</h3>
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>1. Klasa</label>
                             <select id="m-class" class="edit-input" onchange="loadStudents(this.value)"><option>Wybierz...</option></select>
                         </div>
-                        <div class="grade-form-group">
-                            <label>Uczeń</label>
+                        <div class="form-group">
+                            <label>2. Uczeń</label>
                             <select id="m-student" class="edit-input" disabled><option>Najpierw klasa...</option></select>
                         </div>
-                        <div class="grade-form-group">
-                            <label>Przedmiot (Pakiet)</label>
+                        
+                        <div class="form-group full-width">
+                            <label>3. Przedmiot (Pakiet)</label>
                             <select id="m-package" class="edit-input"><option>Wybierz...</option></select>
                         </div>
-                    </div>
-                    <div class="grade-form-row">
-                        <div class="grade-form-group">
-                            <label>Ocena</label>
+
+                        <div class="form-group">
+                            <label>4. Ocena</label>
                             <select id="m-grade" class="edit-input">
                                 <option value="6">6 (Celujący)</option>
                                 <option value="5">5 (Bardzo dobry)</option>
@@ -73,21 +112,41 @@
                                 <option value="np">np (nieprzygotowany)</option>
                             </select>
                         </div>
-                        <div class="grade-form-group">
-                            <label>Kategoria</label>
-                            <input type="text" id="m-cat" class="edit-input" placeholder="np. Kartkówka">
+                        <div class="form-group">
+                            <label>5. Waga Oceny</label>
+                            <select id="m-weight" class="edit-input">
+                                <option value="1" selected>x1 (Standard)</option>
+                                <option value="2">x2 (Kartkówka/Odp.)</option>
+                                <option value="3">x3 (Sprawdzian)</option>
+                                <option value="4">x4 (Egzamin)</option>
+                                <option value="5">x5 (Projekt roczny)</option>
+                            </select>
                         </div>
-                        <div class="grade-form-group">
-                            <label>Opis</label>
-                            <input type="text" id="m-desc" class="edit-input" placeholder="Opcjonalny opis">
+
+                        <div class="form-group full-width">
+                            <label>6. Kategoria</label>
+                            <select id="m-cat" class="edit-input"> <option value="Aktywność">Aktywność</option>
+                                <option value="Kartkówka">Kartkówka</option>
+                                <option value="Sprawdzian">Sprawdzian</option>
+                                <option value="Zadanie domowe">Zadanie domowe</option>
+                                <option value="Odpowiedź ustna">Odpowiedź ustna</option>
+                                <option value="Inne">Inne</option>
+                            </select>
+                        </div>
+                        <div class="form-group full-width">
+                            <label>7. Opis (Opcjonalnie)</label>
+                            <input type="text" id="m-desc" class="edit-input" placeholder="np. Rozdział 4 - Ułamki">
                         </div>
                     </div>
-                    <button class="login-button" onclick="submitManualGrade()">Wstaw Ocenę</button>
+
+                    <div style="text-align:right;">
+                        <button class="login-button" style="width:auto; padding:10px 30px;" onclick="submitManualGrade()">Zapisz Ocenę</button>
+                    </div>
                 </div>
             </div>
 
             <div id="panel-quiz" class="panel">
-                <div class="filter-bar" style="background:var(--panel-bg); padding:15px; border-radius:8px; display:flex; gap:10px;">
+                <div class="filter-bar" style="background:var(--panel-bg); padding:15px; border-radius:8px; display:flex; gap:10px; border:1px solid var(--border-color);">
                     <select id="q-class" class="edit-input" onchange="loadClassQuizzes(this.value)"><option>Wybierz Klasę...</option></select>
                     <select id="q-quiz" class="edit-input" disabled onchange="loadQuizResults()"><option>Wybierz Quiz...</option></select>
                 </div>
@@ -110,7 +169,7 @@
             if (!session) { window.location.href = 'login.html'; return; }
             
             const { data: user } = await _supabase.from('users').select('school_id, role').eq('id', session.user.id).single();
-            if (!['admin', 'teacher', 'manager'].includes(user.role)) return;
+            if (!['admin', 'teacher', 'manager', 'lecturer'].includes(user.role)) return;
             teacherSchoolId = user.school_id;
 
             loadInitData();
@@ -154,7 +213,8 @@
             const studentId = document.getElementById('m-student').value;
             const packageId = document.getElementById('m-package').value;
             const grade = document.getElementById('m-grade').value;
-            const cat = document.getElementById('m-cat').value || 'Aktywność';
+            const weight = document.getElementById('m-weight').value; // NOWE: Waga
+            const cat = document.getElementById('m-cat').value;
             const desc = document.getElementById('m-desc').value;
 
             if(!studentId || !packageId) return alert("Wybierz ucznia i przedmiot!");
@@ -168,19 +228,22 @@
                 grade: grade,
                 category: cat,
                 description: desc,
-                weight: 1
+                weight: weight // Zapisujemy wagę
             });
 
             if(error) alert("Błąd: " + error.message);
-            else { alert("Ocena dodana!"); document.getElementById('m-desc').value = ''; }
+            else { 
+                alert("Ocena dodana!"); 
+                // Resetuj tylko pola opisu, zostaw klasę/przedmiot dla wygody
+                document.getElementById('m-desc').value = ''; 
+            }
         }
 
-        // --- QUIZ LOGIC ---
+        // --- QUIZ LOGIC (Bez zmian w logice, tylko styl tabeli) ---
         async function loadClassQuizzes(classId) {
             const qSelect = document.getElementById('q-quiz');
             qSelect.innerHTML = '<option>Ładowanie...</option>'; qSelect.disabled = true;
             
-            // Get Packages for Class -> Then Quizzes for Packages
             const { data: links } = await _supabase.from('package_classes').select('package_id').eq('class_id', classId);
             const pkgIds = links.map(l => l.package_id);
             const { data: quizzes } = await _supabase.from('courses').select('id, title').in('package_id', pkgIds).eq('type', 'quiz');
@@ -196,26 +259,26 @@
             const container = document.getElementById('quiz-results-container');
             container.innerHTML = 'Ładowanie wyników...';
 
-            // Get Students
             const { data: students } = await _supabase.from('users').select('id, username').eq('class_id', classId).eq('role', 'student');
-            // Get Attempts
-            const { data: attempts } = await _supabase.from('quiz_attempts').select('user_id, score, created_at').eq('course_id', quizId);
+            const { data: attempts } = await _supabase.from('quiz_attempts').select('user_id, score').eq('course_id', quizId);
 
             container.innerHTML = '';
             const table = document.createElement('table');
-            table.className = 'results-table'; // Używamy stylu z teacher_results.html (trzeba dodać do style.css lub inline)
-            table.style.width = "100%"; table.style.background = "var(--panel-bg)"; table.style.borderCollapse="collapse";
+            table.style.width = "100%"; 
+            table.style.background = "var(--panel-bg)"; 
+            table.style.borderCollapse="collapse";
+            table.style.border = "1px solid var(--border-color)";
             
-            table.innerHTML = `<thead><tr style="text-align:left; border-bottom:1px solid #ccc;"><th>Uczeń</th><th>Wynik %</th><th>Proponowana</th><th>Akcja</th></tr></thead>`;
+            table.innerHTML = `<thead style="background:var(--hover-bg);"><tr style="text-align:left; border-bottom:1px solid var(--border-color);"><th style="padding:10px;">Uczeń</th><th style="padding:10px;">Wynik %</th><th style="padding:10px;">Proponowana</th><th style="padding:10px;">Akcja</th></tr></thead><tbody></tbody>`;
             
+            const tbody = table.querySelector('tbody');
+
             students.forEach(s => {
                 const userAttempts = attempts.filter(a => a.user_id === s.id);
-                if(userAttempts.length === 0) return; // Pomiń tych co nie robili
+                if(userAttempts.length === 0) return; 
                 
-                // Max score
                 const maxScore = Math.max(...userAttempts.map(a => a.score));
                 
-                // Propozycja oceny
                 let prop = "1";
                 if(maxScore >= 90) prop = "5";
                 else if(maxScore >= 75) prop = "4";
@@ -223,17 +286,18 @@
                 else if(maxScore >= 30) prop = "2";
 
                 const tr = document.createElement('tr');
+                tr.style.borderBottom = "1px solid var(--border-color)";
                 tr.innerHTML = `
                     <td style="padding:10px;">${s.username}</td>
                     <td style="padding:10px;"><b>${maxScore}%</b></td>
                     <td style="padding:10px;">
-                        <input type="text" value="${prop}" style="width:40px; text-align:center;" id="grade-val-${s.id}">
+                        <input type="text" value="${prop}" style="width:40px; text-align:center; padding:5px; border-radius:4px; border:1px solid var(--border-color);" id="grade-val-${s.id}">
                     </td>
                     <td style="padding:10px;">
-                        <button class="save-mini-btn" onclick="convertQuizToGrade('${s.id}', '${quizId}')">Wystaw</button>
+                        <button class="login-button" style="width:auto; padding:5px 15px; font-size:12px;" onclick="convertQuizToGrade('${s.id}', '${quizId}')">Wystaw</button>
                     </td>
                 `;
-                table.appendChild(tr);
+                tbody.appendChild(tr);
             });
             container.appendChild(table);
         }
@@ -246,11 +310,11 @@
             const { error } = await _supabase.from('grades').insert({
                 user_id: studentId,
                 teacher_id: session.user.id,
-                package_id: course.package_id, // Ważne: przypisujemy do przedmiotu!
+                package_id: course.package_id,
                 grade: val,
                 category: 'Quiz Online',
                 description: `Wynik z: ${course.title}`,
-                weight: 1
+                weight: 1 // Quizy domyślnie x1
             });
 
             if(error) alert(error.message);
