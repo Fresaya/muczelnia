@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mUczelnia - Dziennik Uwag</title>
+    <link rel="stylesheet" href="style.css"> <style>
+        .behavior-layout { display: flex; gap: 20px; flex-wrap: wrap; }
+        
+        /* Panel Formularza */
+        .behavior-form-card { flex: 1; min-width: 300px; background: var(--panel-bg); padding: 25px; border-radius: 12px; border: 1px solid var(--border-color); box-shadow: var(--shadow); height: fit-content; }
+        
+        /* Panel Historii */
+        .behavior-history-card { flex: 2; min-width: 400px; background: var(--panel-bg); padding: 25px; border-radius: 12px; border: 1px solid var(--border-color); box-shadow: var(--shadow); }
+
+        .points-display {
+            font-size: 24px; font-weight: bold; color: var(--accent-color);
+            border: 2px solid var(--accent-color); border-radius: 50%;
+            width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
+            margin-bottom: 15px;
+        }
+
+        .remark-item { padding: 15px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+        .remark-item:last-child { border-bottom: none; }
+        .remark-content h4 { margin: 0 0 5px 0; font-size: 15px; }
+        .remark-content p { margin: 0; font-size: 13px; color: var(--text-muted); }
+        
+        .badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
+        .badge-pos { background: rgba(76, 175, 80, 0.1); color: #4CAF50; border: 1px solid rgba(76, 175, 80, 0.3); }
+        .badge-neg { background: rgba(244, 67, 54, 0.1); color: #F44336; border: 1px solid rgba(244, 67, 54, 0.3); }
+        .badge-neu { background: rgba(33, 150, 243, 0.1); color: #2196F3; border: 1px solid rgba(33, 150, 243, 0.3); }
+
+        .pts-badge { font-weight: bold; font-size: 14px; margin-left: 10px; }
+        .pts-pos { color: #4CAF50; }
+        .pts-neg { color: #F44336; }
+    </style>
+</head>
+<body>
+
+    <div class="layout-wrapper">
+        <aside class="sidebar-left">
+            <div class="top-section">
+                <div class="brand-area"><a href="dashboard.html" class="logo-text"><span>m</span>Uczelnia</a></div>
+                <ul class="nav-menu">
+                    <li class="nav-item"><a href="dashboard.html" class="nav-link"><span>Pulpit</span></a></li>
+                    <li class="nav-item"><a href="#" class="nav-link active"><span>Zachowanie</span></a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="welcome-header">
+                <div>
+                    <a href="dashboard.html" style="text-decoration:none; color:var(--text-muted); font-size:14px;">← Wróć</a>
+                    <h1>Dziennik Zachowania</h1>
+                    <p>Wystawiaj uwagi, pochwały i zarządzaj punktacją.</p>
+                </div>
+            </div>
+
+            <div class="behavior-layout">
+                
+                <div class="behavior-form-card">
+                    <h3 style="margin-top:0;">Nowy Wpis</h3>
+                    
+                    <label style="font-size:12px; font-weight:bold; color:#888;">1. Wybierz Ucznia</label>
+                    <select id="b-class" class="edit-input" onchange="handleClassChange(this.value)"><option>Ładowanie klas...</option></select>
+                    <select id="b-student" class="edit-input" disabled onchange="loadStudentHistory(this.value)"><option>Najpierw klasa...</option></select>
+
+                    <hr style="border:0; border-top:1px solid var(--border-color); margin: 20px 0;">
+
+                    <label style="font-size:12px; font-weight:bold; color:#888;">2. Szczegóły Uwagi</label>
+                    <select id="b-category" class="edit-input" onchange="togglePointsInput()">
+                        <option value="positive">👍 Pochwała / Pozytywna</option>
+                        <option value="negative">👎 Uwaga / Negatywna</option>
+                        <option value="neutral">ℹ️ Informacja / Neutralna</option>
+                    </select>
+
+                    <label style="font-size:12px; font-weight:bold; color:#888; margin-top:10px; display:block;">Przedmiot / Kontekst</label>
+                    <select id="b-subject" class="edit-input">
+                        <option value="Zachowanie ogólne">Zachowanie ogólne</option>
+                        <option value="Apel/Uroczystość">Apel / Uroczystość</option>
+                        <option disabled>--- Przedmioty ---</option>
+                        </select>
+
+                    <div id="points-section" style="display:none; margin-top:15px; background:var(--hover-bg); padding:10px; border-radius:8px;">
+                        <label style="font-size:12px; font-weight:bold; color:var(--accent-color);">PUNKTY ZACHOWANIA</label>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <input type="number" id="b-points" class="edit-input" placeholder="0" style="width:80px; text-align:center; font-weight:bold;">
+                            <span style="font-size:12px; color:#666;">(Wpisz ujemne dla kary, np. -10)</span>
+                        </div>
+                    </div>
+
+                    <label style="font-size:12px; font-weight:bold; color:#888; margin-top:10px; display:block;">Opis zdarzenia</label>
+                    <textarea id="b-desc" class="edit-input" rows="3" placeholder="Opisz powód uwagi..."></textarea>
+
+                    <button class="login-button full-width-btn" style="margin-top:15px;" onclick="submitRemark()">Zapisz w Dzienniku</button>
+                </div>
+
+                <div class="behavior-history-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                        <h3 style="margin:0;">Historia Ucznia</h3>
+                        <div id="student-score-display" style="display:none; text-align:right;">
+                            <span style="font-size:12px; color:#888; text-transform:uppercase;">Obecne Punkty</span>
+                            <div style="font-size:32px; font-weight:bold; color:var(--text-main); line-height:1;" id="score-value">100</div>
+                        </div>
+                    </div>
+                    
+                    <div id="history-list">
+                        <p style="text-align:center; color:#888; padding:40px;">Wybierz ucznia, aby zobaczyć historię.</p>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg'; 
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        let teacherSchoolId = null;
+        let currentClassLevel = null; // Przechowujemy poziom aktualnie wybranej klasy
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (!session) { window.location.href = 'login.html'; return; }
+            
+            const { data: user } = await _supabase.from('users').select('school_id, role').eq('id', session.user.id).single();
+            if (!['admin', 'teacher', 'manager', 'lecturer'].includes(user.role)) {
+                alert("Brak uprawnień"); window.location.href='dashboard.html'; return;
+            }
+            teacherSchoolId = user.school_id;
+
+            loadClasses();
+            loadSubjects(); // Ładowanie listy przedmiotów (pakietów) do selecta
+        });
+
+        async function loadClasses() {
+            // Pobieramy klasy WRAZ z poziomem szkoły (join)
+            const { data: classes } = await _supabase
+                .from('classes')
+                .select('id, name, schools(level)')
+                .eq('school_id', teacherSchoolId)
+                .order('name');
+            
+            const sel = document.getElementById('b-class');
+            sel.innerHTML = '<option value="">-- Wybierz Klasę --</option>';
+            
+            if(classes) {
+                classes.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c.id;
+                    opt.textContent = c.name;
+                    // Zapisujemy poziom szkoły w atrybucie data, żeby nie pytać bazy drugi raz
+                    opt.dataset.level = c.schools ? c.schools.level : 1; 
+                    sel.appendChild(opt);
+                });
+            }
+        }
+
+        async function loadSubjects() {
+            const { data: pkgs } = await _supabase.from('packages').select('title').order('title');
+            const sel = document.getElementById('b-subject');
+            if(pkgs) {
+                pkgs.forEach(p => {
+                    sel.add(new Option(p.title, p.title));
+                });
+            }
+        }
+
+        // KIEDY NAUCZYCIEL ZMIENIA KLASĘ
+        async function handleClassChange(classId) {
+            const sSelect = document.getElementById('b-student');
+            sSelect.innerHTML = '<option>Ładowanie...</option>'; sSelect.disabled = true;
+            document.getElementById('history-list').innerHTML = '<p style="text-align:center; color:#888;">Wybierz ucznia.</p>';
+            document.getElementById('student-score-display').style.display = 'none';
+
+            if(!classId) return;
+
+            // 1. Sprawdź poziom szkoły z selecta
+            const classSelect = document.getElementById('b-class');
+            const selectedOpt = classSelect.options[classSelect.selectedIndex];
+            const level = selectedOpt.dataset.level; // '1' = podst, '2' = średnia, '3' = wyższa
+            currentClassLevel = level;
+
+            // 2. Pokaż/Ukryj sekcję punktów
+            const ptsSection = document.getElementById('points-section');
+            if (level == '1') {
+                ptsSection.style.display = 'none'; // Podstawówka nie ma punktów
+                document.getElementById('b-points').value = 0;
+            } else {
+                ptsSection.style.display = 'block'; // Średnia/Wyższa ma punkty
+                document.getElementById('b-points').value = '';
+            }
+
+            // 3. Załaduj uczniów
+            const { data: students } = await _supabase.from('users').select('id, username').eq('class_id', classId).eq('role', 'student').order('username');
+            
+            sSelect.innerHTML = '<option value="">-- Wybierz Ucznia --</option>';
+            if(students) students.forEach(s => sSelect.add(new Option(s.username, s.id)));
+            sSelect.disabled = false;
+        }
+
+        function togglePointsInput() {
+            // Automatyczne sugerowanie punktów na podstawie kategorii (opcjonalne UX)
+            if(currentClassLevel == '1') return; // Nie dotyczy podstawówki
+
+            const cat = document.getElementById('b-category').value;
+            const ptsInput = document.getElementById('b-points');
+            
+            if(cat === 'positive' && ptsInput.value <= 0) ptsInput.value = 5;
+            if(cat === 'negative' && ptsInput.value >= 0) ptsInput.value = -5;
+            if(cat === 'neutral') ptsInput.value = 0;
+        }
+
+        async function loadStudentHistory(studentId) {
+            if(!studentId) return;
+            const list = document.getElementById('history-list');
+            list.innerHTML = 'Ładowanie historii...';
+
+            // 1. Pobierz punkty bieżące ucznia
+            const { data: user } = await _supabase.from('users').select('behavior_points').eq('id', studentId).single();
+            if(user) {
+                const scoreBox = document.getElementById('student-score-display');
+                const valBox = document.getElementById('score-value');
+                
+                // Jeśli to szkoła średnia/wyższa - pokaż licznik
+                if(currentClassLevel != '1') {
+                    scoreBox.style.display = 'block';
+                    valBox.textContent = user.behavior_points;
+                    valBox.style.color = user.behavior_points < 50 ? 'red' : (user.behavior_points > 100 ? '#4CAF50' : 'var(--text-main)');
+                } else {
+                    scoreBox.style.display = 'none';
+                }
+            }
+
+            // 2. Pobierz historię uwag
+            const { data: remarks } = await _supabase
+                .from('remarks')
+                .select('*')
+                .eq('student_id', studentId)
+                .order('created_at', { ascending: false });
+
+            list.innerHTML = '';
+            if(!remarks || remarks.length === 0) {
+                list.innerHTML = '<p style="text-align:center; color:#888;">Brak wpisów w dzienniku.</p>';
+                return;
+            }
+
+            const badges = { 'positive': 'badge-pos', 'negative': 'badge-neg', 'neutral': 'badge-neu' };
+            const labels = { 'positive': 'POCHWAŁA', 'negative': 'UWAGA', 'neutral': 'INFO' };
+
+            remarks.forEach(r => {
+                const date = new Date(r.created_at).toLocaleDateString();
+                
+                let pointsHtml = '';
+                if (r.points > 0) pointsHtml = `<span class="pts-badge pts-pos">+${r.points} pkt</span>`;
+                else if (r.points < 0) pointsHtml = `<span class="pts-badge pts-neg">${r.points} pkt</span>`;
+
+                const item = document.createElement('div');
+                item.className = 'remark-item';
+                item.innerHTML = `
+                    <div class="remark-content">
+                        <h4>
+                            <span class="badge ${badges[r.category]}">${labels[r.category]}</span>
+                            <span style="margin-left:5px;">${r.subject_name}</span>
+                        </h4>
+                        <p>${r.description}</p>
+                        <p style="font-size:11px; margin-top:5px; opacity:0.7;">${date}</p>
+                    </div>
+                    <div>
+                        ${pointsHtml}
+                        <button class="mini-btn" style="color:red; border:none; background:none; cursor:pointer;" onclick="deleteRemark(${r.id}, '${studentId}')">🗑️</button>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        async function submitRemark() {
+            const studentId = document.getElementById('b-student').value;
+            const cat = document.getElementById('b-category').value;
+            const subject = document.getElementById('b-subject').value;
+            const desc = document.getElementById('b-desc').value;
+            let points = parseInt(document.getElementById('b-points').value) || 0;
+
+            if(!studentId || !desc) return alert("Wybierz ucznia i wpisz treść uwagi!");
+            
+            // Zabezpieczenie: Jeśli podstawówka, wymuś 0 punktów (nawet jak ktoś w HTML zmienił)
+            if(currentClassLevel == '1') points = 0;
+
+            const { data: { session } } = await _supabase.auth.getSession();
+
+            const { error } = await _supabase.from('remarks').insert({
+                teacher_id: session.user.id,
+                student_id: studentId,
+                category: cat,
+                subject_name: subject,
+                description: desc,
+                points: points
+            });
+
+            if(error) alert("Błąd: " + error.message);
+            else {
+                // Czyść formularz
+                document.getElementById('b-desc').value = '';
+                document.getElementById('b-points').value = (currentClassLevel == '1' ? 0 : '');
+                
+                // Odśwież historię i punkty
+                loadStudentHistory(studentId);
+            }
+        }
+
+        async function deleteRemark(remarkId, studentId) {
+            if(!confirm("Usunąć ten wpis? Jeśli miał punkty, zostaną cofnięte.")) return;
+            const { error } = await _supabase.from('remarks').delete().eq('id', remarkId);
+            if(error) alert(error.message);
+            else loadStudentHistory(studentId);
+        }
+
+    </script>
+</body>
+</html>
