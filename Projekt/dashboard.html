@@ -6,57 +6,170 @@
     <title>mUczelnia - Pulpit</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* --- POPRAWKA DLA KALENDARZA (DARK MODE) --- */
-        #calendar-teacher-tools {
-            background: var(--panel-bg) !important; /* Wymuszenie koloru tła z motywu */
-            color: var(--text-main) !important;
-            border: 1px solid var(--border-color) !important;
-        }
-        
-        #calendar-teacher-tools h4 {
-            color: var(--text-main);
-        }
-        /* --- STYL DLA KAFELKÓW I SIDEBARA --- */
-        .packages-container { display: flex; flex-wrap: wrap; gap: 5px; padding-left: 2px; }
-        .pkg-chip { display: inline-flex; align-items: center; background-color: rgba(33, 150, 243, 0.1); color: #1565C0; border: 1px solid rgba(33, 150, 243, 0.3); border-radius: 12px; padding: 2px 8px; font-size: 11px; font-weight: 500; }
-        
-        .event-item { display: flex; align-items: center; padding: 10px; border-bottom: 1px solid var(--border-color); }
-        .event-date-box { 
-            background: var(--panel-bg); border: 1px solid var(--border-color); 
-            border-radius: 8px; width: 50px; height: 50px; display: flex; flex-direction: column; 
-            align-items: center; justify-content: center; margin-right: 15px; box-shadow: var(--shadow);
-        }
-        .event-day { font-size: 18px; font-weight: bold; color: var(--text-main); }
-        .event-month { font-size: 10px; text-transform: uppercase; color: var(--text-muted); }
-        .event-details { flex: 1; }
-        .event-title { font-weight: bold; font-size: 15px; color: var(--text-main); }
-        .event-meta { font-size: 12px; color: var(--text-muted); }
-        .event-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; color: #fff; font-weight: bold; margin-left: 5px; }
-        .bg-test { background: #f04a4a; } 
-        .bg-homework { background: #FF9800; } 
-        .bg-info { background: #2196F3; } 
+       :root {
+    --bg-color: #f4f6f8;
+    --panel-bg: #ffffff;
+    --text-main: #2c3e50;
+    --text-muted: #7f8c8d;
+    --accent-color: #2196F3;
+    --border-color: #e0e0e0;
+    --sidebar-width: 260px;
+    --hover-bg: #f8f9fa;
+    --shadow: 0 2px 10px rgba(0,0,0,0.03);
+}
 
-        #student-sidebar-content { display: flex; flex-direction: column; gap: 30px; width: 100%; margin-top: 30px;}
-        .sidebar-section { width: 100%; display: block; }
-        .sidebar-section + .sidebar-section { border-top: 1px solid var(--border-color); padding-top: 20px; }
-        
-        .sidebar-title { font-size: 12px; text-transform: uppercase; color: var(--text-muted); font-weight: bold; margin-bottom: 15px; letter-spacing: 1px; display: flex; justify-content: space-between; align-items: center; }
-        .sidebar-list-item { display: flex; align-items: center; margin-bottom: 12px; font-size: 14px; }
-        .sidebar-list-date { font-weight: bold; color: var(--accent-color); margin-right: 10px; font-size: 12px; min-width: 35px; }
-        .sidebar-list-content { flex: 1; color: var(--text-main); line-height: 1.3; font-size: 13px; }
-        
-        .sidebar-grade-circle { 
-            width: 30px; height: 30px; border-radius: 50%; background: var(--hover-bg); 
-            border: 2px solid var(--border-color); display: flex; align-items: center; 
-            justify-content: center; font-weight: bold; font-size: 14px; margin-right: 10px; color: var(--text-main);
-        }
-        .empty-sidebar { font-size: 12px; color: var(--text-muted); font-style: italic; }
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-color: #121212;
+        --panel-bg: #1e1e1e;
+        --text-main: #e0e0e0;
+        --text-muted: #a0a0a0;
+        --border-color: #333;
+        --hover-bg: #2a2a2a;
+        --shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+}
 
-        @media (prefers-color-scheme: dark) {
-            .pkg-chip { background-color: rgba(33, 150, 243, 0.2); color: #90caf9; border-color: rgba(33, 150, 243, 0.5); }
-            .event-date-box { background: #2a2a2a; border-color: #444; }
-            .sidebar-grade-circle { background: #333; border-color: #555; color: #fff; }
-        }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-color); color: var(--text-main); height: 100vh; overflow: hidden; }
+
+/* --- UKŁAD --- */
+.layout-wrapper { display: flex; height: 100vh; width: 100%; }
+
+/* SIDEBAR LEWY */
+.sidebar-left { width: var(--sidebar-width); background: var(--panel-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 20px; flex-shrink: 0; }
+.logo-text { font-size: 24px; font-weight: 800; color: var(--text-main); text-decoration: none; display: block; margin-bottom: 40px; }
+.logo-text span { color: var(--accent-color); }
+.nav-menu { list-style: none; padding: 0; margin: 0; }
+.nav-item { margin-bottom: 5px; }
+.nav-link { display: flex; align-items: center; padding: 12px 15px; color: var(--text-muted); text-decoration: none; border-radius: 8px; transition: 0.2s; font-weight: 500; }
+.nav-link:hover { background: var(--hover-bg); color: var(--text-main); }
+.nav-link.active { background: rgba(33, 150, 243, 0.1); color: var(--accent-color); font-weight: bold; }
+
+/* GŁÓWNA TREŚĆ */
+.main-content { flex: 1; padding: 40px; overflow-y: auto; }
+.welcome-header { margin-bottom: 30px; }
+.welcome-header h1 { margin: 0; font-size: 28px; }
+.welcome-header p { margin: 5px 0 0 0; color: var(--text-muted); }
+
+/* GRID KAFELKÓW */
+.dashboard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; }
+
+/* --- NOWY STYL KAFELKÓW (JEDNOLITY) --- */
+.widget-tile {
+    background: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 25px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    justify-content: center;
+    gap: 15px;
+    text-decoration: none;
+    color: var(--text-main);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: var(--shadow);
+    --tile-color: #555; /* Domyślny kolor */
+    min-height: 180px;
+}
+.widget-tile::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 4px;
+    background-color: var(--tile-color);
+}
+.widget-tile:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    border-color: var(--tile-color);
+}
+.widget-tile h3 {
+    margin: 0; font-size: 16px;
+    color: var(--tile-color) !important;
+}
+.widget-tile .course-meta {
+    margin: 0; font-size: 12px; color: var(--text-muted);
+}
+.widget-icon {
+    width: 40px; height: 40px;
+    background-size: contain; background-repeat: no-repeat; background-position: center;
+    opacity: 0.8;
+}
+/* Ikony specjalne */
+.icon-course-active { background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%232196F3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>'); }
+.icon-grades { background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%234CAF50" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>'); }
+
+
+/* SIDEBAR PRAWY */
+.sidebar-right { width: 280px; background: var(--panel-bg); border-left: 1px solid var(--border-color); padding: 25px; flex-shrink: 0; overflow-y: auto; }
+
+/* Profil */
+.profile-card { text-align: center; margin-bottom: 30px; position: relative; }
+.avatar { width: 80px; height: 80px; background: #eee; border-radius: 50%; margin: 0 auto 15px; cursor: pointer; background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23aaa" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>'); background-position: center; background-repeat: no-repeat; border: 1px solid var(--border-color); }
+.profile-name { font-size: 16px; margin: 0; }
+.profile-id { font-size: 12px; color: var(--text-muted); margin-top: 5px; font-weight: bold; }
+
+/* Menu profilu */
+.dropdown-menu { position: absolute; top: 90px; right: 0; left: 0; margin: auto; width: 140px; background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); display: none; z-index: 100; overflow: hidden; }
+.dropdown-menu.show { display: block; animation: fadeIn 0.2s; }
+.dropdown-item { padding: 10px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 8px; color: #F44336; }
+.dropdown-item:hover { background: var(--hover-bg); }
+.icon-logout { width: 16px; height: 16px; background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23F44336" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>'); }
+
+/* Sidebar Listy (Kalendarz, Oceny, Uwagi) */
+#student-sidebar-content { display: flex; flex-direction: column; gap: 30px; width: 100%; margin-top: 30px; }
+.sidebar-section { width: 100%; display: block; }
+.sidebar-section + .sidebar-section { border-top: 1px solid var(--border-color); padding-top: 20px; }
+.sidebar-title { font-size: 12px; text-transform: uppercase; color: var(--text-muted); font-weight: bold; margin-bottom: 15px; letter-spacing: 1px; display: flex; justify-content: space-between; align-items: center; }
+
+.sidebar-list-item { display: flex; align-items: center; margin-bottom: 12px; font-size: 14px; }
+.sidebar-list-date { font-weight: bold; color: var(--accent-color); margin-right: 10px; font-size: 12px; min-width: 35px; }
+.sidebar-list-content { flex: 1; color: var(--text-main); line-height: 1.3; font-size: 13px; }
+
+.sidebar-grade-circle { width: 30px; height: 30px; border-radius: 50%; background: var(--hover-bg); border: 2px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; margin-right: 10px; color: var(--text-main); flex-shrink: 0; }
+.empty-sidebar { font-size: 12px; color: var(--text-muted); font-style: italic; }
+
+/* MODALE */
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); z-index: 1000; display: none; align-items: center; justify-content: center; }
+.modal-overlay.active { display: flex; }
+.modal-window { background: var(--panel-bg); padding: 30px; border-radius: 12px; width: 100%; max-width: 450px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); position: relative; animation: slideUp 0.3s; border: 1px solid var(--border-color); }
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.modal-title { margin: 0; font-size: 20px; }
+.close-modal { font-size: 24px; cursor: pointer; color: var(--text-muted); }
+.close-modal:hover { color: var(--text-main); }
+
+/* Formularze */
+.modal-form label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 5px; color: var(--text-muted); text-transform: uppercase; margin-top: 15px; }
+.modal-form label:first-child { margin-top: 0; }
+.edit-input { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 14px; background: var(--bg-color); color: var(--text-main); outline: none; margin-bottom: 5px; }
+.edit-input:focus { border-color: var(--accent-color); }
+.login-button { background: var(--text-main); color: white; border: none; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.2s; width: 100%; margin-top: 20px; }
+.login-button:hover { opacity: 0.9; transform: translateY(-1px); }
+
+/* Kalendarz Modal Style */
+.event-item { display: flex; align-items: center; padding: 10px; border-bottom: 1px solid var(--border-color); }
+.event-date-box { background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 8px; width: 50px; height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-right: 15px; box-shadow: var(--shadow); flex-shrink: 0; }
+.event-day { font-size: 18px; font-weight: bold; color: var(--text-main); }
+.event-month { font-size: 10px; text-transform: uppercase; color: var(--text-muted); }
+.event-details { flex: 1; }
+.event-title { font-weight: bold; font-size: 15px; color: var(--text-main); }
+.event-meta { font-size: 12px; color: var(--text-muted); }
+.event-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; color: #fff; font-weight: bold; margin-left: 5px; }
+.bg-test { background: #f04a4a; } 
+.bg-homework { background: #FF9800; } 
+.bg-info { background: #2196F3; } 
+.delete-mini-btn { font-size: 18px; color: #F44336; cursor: pointer; margin-left: 10px; }
+
+/* Poprawka dla narzędzi kalendarza w Dark Mode */
+#calendar-teacher-tools { background: var(--panel-bg) !important; color: var(--text-main) !important; border: 1px solid var(--border-color) !important; }
+#calendar-teacher-tools h4 { color: var(--text-main); }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
@@ -81,100 +194,102 @@
 
             <div class="dashboard-grid">
                 
-                <a href="admin_content.html" id="widget-admin-content" class="widget-tile" style="display: none; border: 2px solid #333;">
+                <a href="admin_content.html" id="widget-admin-content" class="widget-tile" style="display: none; --tile-color: #333;">
                     <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23333%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z%22></path><polyline points=%2214 2 14 8 20 8%22></polyline><line x=%2216%22 y1=%2213%22 x2=%228%22 y2=%2213%22></line><line x=%2216%22 y1=%2217%22 x2=%228%22 y2=%2217%22></line><polyline points=%2210 9 9 9 8 9%22></polyline></svg>');"></div>
                     <h3>Baza Treści</h3>
                     <p class="course-meta">Przeglądaj i Edytuj</p>
                 </a>
 
-                <a href="create_course.html" id="widget-create-course" class="widget-tile" style="display: none; border: 2px dashed var(--accent-color);">
+                <a href="create_course.html" id="widget-create-course" class="widget-tile" style="display: none; --tile-color: #f04a4a;">
                     <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23f04a4a%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><rect x=%223%22 y=%223%22 width=%2218%22 height=%2218%22 rx=%222%22 ry=%222%22></rect><line x=%2212%22 y=%228%22 x2=%2212%22 y2=%2216%22></line><line x=%228%22 y=%2212%22 x2=%2216%22 y2=%2212%22></line></svg>');"></div>
-                    <h3 style="color: var(--accent-color);">Utwórz Kurs</h3>
+                    <h3>Utwórz Kurs</h3>
                     <p class="course-meta">Administrator</p>
                 </a>
 
-                <a href="create_quiz.html" id="widget-create-quiz" class="widget-tile" style="display: none; border: 2px dashed #9C27B0;">
+                <a href="create_quiz.html" id="widget-create-quiz" class="widget-tile" style="display: none; --tile-color: #9C27B0;">
                     <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%239C27B0%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z%22></path><polyline points=%2214 2 14 8 20 8%22></polyline><line x=%2212%22 y=%2218%22 x2=%2212%22 y2=%2218%22></line><line x=%2212%22 y=%2214%22 x2=%2212%22 y2=%2212%22></line></svg>');"></div>
-                    <h3 style="color: #9C27B0;">Utwórz Quiz</h3>
+                    <h3>Utwórz Quiz</h3>
                     <p class="course-meta">Administrator</p>
                 </a>
                 
-                <div id="widget-add-user" class="widget-tile" style="display: none; border: 2px dashed #555; cursor: pointer;">
+                <div id="widget-add-user" class="widget-tile" style="display: none; cursor: pointer; --tile-color: #555;">
                     <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23555%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2%22></path><circle cx=%228.5%22 cy=%227%22 r=%224%22></circle><line x=%2220%22 y=%2218%22 x2=%2220%22 y2=%2214%22></line><line x=%2223%22 y=%2211%22 x2=%2217%22 y2=%2211%22></line></svg>');"></div>
-                    <h3 style="color: #555;">Dodaj Użytkownika</h3>
+                    <h3>Dodaj Użytkownika</h3>
                     <p class="course-meta">Admin & Manager</p>
                 </div>
 
-                <div id="widget-add-school" class="widget-tile" style="display: none; border: 2px dashed #2196F3; cursor: pointer;">
+                <div id="widget-add-school" class="widget-tile" style="display: none; cursor: pointer; --tile-color: #2196F3;">
                     <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%232196F3%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M3 21h18M5 21V7l8-4 8 4v14M8 21v-4h8v4%22></path></svg>');"></div>
-                    <h3 style="color: #2196F3;">Dodaj Szkołę</h3>
+                    <h3>Dodaj Szkołę</h3>
                     <p class="course-meta">Administrator</p>
                 </div>
 
-                <a href="manage_classes.html" id="widget-manage-classes" class="widget-tile" style="display: none; border: 2px dashed #009688; text-decoration: none; color: inherit;">
+                <a href="manage_classes.html" id="widget-manage-classes" class="widget-tile" style="display: none; --tile-color: #009688;">
                     <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23009688%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M3 21h18M5 21V7l8-4 8 4v14M8 21v-4h8v4%22></path><path d=%22M18 7v3m3 0h-3m0 0h-3m3 0v-3%22 stroke=%22%23009688%22 stroke-width=%222%22/></svg>');"></div>
-                    <h3 style="color: #009688;">Zarządzaj Klasami</h3>
+                    <h3>Zarządzaj Klasami</h3>
                     <p class="course-meta">Dodawanie i Edycja</p>
                 </a>
 
-                <a href="manage_students.html" id="widget-manage-students" class="widget-tile" style="display: none; border: 2px dashed #FF9800; text-decoration: none; color: inherit;">
+                <a href="manage_students.html" id="widget-manage-students" class="widget-tile" style="display: none; --tile-color: #FF9800;">
                     <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23FF9800%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2%22></path><circle cx=%229%22 cy=%227%22 r=%224%22></circle><path d=%22M23 21v-2a4 4 0 0 0-3-3.87%22></path><path d=%22M16 3.13a4 4 0 0 1 0 7.75%22></path></svg>');"></div>
-                    <h3 style="color: #FF9800;">Zarządzaj Uczniami</h3>
+                    <h3>Zarządzaj Uczniami</h3>
                     <p class="course-meta">Edycja i Usuwanie</p>
                 </a>
 
-                <div id="widget-assign-course" class="widget-tile" style="display: none; border: 2px dashed #9C27B0; cursor: pointer;">
+                <div id="widget-assign-course" class="widget-tile" style="display: none; cursor: pointer; --tile-color: #9C27B0;">
                     <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%239C27B0%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M4 19.5A2.5 2.5 0 0 1 6.5 17H20%22></path><path d=%22M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z%22></path><path d=%22M12 11h5%22></path><path d=%22M12 8h5%22></path></svg>');"></div>
-                    <h3 style="color: #9C27B0;">Przypisz Materiał</h3>
+                    <h3>Przypisz Materiał</h3>
                     <p class="course-meta">Dodaj pakiet do klasy</p>
                 </div>
                 
-                <a href="teacher_results.html" id="widget-teacher-results" class="widget-tile" style="display: none; border: 2px solid #673AB7; text-decoration: none; color: inherit;">
+                <a href="teacher_results.html" id="widget-teacher-results" class="widget-tile" style="display: none; --tile-color: #673AB7;">
                     <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23673AB7%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z%22></path><polyline points=%2214 2 14 8 20 8%22></polyline><line x=%2216%22 y1=%2213%22 x2=%228%22 y2=%2213%22></line><line x=%2216%22 y1=%2217%22 x2=%228%22 y2=%2217%22></line><polyline points=%2210 9 9 9 8 9%22></polyline></svg>');"></div>
-                    <h3 style="color: #673AB7;">Wyniki Uczniów</h3>
+                    <h3>Wyniki Uczniów</h3>
                     <p class="course-meta">Podgląd i Poprawy</p>
                 </a>
 
-                <a href="teacher_grades.html" id="widget-teacher-grades" class="widget-tile" style="display: none; border: 2px solid #FF9800; text-decoration: none; color: inherit;">
+                <a href="teacher_grades.html" id="widget-teacher-grades" class="widget-tile" style="display: none; --tile-color: #FF9800;">
                     <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23FF9800%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2%22></path><rect x=%228%22 y=%222%22 width=%228%22 height=%224%22 rx=%221%22 ry=%221%22></rect><path d=%22M9 14l2 2 4-4%22></path></svg>');"></div>
-                    <h3 style="color: #FF9800;">Dziennik Ocen</h3>
+                    <h3>Dziennik Ocen</h3>
                     <p class="course-meta">Wystawianie i edycja</p>
                 </a>
-                <a href="teacher_behavior.html" id="widget-teacher-behavior" class="widget-tile" style="display: none; border: 2px solid #E91E63; text-decoration: none; color: inherit;">
-                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23E91E63%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M2 21h18M5 21V7l8-4 8 4v14M8 21v-4h8v4%22></path><circle cx=%2212%22 cy=%2211%22 r=%223%22></circle><path d=%22M12 14v3%22></path></svg>');"></div>
-                    <h3 style="color: #E91E63;">Zachowanie</h3>
-                    <p class="course-meta">Uwagi i Punkty</p>
-                </a>
 
-                <div id="widget-calendar" class="widget-tile" style="display:none; cursor: pointer; border: 2px solid #2196F3;">
+                <div id="widget-calendar" class="widget-tile" style="display:none; cursor: pointer; --tile-color: #2196F3;">
                     <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%232196F3%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><rect x=%223%22 y=%224%22 width=%2218%22 height=%2218%22 rx=%222%22 ry=%222%22></rect><line x=%2216%22 y1=%222%22 x2=%2216%22 y2=%226%22></line><line x=%228%22 y=%222%22 x2=%228%22 y2=%226%22></line><line x=%223%22 y=%2210%22 x2=%2221%22 y2=%2210%22></line></svg>');"></div>
-                    <h3 style="color: #2196F3;">Zarządzaj Terminarzem</h3>
+                    <h3>Zarządzaj Terminarzem</h3>
                     <p class="course-meta">Dodaj wydarzenia dla klas</p>
                 </div>
 
-                <a href="courses_list.html" id="widget-student-courses" class="widget-tile">
+                <a href="teacher_behavior.html" id="widget-teacher-behavior" class="widget-tile" style="display: none; --tile-color: #E91E63;">
+                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23E91E63%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M2 21h18M5 21V7l8-4 8 4v14M8 21v-4h8v4%22></path><circle cx=%2212%22 cy=%2211%22 r=%223%22></circle><path d=%22M12 14v3%22></path></svg>');"></div>
+                    <h3>Zachowanie</h3>
+                    <p class="course-meta">Uwagi i Punkty</p>
+                </a>
+
+                <a href="courses_list.html" id="widget-student-courses" class="widget-tile" style="--tile-color: #2196F3;">
                     <div class="widget-icon icon-course-active"></div>
                     <h3>Moje Przedmioty</h3>
                     <p class="course-meta">Przejdź do nauki</p>
                 </a>
 
-                <a href="grades.html" id="widget-student-grades" class="widget-tile">
+                <a href="grades.html" id="widget-student-grades" class="widget-tile" style="--tile-color: #4CAF50;">
                     <div class="widget-icon icon-grades"></div>
                     <h3>Moje Oceny</h3>
                     <p class="course-meta">Sprawdź wyniki</p>
                 </a>
 
-                <a href="student_behavior.html" id="widget-student-behavior" class="widget-tile" style="display: none; text-decoration: none; color: inherit;">
-                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23E91E63%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z%22></path></svg>');"></div>
-                    <h3 style="color: #E91E63;">Zachowanie</h3>
-                    <p class="course-meta">Punkty i Uwagi</p>
-                </a>
-                
-                <div id="widget-student-calendar" class="widget-tile" style="display: none; cursor: pointer; border: 2px solid #2196F3;" onclick="openCalendarModal()">
+                <div id="widget-student-calendar" class="widget-tile" style="display: none; cursor: pointer; --tile-color: #2196F3;">
                     <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%232196F3%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><rect x=%223%22 y=%224%22 width=%2218%22 height=%2218%22 rx=%222%22 ry=%222%22></rect><line x=%2216%22 y1=%222%22 x2=%2216%22 y2=%226%22></line><line x=%228%22 y=%222%22 x2=%228%22 y2=%226%22></line><line x=%223%22 y=%2210%22 x2=%2221%22 y2=%2210%22></line></svg>');"></div>
-                    <h3 style="color: #2196F3;">Terminarz</h3>
+                    <h3>Terminarz</h3>
                     <p class="course-meta">Sprawdziany i Zadania</p>
                 </div>
+
+                <a href="student_behavior.html" id="widget-student-behavior" class="widget-tile" style="display: none; --tile-color: #E91E63;">
+                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23E91E63%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z%22></path></svg>');"></div>
+                    <h3>Zachowanie</h3>
+                    <p class="course-meta">Punkty i Uwagi</p>
+                </a>
+
             </div>
         </main>
 
@@ -202,14 +317,12 @@
                         <p class="empty-sidebar">Ładowanie...</p>
                     </div>
                 </div>
-
                 <div class="sidebar-section">
                     <div class="sidebar-title">OSTATNIE OCENY (7 DNI)</div>
                     <div id="sidebar-grades-list">
                         <p class="empty-sidebar">Ładowanie...</p>
                     </div>
                 </div>
-
                 <div class="sidebar-section">
                     <div class="sidebar-title">OSTATNIE UWAGI</div>
                     <div id="sidebar-remarks-list">
@@ -229,6 +342,7 @@
             <form id="createUserForm" class="modal-form">
                 <label>Nazwa (Imię i Nazwisko)</label>
                 <input type="text" id="new-username" class="edit-input" required>
+                
                 <label>Rola</label>
                 <select id="new-role" class="edit-input" style="border:1px solid #ccc; margin-bottom: 15px;">
                     <option value="student" selected>Student</option>
@@ -237,6 +351,7 @@
                     <option value="lecturer">Wykładowca</option>
                     <option value="admin">Administrator</option>
                 </select>
+
                 <div id="school-select-container" style="display: block;">
                     <label>Typ Szkoły</label>
                     <select id="new-user-level-filter" class="edit-input" style="border:1px solid #ccc; margin-bottom: 10px;">
@@ -245,10 +360,12 @@
                         <option value="2">Szkoła Średnia</option>
                         <option value="3">Szkoła Wyższa</option>
                     </select>
+
                     <label>Szkoła / Wydział</label>
                     <select id="new-user-school" class="edit-input" style="border:1px solid #ccc; margin-bottom: 15px;" disabled>
                         <option value="" selected disabled>-- Najpierw wybierz typ --</option>
                     </select>
+
                     <div id="class-select-container" style="display:none;">
                         <label>Klasa (Opcjonalnie)</label>
                         <select id="new-user-class" class="edit-input" style="border:1px solid #ccc; margin-bottom: 15px;" disabled>
@@ -256,12 +373,17 @@
                         </select>
                     </div>
                 </div>
+
                 <div style="background: #f4f4f4; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ddd;">
                     <label style="margin:0; font-size:12px; color:#555; text-transform:uppercase;">Login (Generowany automatycznie)</label>
-                    <input type="text" id="new-email" class="edit-input" style="background:transparent; border:none; font-weight:bold; color:#333; margin:0; padding:5px 0; width:100%;" readonly placeholder="Wypełnij formularz..." required>
+                    <input type="text" id="new-email" class="edit-input" 
+                           style="background:transparent; border:none; font-weight:bold; color:#333; margin:0; padding:5px 0; width:100%;" 
+                           readonly placeholder="Wypełnij formularz..." required>
                 </div>
+
                 <label>Hasło</label>
                 <input type="password" id="new-password" class="edit-input" required placeholder="Hasło startowe">
+                
                 <button type="submit" class="login-button full-width-btn" id="createBtn">Utwórz konto</button>
             </form>
         </div>
@@ -303,6 +425,7 @@
                 <h3 class="modal-title">Terminarz</h3>
                 <span class="close-modal" onclick="closeModal('calendarModal')">&times;</span>
             </div>
+            
             <div id="calendar-teacher-tools" style="display:none; padding:15px; border-radius:8px; margin-bottom:20px;">
                 <h4 style="margin:0 0 10px 0; font-size:14px;">Dodaj Wydarzenie</h4>
                 
@@ -313,14 +436,12 @@
                         </select>
                         <input type="date" id="cal-date" class="edit-input" style="width:140px;">
                     </div>
-
                     <div style="display:flex; gap:10px;">
                         <select id="cal-subject-select" class="edit-input" style="flex:1;" onchange="toggleManualSubject(this.value)">
                             <option value="" disabled selected>-- Najpierw klasa --</option>
                         </select>
                         <input type="text" id="cal-subject-manual" class="edit-input" placeholder="Wpisz nazwę przedmiotu..." style="flex:1; display:none;">
                     </div>
-
                     <div style="display:flex; gap:10px;">
                         <select id="cal-type" class="edit-input" style="width:130px;">
                             <option value="test">Sprawdzian</option>
@@ -333,6 +454,7 @@
                     <button class="login-button full-width-btn" style="margin-top:5px;" onclick="addCalendarEvent()">Dodaj do kalendarza</button>
                 </div>
             </div>
+
             <div id="calendar-events-list" style="max-height: 400px; overflow-y: auto;">
                 <p style="text-align:center; color:#888;">Ładowanie wydarzeń...</p>
             </div>
@@ -340,11 +462,9 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="dashboard.js"></script>
+    <script src="js/dashboard.js"></script>
 </body>
 </html>
-
-
 
 
 
