@@ -432,13 +432,15 @@ async function openAssignCourseModal(){
 
 async function assignCourseToClass(e){ e.preventDefault(); const p=document.getElementById('assign-package-select').value; const c=document.getElementById('assign-class-select').value; if(!c)return alert("Klasa!"); const {error}=await _supabase.from('package_classes').insert({package_id:p,class_id:c}); if(error)alert(error.message); else{alert("Przypisano"); closeModal('assignCourseModal');} }
 
+// dashboard.js
+
 async function loadSidebarRemarks() {
     const list = document.getElementById('sidebar-remarks-list');
     const { data: { session } } = await _supabase.auth.getSession();
     
-    // Pobierz 3 ostatnie uwagi
+    // 1. DODANO: pobieranie kolumny 'points'
     const { data: remarks } = await _supabase.from('remarks')
-        .select('category, subject_name, created_at')
+        .select('category, subject_name, created_at, points') 
         .eq('student_id', session.user.id)
         .order('created_at', { ascending: false })
         .limit(3);
@@ -449,19 +451,24 @@ async function loadSidebarRemarks() {
         return; 
     }
 
-    const icons = { 'positive': '👍', 'negative': '⚠️', 'neutral': 'ℹ️' };
-
     remarks.forEach(r => {
         // Formatowanie daty (np. 12.05)
         const d = new Date(r.created_at);
         const dateStr = `${d.getDate()}.${d.getMonth() + 1}`;
         
-        // Używamy tych samych klas co w ocenach, żeby wyglądało spójnie
-        // Zamiast oceny w kółku, wyświetlimy ikonę
+        // 2. NOWA LOGIKA: Ustalanie koloru i formatu liczby (+/-)
+        let pts = r.points || 0;     // Domyślnie 0, jeśli null
+        let txt = pts > 0 ? "+" + pts : pts; // Dodajemy plusa dla dodatnich
+        let color = '#757575';       // Domyślny szary (dla 0 pkt)
+
+        if (pts > 0) color = '#4CAF50'; // Zielony dla pochwał
+        if (pts < 0) color = '#F44336'; // Czerwony dla uwag
+
+        // 3. RENDEROWANIE: Zamiast emotikony wstawiamy kółko z liczbą
         list.innerHTML += `
             <div class="sidebar-list-item">
-                <div class="sidebar-grade-circle" style="background:transparent; border:none; font-size:18px; width:25px;">
-                    ${icons[r.category]}
+                <div class="sidebar-grade-circle" style="color:${color}; border-color:${color}; font-size:14px; width:35px; height:35px;">
+                    ${txt}
                 </div>
                 <div class="sidebar-list-content">
                     <span style="font-size:11px; color:#888;">${dateStr}</span><br>
