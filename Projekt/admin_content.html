@@ -271,7 +271,7 @@
                                 </span>
                                 <div style="display:flex; gap:5px; align-items:center;">
                                     <button class="mini-btn" style="color:#2196F3; border-color:var(--border-color);" 
-                                            onclick="window.location.href='course.html?id=${c.id}'" 
+                                            onclick="window.location.href='course.html?id=${c.id}&origin=admin'" 
                                             title="Wejdź / Zobacz jako uczeń">
                                         👁️
                                     </button>
@@ -350,7 +350,7 @@
                     </div>
                     <div style="display:flex; gap:10px; align-items: center;">
                         <button class="login-button" style="width:auto; padding:5px 15px; font-size:12px; background:#2196F3;" 
-                                onclick="window.location.href='course.html?id=${l.id}'" title="Zobacz">👁️</button>
+                                onclick="window.location.href='course.html?id=${l.id}&origin=admin'" title="Zobacz">👁️</button>
 
                         <button class="login-button" style="width:auto; padding:5px 15px; font-size:12px;" 
                                 onclick="window.location.href='${l.type === 'quiz' ? 'create_quiz.html' : 'create_course.html'}?id=${l.id}'">Edytuj</button>
