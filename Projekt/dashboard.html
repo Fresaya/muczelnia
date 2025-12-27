@@ -77,6 +77,12 @@
                     <h1 id="welcome-message">Witaj!</h1>
                     <p>Wybierz moduł, aby kontynuować.</p>
                 </div>
+                <div id="parent-child-selector-container" style="display:none; margin-top:15px; border-top:1px solid #ccc; padding-top:10px;">
+                    <label style="font-size:12px; font-weight:bold; color:#888; margin-right:10px;">OGLĄDASZ DANE UCZNIA:</label>
+                    <select id="parent-child-select" class="edit-input" style="width:auto; display:inline-block; margin:0;" onchange="switchChildView(this.value)">
+                        <option>Ładowanie...</option>
+                    </select>
+            </div>
             </div>
 
             <div class="dashboard-grid">
@@ -236,6 +242,7 @@
                     <option value="manager">Dziekanat (Manager)</option>
                     <option value="lecturer">Wykładowca</option>
                     <option value="admin">Administrator</option>
+                    <option value="parent">Rodzic</option>
                 </select>
                 <div id="school-select-container" style="display: block;">
                     <label>Typ Szkoły</label>
@@ -255,6 +262,17 @@
                             <option value="" selected disabled>-- Najpierw wybierz szkołę --</option>
                         </select>
                     </div>
+                    <div id="parent-tools-container" style="display:none; margin-top:15px; background:#f9f9f9; padding:10px; border-radius:8px; border:1px solid #eee;">
+                        <label style="font-size:12px; font-weight:bold; color:#555;">PRZYPISZ DZIECI</label>
+                    <div style="display:flex; gap:5px; margin-bottom:5px;">
+                        <input type="text" id="child-search-input" class="edit-input" placeholder="Szukaj ucznia (nazwisko)..." style="margin:0;">
+                        <button type="button" class="login-button" style="width:auto; padding:0 15px; font-size:12px; background:#2196F3;" onclick="searchStudentForParent()">Szukaj</button>
+                    </div>
+    
+                    <ul id="child-search-results" style="list-style:none; padding:0; margin:0; max-height:100px; overflow-y:auto; border:1px solid #eee; background:#fff; display:none; margin-bottom:10px;"></ul>
+
+                    <div id="selected-children-list" style="display:flex; flex-wrap:wrap; gap:5px;"></div>
+                </div>
                 </div>
                 <div style="background: #f4f4f4; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ddd;">
                     <label style="margin:0; font-size:12px; color:#555; text-transform:uppercase;">Login (Generowany automatycznie)</label>
@@ -343,6 +361,7 @@
     <script src="dashboard.js"></script>
 </body>
 </html>
+
 
 
 
