@@ -241,22 +241,18 @@
             container.innerHTML = '';
             
             // Pobierz frazę wyszukiwania
-            const searchTerm = document.getElementById('global-search').value.toLowerCase();
+            const searchTerm = document.getElementById('global-search') ? document.getElementById('global-search').value.toLowerCase() : '';
 
             // Filtrowanie
             const filtered = packagesData.filter(p => {
-                // Szukamy w tytule pakietu
                 const matchTitle = p.title.toLowerCase().includes(searchTerm);
-                // Szukamy w opisie pakietu
                 const matchDesc = p.description && p.description.toLowerCase().includes(searchTerm);
-                // Szukamy w tytułach kursów WEWNĄTRZ pakietu (Smart search!)
                 const matchInner = p.courses && p.courses.some(c => c.title.toLowerCase().includes(searchTerm));
-
                 return matchTitle || matchDesc || matchInner;
             });
 
             if (filtered.length === 0) {
-                container.innerHTML = '<p>Nie znaleziono pakietów pasujących do wyszukiwania.</p>';
+                container.innerHTML = '<p>Nie znaleziono pakietów.</p>';
                 return;
             }
 
@@ -268,15 +264,32 @@
                 if (p.courses && p.courses.length > 0) {
                     p.courses.forEach(c => {
                         const icon = c.type === 'quiz' ? '📝' : '📘';
-                        // Podświetlenie (opcjonalne): Jeśli to ten kurs pasuje do wyszukiwania, można by go wyróżnić, ale na razie wystarczy wyświetlić
+                        
+                        // --- ZMIANA TUTAJ: Dodajemy przycisk edycji ---
+                        const editUrl = c.type === 'quiz' ? 'create_quiz.html' : 'create_course.html';
+                        
                         coursesHtml += `
                             <li class="pkg-item">
-                                <span>${icon} ${c.title}</span>
-                                <span class="mini-btn" style="color:red; border-color:red;" onclick="detachCourse('${c.id}')" title="Wyrzuć do luźnych">×</span>
+                                <span style="display:flex; align-items:center; gap:5px; overflow:hidden; text-overflow:ellipsis;">
+                                    ${icon} ${c.title}
+                                </span>
+                                <div style="display:flex; gap:5px; align-items:center;">
+                                    <button class="mini-btn" style="color:var(--accent-color); border-color:var(--border-color);" 
+                                            onclick="window.location.href='${editUrl}?id=${c.id}'" 
+                                            title="Edytuj zawartość">
+                                        ✏️
+                                    </button>
+                                    
+                                    <button class="mini-btn" style="color:red; border-color:red;" 
+                                            onclick="detachCourse('${c.id}')" 
+                                            title="Wyrzuć do luźnych">
+                                        ×
+                                    </button>
+                                </div>
                             </li>`;
                     });
                 } else {
-                    coursesHtml += '<li class="pkg-item" style="color:#aaa;">Pusty pakiet</li>';
+                    coursesHtml += '<li class="pkg-item" style="color:#aaa; justify-content:center;">Pusty pakiet</li>';
                 }
                 coursesHtml += '</ul>';
 
