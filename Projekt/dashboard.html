@@ -6,56 +6,22 @@
     <title>mUczelnia - Pulpit</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* --- POPRAWKA DLA KALENDARZA (DARK MODE) --- */
-        #calendar-teacher-tools {
-            background: var(--panel-bg) !important; /* Wymuszenie koloru tła z motywu */
-            color: var(--text-main) !important;
-            border: 1px solid var(--border-color) !important;
+        /* Styl badge'a dla wybranego dziecka w modalu */
+        .child-badge {
+            background: rgba(33, 150, 243, 0.1);
+            color: #2196F3;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
-        
-        #calendar-teacher-tools h4 {
-            color: var(--text-main);
-        }
-        /* --- STYL DLA KAFELKÓW I SIDEBARA --- */
-        .packages-container { display: flex; flex-wrap: wrap; gap: 5px; padding-left: 2px; }
-        .pkg-chip { display: inline-flex; align-items: center; background-color: rgba(33, 150, 243, 0.1); color: #1565C0; border: 1px solid rgba(33, 150, 243, 0.3); border-radius: 12px; padding: 2px 8px; font-size: 11px; font-weight: 500; }
-        
-        .event-item { display: flex; align-items: center; padding: 10px; border-bottom: 1px solid var(--border-color); }
-        .event-date-box { 
-            background: var(--panel-bg); border: 1px solid var(--border-color); 
-            border-radius: 8px; width: 50px; height: 50px; display: flex; flex-direction: column; 
-            align-items: center; justify-content: center; margin-right: 15px; box-shadow: var(--shadow);
-        }
-        .event-day { font-size: 18px; font-weight: bold; color: var(--text-main); }
-        .event-month { font-size: 10px; text-transform: uppercase; color: var(--text-muted); }
-        .event-details { flex: 1; }
-        .event-title { font-weight: bold; font-size: 15px; color: var(--text-main); }
-        .event-meta { font-size: 12px; color: var(--text-muted); }
-        .event-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; color: #fff; font-weight: bold; margin-left: 5px; }
-        .bg-test { background: #f04a4a; } 
-        .bg-homework { background: #FF9800; } 
-        .bg-info { background: #2196F3; } 
-
-        #student-sidebar-content { display: flex; flex-direction: column; gap: 30px; width: 100%; margin-top: 30px;}
-        .sidebar-section { width: 100%; display: block; }
-        .sidebar-section + .sidebar-section { border-top: 1px solid var(--border-color); padding-top: 20px; }
-        
-        .sidebar-title { font-size: 12px; text-transform: uppercase; color: var(--text-muted); font-weight: bold; margin-bottom: 15px; letter-spacing: 1px; display: flex; justify-content: space-between; align-items: center; }
-        .sidebar-list-item { display: flex; align-items: center; margin-bottom: 12px; font-size: 14px; }
-        .sidebar-list-date { font-weight: bold; color: var(--accent-color); margin-right: 10px; font-size: 12px; min-width: 35px; }
-        .sidebar-list-content { flex: 1; color: var(--text-main); line-height: 1.3; font-size: 13px; }
-        
-        .sidebar-grade-circle { 
-            width: 30px; height: 30px; border-radius: 50%; background: var(--hover-bg); 
-            border: 2px solid var(--border-color); display: flex; align-items: center; 
-            justify-content: center; font-weight: bold; font-size: 14px; margin-right: 10px; color: var(--text-main);
-        }
-        .empty-sidebar { font-size: 12px; color: var(--text-muted); font-style: italic; }
-
-        @media (prefers-color-scheme: dark) {
-            .pkg-chip { background-color: rgba(33, 150, 243, 0.2); color: #90caf9; border-color: rgba(33, 150, 243, 0.5); }
-            .event-date-box { background: #2a2a2a; border-color: #444; }
-            .sidebar-grade-circle { background: #333; border-color: #555; color: #fff; }
+        .child-badge span {
+            cursor: pointer;
+            color: red;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -64,277 +30,331 @@
     <div class="layout-wrapper">
         <aside class="sidebar-left">
             <div class="top-section">
-                <div class="brand-area"><a href="#" class="logo-text"><span>m</span>Uczelnia</a></div>
+                <div class="brand-area">
+                    <a href="dashboard.html" class="logo-text"><span>m</span>Uczelnia</a>
+                </div>
+                
+                <div class="user-profile-widget" id="avatarTrigger">
+                    <div class="avatar-circle">
+                        <img src="https://ui-avatars.com/api/?name=User&background=random" alt="Avatar" id="user-avatar-img">
+                    </div>
+                    <div class="user-info-text">
+                        <h4 id="profile-name-display">Ładowanie...</h4>
+                        <p id="profile-role-display">...</p>
+                    </div>
+                    <div class="dropdown-menu" id="profileDropdown">
+                        <a href="settings.html">Ustawienia</a>
+                        <a href="#" id="logoutBtn" style="color:var(--accent-color);">Wyloguj</a>
+                    </div>
+                </div>
+
                 <ul class="nav-menu">
-                    <li class="nav-item"><a href="#" class="nav-link active"><span>Pulpit</span></a></li>
+                    <li class="nav-item"><a href="#" class="nav-link active"><span>Pulpit Główny</span></a></li>
+                    <div id="student-sidebar-content" style="display:none;">
+                        <li class="section-title">TWOJE DANE</li>
+                        <li class="nav-item"><a href="grades.html" class="nav-link"><span>Oceny</span></a></li>
+                        <li class="nav-item"><a href="student_behavior.html" class="nav-link"><span>Zachowanie</span></a></li>
+                        
+                        <li class="section-title">TERMINARZ</li>
+                        <div id="sidebar-calendar-list" class="sidebar-list">
+                            <p class="empty-sidebar">Ładowanie...</p>
+                        </div>
+
+                        <li class="section-title">OSTATNIE OCENY</li>
+                        <div id="sidebar-grades-list" class="sidebar-list">
+                            <p class="empty-sidebar">Ładowanie...</p>
+                        </div>
+
+                        <li class="section-title">UWAGI / POCHWAŁY</li>
+                        <div id="sidebar-remarks-list" class="sidebar-list">
+                            <p class="empty-sidebar">Ładowanie...</p>
+                        </div>
+                    </div>
                 </ul>
+            </div>
+            
+            <div class="bottom-section">
+                <p style="font-size:10px; color:#666;">mUczelnia v1.0 &copy; 2024</p>
             </div>
         </aside>
 
         <main class="main-content">
             <div class="welcome-header">
                 <div>
-                    <h1 id="welcome-message">Witaj!</h1>
-                    <p>Wybierz moduł, aby kontynuować.</p>
+                    <h1>Pulpit Sterowania</h1>
+                    <p id="welcome-message">Witaj w systemie mUczelnia.</p>
+                    <div id="profile-school-display" style="font-size:12px; color:var(--text-muted); margin-top:5px;"></div>
+                    
+                    <div id="parent-child-selector-container" style="display:none; margin-top:15px; border-top:1px solid var(--border-color); padding-top:10px;">
+                        <label style="font-size:12px; font-weight:bold; color:var(--text-muted); margin-right:10px;">OGLĄDASZ DANE UCZNIA:</label>
+                        <select id="parent-child-select" class="edit-input" style="width:auto; display:inline-block; margin:0;" onchange="switchChildView(this.value)">
+                            <option>Ładowanie...</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
             <div class="dashboard-grid">
                 
-                <a href="admin_content.html" id="widget-admin-content" class="widget-tile" style="display: none; border: 2px solid #333;">
-                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23333%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z%22></path><polyline points=%2214 2 14 8 20 8%22></polyline><line x=%2216%22 y1=%2213%22 x2=%228%22 y2=%2213%22></line><line x=%2216%22 y1=%2217%22 x2=%228%22 y2=%2217%22></line><polyline points=%2210 9 9 9 8 9%22></polyline></svg>');"></div>
+                <div class="widget-card" id="widget-admin-content" style="display:none;" onclick="window.location.href='admin_content.html'">
+                    <div class="widget-icon" style="background:rgba(33, 150, 243, 0.1); color:#2196F3;">📂</div>
                     <h3>Baza Treści</h3>
-                    <p class="course-meta">Przeglądaj i Edytuj</p>
-                </a>
+                    <p>Zarządzaj kursami i quizami</p>
+                </div>
 
-                <a href="create_course.html" id="widget-create-course" class="widget-tile" style="display: none; border: 2px dashed var(--accent-color);">
-                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23f04a4a%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><rect x=%223%22 y=%223%22 width=%2218%22 height=%2218%22 rx=%222%22 ry=%222%22></rect><line x=%2212%22 y=%228%22 x2=%2212%22 y2=%2216%22></line><line x=%228%22 y=%2212%22 x2=%2216%22 y2=%2212%22></line></svg>');"></div>
-                    <h3 style="color: var(--accent-color);">Utwórz Kurs</h3>
-                    <p class="course-meta">Administrator</p>
-                </a>
+                <div class="widget-card" id="widget-create-course" style="display:none;" onclick="window.location.href='create_course.html'">
+                    <div class="widget-icon" style="background:rgba(255, 152, 0, 0.1); color:#FF9800;">📘</div>
+                    <h3>Kreator Kursu</h3>
+                    <p>Utwórz nową lekcję</p>
+                </div>
 
-                <a href="create_quiz.html" id="widget-create-quiz" class="widget-tile" style="display: none; border: 2px dashed #9C27B0;">
-                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%239C27B0%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z%22></path><polyline points=%2214 2 14 8 20 8%22></polyline><line x=%2212%22 y=%2218%22 x2=%2212%22 y2=%2218%22></line><line x=%2212%22 y=%2214%22 x2=%2212%22 y2=%2212%22></line></svg>');"></div>
-                    <h3 style="color: #9C27B0;">Utwórz Quiz</h3>
-                    <p class="course-meta">Administrator</p>
-                </a>
+                <div class="widget-card" id="widget-create-quiz" style="display:none;" onclick="window.location.href='create_quiz.html'">
+                    <div class="widget-icon" style="background:rgba(156, 39, 176, 0.1); color:#9C27B0;">📝</div>
+                    <h3>Kreator Quizu</h3>
+                    <p>Utwórz test sprawdzający</p>
+                </div>
+
+                <div class="widget-card" id="widget-add-user" style="display:none;">
+                    <div class="widget-icon" style="background:rgba(76, 175, 80, 0.1); color:#4CAF50;">👤</div>
+                    <h3>Dodaj Użytkownika</h3>
+                    <p>Utwórz konto ucznia lub kadry</p>
+                </div>
+
+                <div class="widget-card" id="widget-add-school" style="display:none;">
+                    <div class="widget-icon" style="background:rgba(244, 67, 54, 0.1); color:#F44336;">🏫</div>
+                    <h3>Dodaj Szkołę</h3>
+                    <p>Rejestracja nowej placówki</p>
+                </div>
+
+                <div class="widget-card" id="widget-assign-course" style="display:none;">
+                    <div class="widget-icon" style="background:rgba(0, 150, 136, 0.1); color:#009688;">🔗</div>
+                    <h3>Przypisz Pakiet</h3>
+                    <p>Udostępnij materiały klasie</p>
+                </div>
+
+                <div class="widget-card" id="widget-manage-classes" style="display:none;" onclick="window.location.href='manage_classes.html'">
+                    <div class="widget-icon" style="background:rgba(63, 81, 181, 0.1); color:#3F51B5;">🎓</div>
+                    <h3>Zarządzaj Klasami</h3>
+                    <p>Edycja klas i roczników</p>
+                </div>
+
+                <div class="widget-card" id="widget-manage-students" style="display:none;" onclick="window.location.href='manage_students.html'">
+                    <div class="widget-icon" style="background:rgba(233, 30, 99, 0.1); color:#E91E63;">boy</div>
+                    <h3>Uczniowie</h3>
+                    <p>Lista uczniów, hasła, edycja</p>
+                </div>
                 
-                <div id="widget-add-user" class="widget-tile" style="display: none; border: 2px dashed #555; cursor: pointer;">
-                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23555%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2%22></path><circle cx=%228.5%22 cy=%227%22 r=%224%22></circle><line x=%2220%22 y=%2218%22 x2=%2220%22 y2=%2214%22></line><line x=%2223%22 y=%2211%22 x2=%2217%22 y2=%2211%22></line></svg>');"></div>
-                    <h3 style="color: #555;">Dodaj Użytkownika</h3>
-                    <p class="course-meta">Admin & Manager</p>
+                <div class="widget-card" id="widget-teacher-results" style="display:none;" onclick="window.location.href='teacher_results.html'">
+                    <div class="widget-icon" style="background:rgba(96, 125, 139, 0.1); color:#607D8B;">📊</div>
+                    <h3>Wyniki Quizów</h3>
+                    <p>Sprawdź postępy uczniów</p>
                 </div>
 
-                <div id="widget-add-school" class="widget-tile" style="display: none; border: 2px dashed #2196F3; cursor: pointer;">
-                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%232196F3%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M3 21h18M5 21V7l8-4 8 4v14M8 21v-4h8v4%22></path></svg>');"></div>
-                    <h3 style="color: #2196F3;">Dodaj Szkołę</h3>
-                    <p class="course-meta">Administrator</p>
+                <div class="widget-card" id="widget-teacher-grades" style="display:none;" onclick="window.location.href='teacher_grades.html'">
+                    <div class="widget-icon" style="background:rgba(103, 58, 183, 0.1); color:#673AB7;">Oc</div>
+                    <h3>Dziennik Ocen</h3>
+                    <p>Wystawianie ocen</p>
                 </div>
 
-                <a href="manage_classes.html" id="widget-manage-classes" class="widget-tile" style="display: none; border: 2px dashed #009688; text-decoration: none; color: inherit;">
-                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23009688%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M3 21h18M5 21V7l8-4 8 4v14M8 21v-4h8v4%22></path><path d=%22M18 7v3m3 0h-3m0 0h-3m3 0v-3%22 stroke=%22%23009688%22 stroke-width=%222%22/></svg>');"></div>
-                    <h3 style="color: #009688;">Zarządzaj Klasami</h3>
-                    <p class="course-meta">Dodawanie i Edycja</p>
-                </a>
-
-                <a href="manage_students.html" id="widget-manage-students" class="widget-tile" style="display: none; border: 2px dashed #FF9800; text-decoration: none; color: inherit;">
-                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23FF9800%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2%22></path><circle cx=%229%22 cy=%227%22 r=%224%22></circle><path d=%22M23 21v-2a4 4 0 0 0-3-3.87%22></path><path d=%22M16 3.13a4 4 0 0 1 0 7.75%22></path></svg>');"></div>
-                    <h3 style="color: #FF9800;">Zarządzaj Uczniami</h3>
-                    <p class="course-meta">Edycja i Usuwanie</p>
-                </a>
-
-                <div id="widget-assign-course" class="widget-tile" style="display: none; border: 2px dashed #9C27B0; cursor: pointer;">
-                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%239C27B0%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M4 19.5A2.5 2.5 0 0 1 6.5 17H20%22></path><path d=%22M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z%22></path><path d=%22M12 11h5%22></path><path d=%22M12 8h5%22></path></svg>');"></div>
-                    <h3 style="color: #9C27B0;">Przypisz Materiał</h3>
-                    <p class="course-meta">Dodaj pakiet do klasy</p>
+                <div class="widget-card" id="widget-teacher-behavior" style="display:none;" onclick="window.location.href='teacher_behavior.html'">
+                    <div class="widget-icon" style="background:rgba(255, 87, 34, 0.1); color:#FF5722;">⚠️</div>
+                    <h3>Zachowanie</h3>
+                    <p>Uwagi i pochwały</p>
                 </div>
                 
-                <a href="teacher_results.html" id="widget-teacher-results" class="widget-tile" style="display: none; border: 2px solid #673AB7; text-decoration: none; color: inherit;">
-                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23673AB7%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z%22></path><polyline points=%2214 2 14 8 20 8%22></polyline><line x=%2216%22 y1=%2213%22 x2=%228%22 y2=%2213%22></line><line x=%2216%22 y1=%2217%22 x2=%228%22 y2=%2217%22></line><polyline points=%2210 9 9 9 8 9%22></polyline></svg>');"></div>
-                    <h3 style="color: #673AB7;">Wyniki Uczniów</h3>
-                    <p class="course-meta">Podgląd i Poprawy</p>
-                </a>
-
-                <a href="teacher_grades.html" id="widget-teacher-grades" class="widget-tile" style="display: none; border: 2px solid #FF9800; text-decoration: none; color: inherit;">
-                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23FF9800%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2%22></path><rect x=%228%22 y=%222%22 width=%228%22 height=%224%22 rx=%221%22 ry=%221%22></rect><path d=%22M9 14l2 2 4-4%22></path></svg>');"></div>
-                    <h3 style="color: #FF9800;">Dziennik Ocen</h3>
-                    <p class="course-meta">Wystawianie i edycja</p>
-                </a>
-                <a href="teacher_behavior.html" id="widget-teacher-behavior" class="widget-tile" style="display: none; border: 2px solid #E91E63; text-decoration: none; color: inherit;">
-                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23E91E63%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M2 21h18M5 21V7l8-4 8 4v14M8 21v-4h8v4%22></path><circle cx=%2212%22 cy=%2211%22 r=%223%22></circle><path d=%22M12 14v3%22></path></svg>');"></div>
-                    <h3 style="color: #E91E63;">Zachowanie</h3>
-                    <p class="course-meta">Uwagi i Punkty</p>
-                </a>
-
-                <div id="widget-calendar" class="widget-tile" style="display:none; cursor: pointer; border: 2px solid #2196F3;">
-                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%232196F3%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><rect x=%223%22 y=%224%22 width=%2218%22 height=%2218%22 rx=%222%22 ry=%222%22></rect><line x=%2216%22 y1=%222%22 x2=%2216%22 y2=%226%22></line><line x=%228%22 y=%222%22 x2=%228%22 y2=%226%22></line><line x=%223%22 y=%2210%22 x2=%2221%22 y2=%2210%22></line></svg>');"></div>
-                    <h3 style="color: #2196F3;">Zarządzaj Terminarzem</h3>
-                    <p class="course-meta">Dodaj wydarzenia dla klas</p>
+                <div class="widget-card" id="widget-calendar" style="display:none;">
+                    <div class="widget-icon" style="background:rgba(121, 85, 72, 0.1); color:#795548;">📅</div>
+                    <h3>Kalendarz</h3>
+                    <p>Planuj sprawdziany</p>
                 </div>
 
-                <a href="courses_list.html" id="widget-student-courses" class="widget-tile">
-                    <div class="widget-icon icon-course-active"></div>
-                    <h3>Moje Przedmioty</h3>
-                    <p class="course-meta">Przejdź do nauki</p>
-                </a>
-
-                <a href="grades.html" id="widget-student-grades" class="widget-tile">
-                    <div class="widget-icon icon-grades"></div>
+                <div class="widget-card" id="widget-student-courses" style="display:none;" onclick="window.location.href='courses_list.html'">
+                    <div class="widget-icon" style="background:rgba(33, 150, 243, 0.1); color:#2196F3;">📚</div>
+                    <h3>Moje Kursy</h3>
+                    <p>Przeglądaj materiały</p>
+                </div>
+                
+                <div class="widget-card" id="widget-student-grades" style="display:none;" onclick="window.location.href='grades.html'">
+                    <div class="widget-icon" style="background:rgba(76, 175, 80, 0.1); color:#4CAF50;">A+</div>
                     <h3>Moje Oceny</h3>
-                    <p class="course-meta">Sprawdź wyniki</p>
-                </a>
-
-                <a href="student_behavior.html" id="widget-student-behavior" class="widget-tile" style="display: none; text-decoration: none; color: inherit;">
-                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23E91E63%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z%22></path></svg>');"></div>
-                    <h3 style="color: #E91E63;">Zachowanie</h3>
-                    <p class="course-meta">Punkty i Uwagi</p>
-                </a>
-                
-                <div id="widget-student-calendar" class="widget-tile" style="display: none; cursor: pointer; border: 2px solid #2196F3;" onclick="openCalendarModal()">
-                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%232196F3%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><rect x=%223%22 y=%224%22 width=%2218%22 height=%2218%22 rx=%222%22 ry=%222%22></rect><line x=%2216%22 y1=%222%22 x2=%2216%22 y2=%226%22></line><line x=%228%22 y=%222%22 x2=%228%22 y2=%226%22></line><line x=%223%22 y=%2210%22 x2=%2221%22 y2=%2210%22></line></svg>');"></div>
-                    <h3 style="color: #2196F3;">Terminarz</h3>
-                    <p class="course-meta">Sprawdziany i Zadania</p>
+                    <p>Sprawdź wyniki nauczania</p>
                 </div>
+
+                <div class="widget-card" id="widget-student-calendar" style="display:none;">
+                    <div class="widget-icon" style="background:rgba(121, 85, 72, 0.1); color:#795548;">📅</div>
+                    <h3>Terminarz</h3>
+                    <p>Sprawdziany i zadania</p>
+                </div>
+
+                <div class="widget-card" id="widget-student-behavior" style="display:none;" onclick="window.location.href='student_behavior.html'">
+                    <div class="widget-icon" style="background:rgba(255, 87, 34, 0.1); color:#FF5722;">👍</div>
+                    <h3>Zachowanie</h3>
+                    <p>Punkty i uwagi</p>
+                </div>
+
             </div>
         </main>
-
-        <aside class="sidebar-right">
-            <div class="profile-card">
-                <div class="avatar" id="avatarTrigger" title="Kliknij, aby otworzyć opcje"></div>
-                <div class="dropdown-menu" id="profileDropdown">
-                    <div class="dropdown-item" id="logoutBtn">
-                        <div class="icon-logout"></div>
-                        Wyloguj się
-                    </div>
-                </div>
-                <h2 class="profile-name" id="profile-name-display">...</h2>
-                <p class="profile-id" id="profile-role-display">...</p>
-                <p style="font-size: 13px; color: #888; margin-top: 5px; max-width: 200px; line-height: 1.4;" id="profile-school-display"></p>
-            </div>
-
-            <div id="student-sidebar-content" style="display: none;">
-                <div class="sidebar-section">
-                    <div class="sidebar-title" onclick="openCalendarModal()" style="cursor:pointer;">
-                        <span>NADCHODZĄCE</span>
-                        <span style="font-size:10px;">WIĘCEJ &rarr;</span>
-                    </div>
-                    <div id="sidebar-calendar-list">
-                        <p class="empty-sidebar">Ładowanie...</p>
-                    </div>
-                </div>
-
-                <div class="sidebar-section">
-                    <div class="sidebar-title">OSTATNIE OCENY (7 DNI)</div>
-                    <div id="sidebar-grades-list">
-                        <p class="empty-sidebar">Ładowanie...</p>
-                    </div>
-                </div>
-
-                <div class="sidebar-section">
-                    <div class="sidebar-title">OSTATNIE UWAGI</div>
-                    <div id="sidebar-remarks-list">
-                        <p class="empty-sidebar">Ładowanie...</p>
-                    </div>
-                </div>
-            </div>
-        </aside>
     </div>
 
     <div class="modal-overlay" id="createUserModal">
         <div class="modal-window">
-            <div class="modal-header">
-                <h3 class="modal-title">Dodaj Użytkownika</h3>
-                <span class="close-modal" onclick="closeModal('createUserModal')">&times;</span>
-            </div>
-            <form id="createUserForm" class="modal-form">
-                <label>Nazwa (Imię i Nazwisko)</label>
-                <input type="text" id="new-username" class="edit-input" required>
+            <h3>Utwórz Użytkownika</h3>
+            <form id="createUserForm">
                 <label>Rola</label>
-                <select id="new-role" class="edit-input" style="border:1px solid #ccc; margin-bottom: 15px;">
-                    <option value="student" selected>Student</option>
+                <select id="new-role" class="edit-input" required>
+                    <option value="student">Uczeń</option>
                     <option value="teacher">Nauczyciel</option>
-                    <option value="manager">Dziekanat (Manager)</option>
+                    <option value="manager">Manager</option>
                     <option value="lecturer">Wykładowca</option>
                     <option value="admin">Administrator</option>
-                </select>
-                <div id="school-select-container" style="display: block;">
-                    <label>Typ Szkoły</label>
-                    <select id="new-user-level-filter" class="edit-input" style="border:1px solid #ccc; margin-bottom: 10px;">
-                        <option value="" disabled selected>-- Wybierz Typ --</option>
-                        <option value="1">Szkoła Podstawowa</option>
-                        <option value="2">Szkoła Średnia</option>
-                        <option value="3">Szkoła Wyższa</option>
+                    <option value="parent">Rodzic</option> </select>
+
+                <div id="school-select-container">
+                    <label>Filtruj szkoły (poziom)</label>
+                    <select id="new-user-level-filter" class="edit-input">
+                        <option value="" selected>Wszystkie</option>
+                        <option value="1">Podstawowa</option>
+                        <option value="2">Średnia</option>
+                        <option value="3">Wyższa</option>
                     </select>
-                    <label>Szkoła / Wydział</label>
-                    <select id="new-user-school" class="edit-input" style="border:1px solid #ccc; margin-bottom: 15px;" disabled>
-                        <option value="" selected disabled>-- Najpierw wybierz typ --</option>
+
+                    <label>Szkoła</label>
+                    <select id="new-user-school" class="edit-input">
+                        <option value="" disabled selected>-- Wybierz szkołę --</option>
                     </select>
-                    <div id="class-select-container" style="display:none;">
-                        <label>Klasa (Opcjonalnie)</label>
-                        <select id="new-user-class" class="edit-input" style="border:1px solid #ccc; margin-bottom: 15px;" disabled>
-                            <option value="" selected disabled>-- Najpierw wybierz szkołę --</option>
-                        </select>
+                </div>
+
+                <div id="class-select-container" style="display:none;">
+                    <label>Klasa</label>
+                    <select id="new-user-class" class="edit-input" disabled>
+                        <option>Wybierz szkołę najpierw...</option>
+                    </select>
+                </div>
+                
+                <div id="parent-tools-container" style="display:none; margin-top:15px; background:var(--bg-color); padding:10px; border-radius:8px; border:1px solid var(--border-color);">
+                    <label style="font-size:12px; font-weight:bold; color:var(--text-muted);">PRZYPISZ DZIECI</label>
+                    <div style="display:flex; gap:5px; margin-bottom:5px;">
+                        <input type="text" id="child-search-input" class="edit-input" placeholder="Wpisz nazwisko ucznia..." style="margin:0;">
+                        <button type="button" class="login-button" style="width:auto; padding:0 15px; font-size:12px; background:var(--accent-color);" onclick="searchStudentForParent()">Szukaj</button>
                     </div>
+                    
+                    <ul id="child-search-results" style="list-style:none; padding:0; margin:0; max-height:100px; overflow-y:auto; border:1px solid var(--border-color); background:var(--panel-bg); display:none; margin-bottom:10px;"></ul>
+                
+                    <div id="selected-children-list" style="display:flex; flex-wrap:wrap; gap:5px;"></div>
                 </div>
-                <div style="background: #f4f4f4; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ddd;">
-                    <label style="margin:0; font-size:12px; color:#555; text-transform:uppercase;">Login (Generowany automatycznie)</label>
-                    <input type="text" id="new-email" class="edit-input" style="background:transparent; border:none; font-weight:bold; color:#333; margin:0; padding:5px 0; width:100%;" readonly placeholder="Wypełnij formularz..." required>
-                </div>
+
+                <div style="margin-top:15px;"></div>
+
+                <label>Imię i Nazwisko</label>
+                <input type="text" id="new-username" class="edit-input" placeholder="Jan Kowalski" required>
+
+                <label>Email (Login)</label>
+                <input type="email" id="new-email" class="edit-input" placeholder="Generowany automatycznie..." readonly required>
+
                 <label>Hasło</label>
-                <input type="password" id="new-password" class="edit-input" required placeholder="Hasło startowe">
-                <button type="submit" class="login-button full-width-btn" id="createBtn">Utwórz konto</button>
+                <input type="text" id="new-password" class="edit-input" value="start123" required>
+
+                <div style="text-align:right; margin-top:20px;">
+                    <button type="button" class="login-button" style="background:#ccc; color:#333; width:auto;" onclick="closeModal('createUserModal')">Anuluj</button>
+                    <button type="submit" class="login-button" style="width:auto;" id="createBtn">Utwórz konto</button>
+                </div>
             </form>
         </div>
     </div>
 
     <div class="modal-overlay" id="addSchoolModal">
         <div class="modal-window">
-            <div class="modal-header">
-                <h3 class="modal-title">Dodaj Szkołę</h3>
-                <span class="close-modal" onclick="closeModal('addSchoolModal')">&times;</span>
-            </div>
-            <form id="addSchoolForm" class="modal-form">
+            <h3>Dodaj Nową Szkołę</h3>
+            <form id="addSchoolForm">
                 <label>Nazwa Szkoły</label>
-                <input type="text" id="school-name" class="edit-input" placeholder="np. Liceum nr 1" required>
-                <label>Skrót (max 5 znaków)</label>
-                <input type="text" id="school-abbr" class="edit-input" placeholder="LO1" maxlength="5" style="text-transform:uppercase;" required>
-                <label>Poziom Szkoły</label>
-                <select id="school-level" class="edit-input" style="border:1px solid #ccc;" required>
+                <input type="text" id="school-name" class="edit-input" placeholder="np. Liceum Ogólnokształcące nr 1" required>
+                
+                <label>Skrót (do loginu)</label>
+                <input type="text" id="school-abbr" class="edit-input" placeholder="np. LO1" maxlength="5" style="text-transform:uppercase;" required>
+                
+                <label>Poziom</label>
+                <select id="school-level" class="edit-input">
                     <option value="1">Szkoła Podstawowa</option>
                     <option value="2">Szkoła Średnia</option>
                     <option value="3">Szkoła Wyższa</option>
                 </select>
+
                 <label>Adres</label>
-                <input type="text" id="school-address" class="edit-input">
-                <button type="submit" class="login-button full-width-btn">Zapisz Szkołę</button>
+                <input type="text" id="school-address" class="edit-input" placeholder="Ulica, Miasto">
+
+                <div style="text-align:right; margin-top:20px;">
+                    <button type="button" class="login-button" style="background:#ccc; color:#333; width:auto;" onclick="closeModal('addSchoolModal')">Anuluj</button>
+                    <button type="submit" class="login-button" style="width:auto;">Dodaj</button>
+                </div>
             </form>
         </div>
     </div>
-    
-    <div class="modal-overlay" id="assignCourseModal"><div class="modal-window"><div class="modal-header"><h3 class="modal-title">Przypisz Pakiet do Klasy</h3><span class="close-modal" onclick="closeModal('assignCourseModal')">&times;</span></div><form id="assignCourseForm" class="modal-form"><div style="margin-bottom: 10px;">
-        <label>1. Wybierz Szkołę</label><select id="assign-school-select" class="edit-input" style="border:1px solid #ccc; margin-bottom:10px;"><option value="">-- Wybierz --</option></select>
-        <label>2. Wybierz Klasę</label><select id="assign-class-select" class="edit-input" style="border:1px solid #ccc; margin-bottom:10px;" disabled><option value="">-- Wybierz szkołę najpierw --</option></select>
-        <label>3. Wybierz Pakiet (zgodny z poziomem)</label><select id="assign-package-select" class="edit-input" style="border:1px solid #ccc;" required><option value="" disabled selected>-- Wybierz Pakiet --</option></select>
-    </div><button type="submit" class="login-button full-width-btn">Przypisz Pakiet</button></form></div></div>
+
+    <div class="modal-overlay" id="assignCourseModal">
+        <div class="modal-window">
+            <h3>Przypisz Pakiet do Klasy</h3>
+            <p>Udostępnij cały zestaw przedmiotów (np. Fizyka - Cały rok) danej klasie.</p>
+            
+            <form id="assignCourseForm">
+                <label>Szkoła</label>
+                <select id="assign-school-select" class="edit-input">
+                    <option disabled selected>Wybierz Szkołę</option>
+                </select>
+
+                <label>Klasa</label>
+                <select id="assign-class-select" class="edit-input" disabled>
+                    <option disabled selected>Najpierw Szkoła...</option>
+                </select>
+
+                <label>Pakiet (Przedmiot)</label>
+                <select id="assign-package-select" class="edit-input" disabled>
+                    <option disabled selected>Najpierw Klasa...</option>
+                </select>
+
+                <div style="text-align:right; margin-top:20px;">
+                    <button type="button" class="login-button" style="background:#ccc; color:#333; width:auto;" onclick="closeModal('assignCourseModal')">Anuluj</button>
+                    <button type="submit" class="login-button" style="width:auto;">Przypisz</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <div class="modal-overlay" id="calendarModal">
-        <div class="modal-window" style="max-width: 700px;">
-            <div class="modal-header">
-                <h3 class="modal-title">Terminarz</h3>
-                <span class="close-modal" onclick="closeModal('calendarModal')">&times;</span>
-            </div>
-            <div id="calendar-teacher-tools" style="display:none; padding:15px; border-radius:8px; margin-bottom:20px;">
-                <h4 style="margin:0 0 10px 0; font-size:14px;">Dodaj Wydarzenie</h4>
-                
-                <div style="display:flex; flex-direction: column; gap: 10px;">
-                    <div style="display:flex; gap:10px;">
-                        <select id="cal-class" class="edit-input" style="flex:1;" onchange="loadSubjectsForCalendar(this.value)">
-                            <option value="">Wybierz klasę...</option>
-                        </select>
-                        <input type="date" id="cal-date" class="edit-input" style="width:140px;">
-                    </div>
+        <div class="modal-window" style="max-width:800px; width:90%;">
+            <h3 style="margin-bottom:20px;">Kalendarz Wydarzeń</h3>
+            
+            <div id="calendar-teacher-tools" style="background:var(--bg-color); padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid var(--border-color); display:none;">
+                <h4 style="margin:0 0 10px 0;">Dodaj Wydarzenie</h4>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <select id="cal-class" class="edit-input" style="flex:1; min-width:150px;" onchange="loadSubjectsForCalendar(this.value)">
+                        <option value="">Wybierz klasę...</option>
+                    </select>
+                    
+                    <select id="cal-subject-select" class="edit-input" style="flex:1; min-width:150px;" onchange="toggleManualSubject(this.value)" disabled>
+                        <option value="" disabled selected>-- Najpierw klasa --</option>
+                    </select>
+                    <input type="text" id="cal-subject-manual" class="edit-input" placeholder="Wpisz przedmiot ręcznie..." style="flex:1; min-width:150px; display:none;">
 
-                    <div style="display:flex; gap:10px;">
-                        <select id="cal-subject-select" class="edit-input" style="flex:1;" onchange="toggleManualSubject(this.value)">
-                            <option value="" disabled selected>-- Najpierw klasa --</option>
-                        </select>
-                        <input type="text" id="cal-subject-manual" class="edit-input" placeholder="Wpisz nazwę przedmiotu..." style="flex:1; display:none;">
-                    </div>
-
-                    <div style="display:flex; gap:10px;">
-                        <select id="cal-type" class="edit-input" style="width:130px;">
-                            <option value="test">Sprawdzian</option>
-                            <option value="homework">Zadanie</option>
-                            <option value="info">Info</option>
-                        </select>
-                        <input type="text" id="cal-title" class="edit-input" placeholder="Opis (np. Dział 3 - Ułamki)" style="flex:1;">
-                    </div>
-
-                    <button class="login-button full-width-btn" style="margin-top:5px;" onclick="addCalendarEvent()">Dodaj do kalendarza</button>
+                    <input type="date" id="cal-date" class="edit-input" style="width:auto;">
+                    
+                    <select id="cal-type" class="edit-input" style="width:auto;">
+                        <option value="test">Sprawdzian</option>
+                        <option value="homework">Zadanie</option>
+                        <option value="info">Info</option>
+                    </select>
+                    
+                    <input type="text" id="cal-title" class="edit-input" placeholder="Opis (np. Dział 1)" style="flex:2;">
+                    
+                    <button class="login-button" style="width:auto; padding:0 20px;" onclick="addCalendarEvent()">Dodaj</button>
                 </div>
             </div>
-            <div id="calendar-events-list" style="max-height: 400px; overflow-y: auto;">
-                <p style="text-align:center; color:#888;">Ładowanie wydarzeń...</p>
+
+            <div id="calendar-events-list" class="calendar-grid-view">
+                Ładowanie...
+            </div>
+
+            <div style="text-align:right; margin-top:20px;">
+                <button class="login-button" style="background:#ccc; color:#333; width:auto;" onclick="closeModal('calendarModal')">Zamknij</button>
             </div>
         </div>
     </div>
@@ -343,8 +363,3 @@
     <script src="dashboard.js"></script>
 </body>
 </html>
-
-
-
-
-
