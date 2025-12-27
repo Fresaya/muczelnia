@@ -240,10 +240,8 @@
             const container = document.getElementById('packages-container');
             container.innerHTML = '';
             
-            // Pobierz frazę wyszukiwania
             const searchTerm = document.getElementById('global-search') ? document.getElementById('global-search').value.toLowerCase() : '';
 
-            // Filtrowanie
             const filtered = packagesData.filter(p => {
                 const matchTitle = p.title.toLowerCase().includes(searchTerm);
                 const matchDesc = p.description && p.description.toLowerCase().includes(searchTerm);
@@ -264,8 +262,6 @@
                 if (p.courses && p.courses.length > 0) {
                     p.courses.forEach(c => {
                         const icon = c.type === 'quiz' ? '📝' : '📘';
-                        
-                        // --- ZMIANA TUTAJ: Dodajemy przycisk edycji ---
                         const editUrl = c.type === 'quiz' ? 'create_quiz.html' : 'create_course.html';
                         
                         coursesHtml += `
@@ -274,6 +270,12 @@
                                     ${icon} ${c.title}
                                 </span>
                                 <div style="display:flex; gap:5px; align-items:center;">
+                                    <button class="mini-btn" style="color:#2196F3; border-color:var(--border-color);" 
+                                            onclick="window.location.href='course.html?id=${c.id}'" 
+                                            title="Wejdź / Zobacz jako uczeń">
+                                        👁️
+                                    </button>
+
                                     <button class="mini-btn" style="color:var(--accent-color); border-color:var(--border-color);" 
                                             onclick="window.location.href='${editUrl}?id=${c.id}'" 
                                             title="Edytuj zawartość">
@@ -315,9 +317,8 @@
             const container = document.getElementById('loose-container');
             container.innerHTML = '';
 
-            const searchTerm = document.getElementById('global-search').value.toLowerCase();
+            const searchTerm = document.getElementById('global-search') ? document.getElementById('global-search').value.toLowerCase() : '';
 
-            // Filtrowanie
             const filtered = looseData.filter(l => {
                 const matchTitle = l.title.toLowerCase().includes(searchTerm);
                 const matchDesc = l.description && l.description.toLowerCase().includes(searchTerm);
@@ -325,11 +326,10 @@
             });
 
             if (filtered.length === 0) {
-                // Jeśli baza jest pusta vs jeśli wyszukiwanie nic nie dało
                 if (looseData.length === 0) {
-                    container.innerHTML = '<p style="text-align:center; padding:20px; color:#888;">Brak luźnych elementów. Wszystko jest w pakietach!</p>';
+                    container.innerHTML = '<p style="text-align:center; padding:20px; color:#888;">Brak luźnych elementów.</p>';
                 } else {
-                    container.innerHTML = '<p style="text-align:center; padding:20px; color:#888;">Brak elementów pasujących do wyszukiwania.</p>';
+                    container.innerHTML = '<p style="text-align:center; padding:20px; color:#888;">Brak wyników wyszukiwania.</p>';
                 }
                 return;
             }
@@ -349,15 +349,22 @@
                         <p>${l.description || 'Bez opisu'}</p>
                     </div>
                     <div style="display:flex; gap:10px; align-items: center;">
-                        <button class="login-button" style="width:auto; padding:5px 15px; font-size:12px;" onclick="window.location.href='${l.type === 'quiz' ? 'create_quiz.html' : 'create_course.html'}?id=${l.id}'">Edytuj</button>
-                        <button class="login-button" style="width:auto; padding:5px 15px; font-size:12px; background:var(--accent-color);" onclick="openAssignModal('${l.id}', '${l.title}')">📦 Dołącz</button>
-                        <button class="mini-btn" style="color:white; background:#F44336; border-color:#F44336; height: 30px; font-weight:bold;" onclick="deleteLooseItem('${l.id}')">Usuń</button>
+                        <button class="login-button" style="width:auto; padding:5px 15px; font-size:12px; background:#2196F3;" 
+                                onclick="window.location.href='course.html?id=${l.id}'" title="Zobacz">👁️</button>
+
+                        <button class="login-button" style="width:auto; padding:5px 15px; font-size:12px;" 
+                                onclick="window.location.href='${l.type === 'quiz' ? 'create_quiz.html' : 'create_course.html'}?id=${l.id}'">Edytuj</button>
+                        
+                        <button class="login-button" style="width:auto; padding:5px 15px; font-size:12px; background:var(--accent-color);" 
+                                onclick="openAssignModal('${l.id}', '${l.title}')">📦 Dołącz</button>
+                        
+                        <button class="mini-btn" style="color:white; background:#F44336; border-color:#F44336; height: 30px; font-weight:bold;" 
+                                onclick="deleteLooseItem('${l.id}')">Usuń</button>
                     </div>
                 `;
                 container.appendChild(div);
             });
         }
-
         // --- DODAJ TĘ FUNKCJĘ GDZIEŚ W SKRYPCIE ---
         async function deleteLooseItem(id) {
             if(!confirm("UWAGA: Czy na pewno usunąć ten element bezpowrotnie?")) return;
