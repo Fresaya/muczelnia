@@ -299,7 +299,7 @@
             if (lessons) {
                 questions = lessons.map(l => ({
                     id: l.id,
-                    title: l.lesson_components?.[0]?.content_text_blocks?.content || "",
+                    title: l.title || "",
                     answers: l.lesson_answers.map(a => ({ text: a.answer_text, isCorrect: a.is_correct }))
                 }));
                 renderSidebar();
