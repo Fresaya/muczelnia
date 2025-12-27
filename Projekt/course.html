@@ -74,7 +74,7 @@
     <div class="course-layout">
         <aside class="course-sidebar" id="course-sidebar">
             <div class="sidebar-header">
-                <a href="#" class="back-btn">← Wróć</a>
+                <a href="#" class="back-btn" id="back-btn">← Wróć</a>
                 <h3 style="margin:0; font-size:16px;" id="course-title">Ładowanie...</h3>
                 <span onclick="toggleSidebar()" style="margin-left:auto; cursor:pointer; font-size:24px; display:block; padding:0 10px;">&times;</span>
             </div>
@@ -134,19 +134,44 @@
                 quizSettings.attempt_limit = course.attempt_limit || 0;
                 quizSettings.randomize = course.randomize_answers;
 
-                // Ustaw link powrotu (Dla przycisku Back i Limit Screen)
+                // Ustaw bazowy returnLink (potrzebny dla ekranu limitu podejść)
                 if (course.package_id) returnLink = `subject.html?id=${course.package_id}`;
                 else returnLink = "courses_list.html";
                 
-                const backBtn = document.querySelector('.back-btn');
-                backBtn.href = returnLink;
-                backBtn.innerHTML = course.package_id ? "← Wróć do przedmiotu" : "← Wróć";
+                // --- NOWA LOGIKA PRZYCISKU POWROTU (Smart Back Button) ---
+                const params = new URLSearchParams(window.location.search);
+                const origin = params.get('origin');
+                const backBtn = document.getElementById('back-btn');
+
+                if (backBtn) {
+                    // Domyślny tekst
+                    backBtn.innerHTML = course.package_id ? "← Wróć do przedmiotu" : "← Wróć";
+                    
+                    if (origin === 'admin') {
+                        // Jeśli admin wszedł z Bazy Treści -> wraca do Bazy Treści
+                        backBtn.href = 'admin_content.html';
+                        backBtn.innerHTML = "← Wróć do Bazy Treści";
+                        backBtn.onclick = null; // Usuwamy eventy, żeby zadziałał href
+                    } else {
+                        // Jeśli uczeń -> używamy historii przeglądarki, żeby wrócił tam skąd przyszedł
+                        // (np. z listy przedmiotów ALBO z konkretnego przedmiotu)
+                        backBtn.href = returnLink; // Fallback
+                        backBtn.onclick = (e) => {
+                            e.preventDefault();
+                            if (window.history.length > 1) {
+                                window.history.back();
+                            } else {
+                                window.location.href = returnLink || 'dashboard.html';
+                            }
+                        };
+                    }
+                }
 
                 if(isQuizMode) {
                     document.getElementById('mobile-menu-label').innerText = "Pytania";
                     document.getElementById('placeholder-title').innerText = "Witaj w Quizie";
                     
-                    // Sprawdź limit - teraz mamy już poprawny returnLink
+                    // Sprawdź limit
                     const allowed = await checkAttempts();
                     if(!allowed) return; 
                 }
