@@ -9,14 +9,13 @@ let schoolsCache = [];
 let generatedMemberCode = null;
 
 // --- NOWE ZMIENNE DLA RODZICA ---
-let selectedChildrenIds = []; // Lista ID dzieci przy tworzeniu konta rodzica
-let currentChildId = null;    // Aktualnie wybrane dziecko (dla widoku rodzica)
+let selectedChildrenIds = []; 
+let currentChildId = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
     const { data: { session } } = await _supabase.auth.getSession();
     if (!session) { window.location.href = 'login.html'; return; }
 
-    // Czyszczenie starych eventów (jeśli funkcja RPC istnieje)
     try { await _supabase.rpc('delete_old_events'); } catch (e) { console.log("Brak funkcji RPC, pomijam czyszczenie."); }
 
     const userId = session.user.id;
@@ -28,6 +27,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         currentUserClassId = profile.class_id;
         
         document.getElementById('profile-name-display').textContent = profile.username;
+        // Mapa ról rozszerzona o Rodzica
         const roleMap = { 'student': 'UCZEŃ', 'teacher': 'NAUCZYCIEL', 'manager': 'MANAGER', 'admin': 'ADMIN', 'lecturer': 'WYKŁADOWCA', 'parent': 'RODZIC' };
         document.getElementById('profile-role-display').textContent = (roleMap[profile.role] || profile.role).toUpperCase();
         
@@ -37,52 +37,53 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('profile-school-display').innerHTML = schoolInfo;
         document.getElementById('welcome-message').textContent = `Witaj, ${profile.username}!`;
 
-        // --- KONFIGURACJA WIDOKU ZALEŻNIE OD ROLI ---
+        // --- KONFIGURACJA WIDOKU ---
         
+        // 1. RODZIC
         if (currentUserRole === 'parent') {
-            // --- LOGIKA DLA RODZICA ---
-            // Rodzic korzysta z widoków studenta, ale dla swoich dzieci
+            // Rodzic widzi sekcję studenta (ale dla dziecka)
             show('student-sidebar-content'); 
             show('widget-student-grades');
             show('widget-student-calendar');
             show('widget-student-behavior');
             
             // Ukrywamy widgety kadry
-            ['widget-assign-course', 'widget-teacher-results', 'widget-teacher-grades', 'widget-calendar', 'widget-teacher-behavior', 'widget-admin-content', 'widget-create-course', 'widget-create-quiz', 'widget-add-user', 'widget-add-school', 'widget-manage-classes', 'widget-manage-students'].forEach(hide);
-            // Ukrywamy widget kursów (chyba że rodzic ma widzieć kursy - wtedy zostaw show)
+            ['widget-assign-course', 'widget-teacher-results', 'widget-teacher-grades', 'widget-calendar', 'widget-teacher-behavior'].forEach(hide);
+            // Ukrywamy widget kursów (chyba że rodzic ma je widzieć)
             hide('widget-student-courses');
 
-            // Widget klikalny otwiera modal - musimy wiedzieć dla którego dziecka
+            // Kliknięcie w kalendarz otwiera modal
             document.getElementById('widget-student-calendar').onclick = () => openCalendarModal();
 
-            // Pobieramy dzieci przypisane do rodzica
+            // Pobieramy dzieci
             const { data: relations } = await _supabase.from('parent_children')
-                .select('child_id, users:child_id(username, class_id)')
+                .select('child_id, users:child_id(username)')
                 .eq('parent_id', userId);
 
             if (relations && relations.length > 0) {
                 const selectorDiv = document.getElementById('parent-child-selector-container');
                 const selector = document.getElementById('parent-child-select');
-                selectorDiv.style.display = 'block'; 
+                if(selectorDiv) selectorDiv.style.display = 'block';
                 selector.innerHTML = '';
 
                 relations.forEach((rel, index) => {
                     selector.add(new Option(rel.users.username, rel.child_id));
-                    if(index === 0) currentChildId = rel.child_id; // Wybierz pierwsze dziecko domyślnie
+                    if(index === 0) currentChildId = rel.child_id;
                 });
 
                 // Załaduj dane pierwszego dziecka
                 switchChildView(currentChildId);
             } else {
-                alert("To konto rodzica nie ma przypisanych dzieci.");
+                alert("Brak przypisanych dzieci.");
             }
 
-        } else if (['admin', 'manager', 'teacher', 'lecturer'].includes(currentUserRole)) {
-            // --- LOGIKA DLA KADRY ---
+        } 
+        // 2. KADRA (Admin, Nauczyciel, Manager, Wykładowca)
+        else if (['admin', 'manager', 'teacher', 'lecturer'].includes(currentUserRole)) {
             show('widget-assign-course');
             show('widget-teacher-results');
             show('widget-teacher-grades');
-            show('widget-calendar'); 
+            show('widget-calendar');
             show('widget-teacher-behavior');
             
             document.getElementById('widget-assign-course').onclick = () => openAssignCourseModal();
@@ -112,19 +113,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                 show('widget-create-course');
                 show('widget-create-quiz');
             }
-        } else {
-            // --- LOGIKA DLA STUDENTA ---
+        } 
+        // 3. STUDENT
+        else {
             show('student-sidebar-content'); 
-            
-            // Student patrzy na swoje dane
-            currentChildId = userId; 
-            switchChildView(currentChildId); // Ładuje sidebar
+            currentChildId = userId; // Uczeń patrzy na siebie
+            switchChildView(userId);
             
             show('widget-student-courses');
             show('widget-student-grades');
             show('widget-student-calendar');
-            show('widget-student-behavior');
             document.getElementById('widget-student-calendar').onclick = () => openCalendarModal();
+            show('widget-student-behavior');
         }
     }
 
@@ -184,22 +184,21 @@ async function ensureSchoolsCache() {
     }
 }
 
-// --- FUNKCJE DLA RODZICA I PRZEŁĄCZANIA WIDOKU ---
+// --- NOWE FUNKCJE DLA RODZICA ---
 
 function switchChildView(childId) {
     currentChildId = childId;
-    // Odświeżamy dane na sidebarze dla konkretnego dziecka
     loadSidebarCalendar(childId);
     loadSidebarGrades(childId);
     loadSidebarRemarks(childId);
 }
 
-// --- SIDEBAR DATA LOADERS (ZMODYFIKOWANE ABY PRZYJMOWAŁY USER_ID) ---
+// Zmodyfikowane funkcje ładowania (przyjmują targetUserId)
 
 async function loadSidebarCalendar(targetUserId) {
     const list = document.getElementById('sidebar-calendar-list');
     
-    // Pobierz klasę tego konkretnego użytkownika (dziecka lub studenta)
+    // Musimy pobrać klasę konkretnego użytkownika (dziecka)
     const { data: user } = await _supabase.from('users').select('class_id').eq('id', targetUserId).single();
     if(!user || !user.class_id) { list.innerHTML = '<p class="empty-sidebar">Brak klasy.</p>'; return; }
 
@@ -232,7 +231,7 @@ async function loadSidebarGrades(targetUserId) {
     const list = document.getElementById('sidebar-grades-list');
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     
-    // Używamy targetUserId (dziecka)
+    // targetUserId zamiast session.user.id
     const { data: grades } = await _supabase.from('grades')
         .select('grade, packages(title)')
         .eq('user_id', targetUserId)
@@ -256,7 +255,7 @@ async function loadSidebarGrades(targetUserId) {
 async function loadSidebarRemarks(targetUserId) {
     const list = document.getElementById('sidebar-remarks-list');
     
-    // Używamy targetUserId
+    // targetUserId zamiast student_id z sesji
     const { data: remarks } = await _supabase.from('remarks')
         .select('category, subject_name, created_at, points')
         .eq('student_id', targetUserId)
@@ -301,7 +300,7 @@ async function openCalendarModal() {
     const tools = document.getElementById('calendar-teacher-tools');
     list.innerHTML = 'Ładowanie...';
 
-    // Resetowanie pól
+    // Reset formularza
     if(document.getElementById('cal-subject-select')) {
         document.getElementById('cal-subject-select').innerHTML = '<option value="" disabled selected>-- Najpierw klasa --</option>';
         document.getElementById('cal-subject-select').disabled = true;
@@ -309,7 +308,6 @@ async function openCalendarModal() {
         document.getElementById('cal-subject-manual').value = '';
     }
 
-    // SCENARIUSZ: KADRA
     if(['admin', 'teacher', 'manager', 'lecturer'].includes(currentUserRole)) {
         tools.style.display = 'block';
         const sel = document.getElementById('cal-class');
@@ -318,11 +316,9 @@ async function openCalendarModal() {
         if(classes) classes.forEach(c => sel.add(new Option(c.name, c.id)));
         
         loadFullCalendar(true); 
-    } 
-    // SCENARIUSZ: RODZIC LUB UCZEŃ
-    else {
+    } else {
         tools.style.display = 'none';
-        // Przekazujemy ID klasy aktualnie wybranego dziecka (currentChildId jest ustawiony przez switchChildView lub na starcie)
+        // Dla rodzica/studenta ładujemy kalendarz wybranego dziecka
         if(currentChildId) {
              const { data: user } = await _supabase.from('users').select('class_id').eq('id', currentChildId).single();
              if(user && user.class_id) {
@@ -378,7 +374,6 @@ async function loadFullCalendar(isTeacher, targetClassId) {
 async function loadSubjectsForCalendar(classId) {
     const subjSelect = document.getElementById('cal-subject-select');
     const manualInput = document.getElementById('cal-subject-manual');
-    
     subjSelect.innerHTML = '<option>Ładowanie...</option>';
     subjSelect.disabled = true;
     manualInput.style.display = 'none';
@@ -390,32 +385,20 @@ async function loadSubjectsForCalendar(classId) {
     }
 
     const { data: links } = await _supabase.from('package_classes').select('package_id').eq('class_id', classId);
-    
     subjSelect.innerHTML = '<option value="" disabled selected>-- Wybierz Przedmiot --</option>';
     
     if (links && links.length > 0) {
         const pkgIds = links.map(l => l.package_id);
         const { data: packages } = await _supabase.from('packages').select('id, title').in('id', pkgIds);
-        
-        if (packages) {
-            packages.forEach(p => {
-                subjSelect.add(new Option(p.title, p.title));
-            });
-        }
+        if (packages) packages.forEach(p => subjSelect.add(new Option(p.title, p.title)));
     }
-
     subjSelect.add(new Option("Inny (wpisz ręcznie)...", "custom"));
     subjSelect.disabled = false;
 }
 
 function toggleManualSubject(value) {
     const manualInput = document.getElementById('cal-subject-manual');
-    if (value === 'custom') {
-        manualInput.style.display = 'block';
-        manualInput.focus();
-    } else {
-        manualInput.style.display = 'none';
-    }
+    if (value === 'custom') { manualInput.style.display = 'block'; manualInput.focus(); } else { manualInput.style.display = 'none'; }
 }
 
 async function addCalendarEvent() {
@@ -423,25 +406,16 @@ async function addCalendarEvent() {
     const d = document.getElementById('cal-date').value; 
     const t = document.getElementById('cal-type').value; 
     const tit = document.getElementById('cal-title').value; 
-
     const subjSelect = document.getElementById('cal-subject-select').value;
     const subjManual = document.getElementById('cal-subject-manual').value;
     
-    let finalSubject = null;
-    if (subjSelect === 'custom') finalSubject = subjManual;
-    else finalSubject = subjSelect;
+    let finalSubject = (subjSelect === 'custom') ? subjManual : subjSelect;
 
     if(!cid || !d || !tit || !finalSubject) return alert("Wypełnij wszystkie pola!"); 
     
     const {data:{session}} = await _supabase.auth.getSession(); 
-    
     const {error} = await _supabase.from('calendar_events').insert({
-        teacher_id: session.user.id,
-        class_id: cid,
-        title: tit,
-        subject_name: finalSubject,
-        event_date: d,
-        type: t
+        teacher_id: session.user.id, class_id: cid, title: tit, subject_name: finalSubject, event_date: d, type: t
     }); 
     
     if(error) alert(error.message); 
@@ -474,27 +448,18 @@ async function createNewUser(e) {
     
     const tmp=supabase.createClient(supabaseUrl,supabaseKey,{auth:{persistSession:false}}); 
     
-    // 1. Rejestracja w Auth
+    // 1. Rejestracja
     const {data: newUser, error}=await tmp.auth.signUp({
         email:em, password:pw,
         options:{data:{username:un,role:ro,school_id:sid||null,class_id:cid,member_code:generatedMemberCode}}
     }); 
     
-    if(error) { 
-        alert(error.message); 
-        btn.disabled=false; 
-        btn.textContent = "Utwórz konto"; 
-        return; 
-    } 
+    if(error) { alert(error.message); btn.disabled=false; btn.textContent = "Utwórz konto"; return; } 
 
-    // 2. Jeśli Rodzic -> Przypisz Dzieci (Insert do parent_children)
+    // 2. Przypisanie dzieci (Rodzic)
     if (ro === 'parent' && selectedChildrenIds.length > 0 && newUser.user) {
         const parentId = newUser.user.id;
-        const links = selectedChildrenIds.map(childId => ({
-            parent_id: parentId,
-            child_id: childId
-        }));
-        
+        const links = selectedChildrenIds.map(childId => ({ parent_id: parentId, child_id: childId }));
         const { error: linkError } = await _supabase.from('parent_children').insert(links);
         if(linkError) console.error("Błąd przypisywania dzieci:", linkError);
     }
@@ -502,15 +467,11 @@ async function createNewUser(e) {
     alert("Konto utworzone!"); 
     closeModal('createUserModal'); 
     document.getElementById('createUserForm').reset();
-    
-    // Reset selection
-    selectedChildrenIds = [];
-    updateSelectedChildrenUI();
-    
+    selectedChildrenIds = []; updateSelectedChildrenUI();
     btn.disabled=false; btn.textContent = "Utwórz konto";
 }
 
-// --- WYSZUKIWANIE DZIECI DLA RODZICA ---
+// --- WYSZUKIWANIE DZIECI ---
 
 async function searchStudentForParent() {
     const term = document.getElementById('child-search-input').value;
@@ -520,24 +481,17 @@ async function searchStudentForParent() {
     list.style.display = 'block';
     list.innerHTML = '<li style="padding:5px; color:#888;">Szukanie...</li>';
 
-    const { data } = await _supabase.from('users')
-        .select('id, username, email')
-        .eq('role', 'student')
-        .ilike('username', `%${term}%`)
-        .limit(5);
+    const { data } = await _supabase.from('users').select('id, username, email').eq('role', 'student').ilike('username', `%${term}%`).limit(5);
 
     list.innerHTML = '';
     if(!data || data.length === 0) { list.innerHTML = '<li style="padding:5px;">Brak wyników</li>'; return; }
 
     data.forEach(s => {
         const li = document.createElement('li');
-        li.style.padding = "8px";
-        li.style.borderBottom = "1px solid #eee";
-        li.style.cursor = "pointer";
+        li.style.padding = "8px"; li.style.borderBottom = "1px solid #eee"; li.style.cursor = "pointer";
         li.innerHTML = `<b>${s.username}</b> <br><span style="font-size:10px; color:#888;">${s.email}</span>`;
         li.onclick = () => addChildToSelection(s);
-        li.onmouseover = () => li.style.background = "var(--hover-bg)";
-        li.onmouseout = () => li.style.background = "transparent";
+        li.onmouseover = () => li.style.background = "#f0f0f0"; li.onmouseout = () => li.style.background = "#fff";
         list.appendChild(li);
     });
 }
@@ -545,13 +499,11 @@ async function searchStudentForParent() {
 function addChildToSelection(student) {
     if(selectedChildrenIds.includes(student.id)) return;
     selectedChildrenIds.push(student.id);
-    
     const container = document.getElementById('selected-children-list');
     const badge = document.createElement('div');
-    badge.className = 'child-badge'; // Styl zdefiniowany w HTML
-    badge.innerHTML = `${student.username} <span onclick="removeChildFromSelection('${student.id}', this)">&times;</span>`;
+    badge.style.cssText = "background:rgba(33,150,243,0.1); color:#2196F3; padding:5px 10px; border-radius:15px; font-size:12px; font-weight:bold; display:flex; gap:8px;";
+    badge.innerHTML = `${student.username} <span style="cursor:pointer; color:red;" onclick="removeChildFromSelection('${student.id}', this)">&times;</span>`;
     container.appendChild(badge);
-
     document.getElementById('child-search-results').style.display = 'none';
     document.getElementById('child-search-input').value = '';
 }
@@ -561,11 +513,9 @@ function removeChildFromSelection(id, elem) {
     elem.parentElement.remove();
 }
 
-function updateSelectedChildrenUI() {
-    document.getElementById('selected-children-list').innerHTML = '';
-}
+function updateSelectedChildrenUI() { document.getElementById('selected-children-list').innerHTML = ''; }
 
-// --- POMOCNICZE FUNKCJE FORMULARZA ---
+// --- POMOCNICZE FORMULARZA ---
 
 async function openCreateUserModal() { openModal('createUserModal'); await ensureSchoolsCache(); document.getElementById('new-user-level-filter').value = ""; const sSelect = document.getElementById('new-user-school'); sSelect.innerHTML = '<option value="" disabled selected>-- Wybierz typ najpierw --</option>'; sSelect.disabled = true; document.getElementById('class-select-container').style.display = 'none'; document.getElementById('new-email').value=""; }
 
@@ -576,27 +526,18 @@ function handleRoleChange() {
     const pt = document.getElementById('parent-tools-container'); 
     const em = document.getElementById('new-email'); 
 
-    // Reset widoczności
     if(pt) pt.style.display = 'none';
     if(cc) cc.style.display = 'none';
     if(sc) sc.style.display = 'block';
 
     if (role === 'admin') { 
-        sc.style.display = 'none'; 
-        em.removeAttribute('readonly'); 
-        em.value = ""; 
-        em.placeholder = "Email admina"; 
+        sc.style.display = 'none'; em.removeAttribute('readonly'); em.value = ""; em.placeholder = "Email admina"; 
     } else { 
-        em.setAttribute('readonly', true); 
-        em.placeholder = "Wybierz szkołę..."; 
-        
+        em.setAttribute('readonly', true); em.placeholder = "Wybierz szkołę..."; 
         if (role === 'student') cc.style.display = 'block';
         if (role === 'parent') {
-             if(pt) pt.style.display = 'block'; 
-             selectedChildrenIds = []; 
-             updateSelectedChildrenUI();
+             if(pt) pt.style.display = 'block'; selectedChildrenIds = []; updateSelectedChildrenUI();
         }
-
         if(document.getElementById('new-user-school').value) generateEmail(); 
     } 
 }
@@ -609,27 +550,20 @@ async function generateEmail() {
     const sid = document.getElementById('new-user-school').value; 
     const em = document.getElementById('new-email'); 
     
-    if(r==='admin') return; 
-    if(!sid) return; // Rodzic też musi wybrać szkołę "główną"
+    if(r==='admin') return; if(!sid) return; 
 
     em.value="..."; 
-    
-    const s=schoolsCache.find(x=>x.id==sid); 
-    const abbr=s?s.abbreviation:"SC"; 
+    const s=schoolsCache.find(x=>x.id==sid); const abbr=s?s.abbreviation:"SC"; 
     
     let query = _supabase.from('users').select('*',{count:'exact',head:true}).eq('school_id',sid);
-    
     if(r==='student') query = query.eq('role', 'student');
-    else if(r==='parent') query = query.eq('role', 'parent'); // Osobny licznik dla rodziców
+    else if(r==='parent') query = query.eq('role', 'parent'); 
     else query = query.in('role', ['teacher', 'manager', 'lecturer', 'admin']);
     
-    const {count} = await query;
-    const n=(count||0)+1; 
-    generatedMemberCode=n; 
-    
+    const {count} = await query; const n=(count||0)+1; generatedMemberCode=n; 
     let suffix = 'kadra';
     if(r === 'student') suffix = 'student';
-    if(r === 'parent') suffix = 'rodzic'; // NOWE
+    if(r === 'parent') suffix = 'rodzic';
 
     em.value = `${String(n).padStart(4,'0')}.${abbr}-${suffix}@muczelnia.pl`; 
 }
@@ -638,16 +572,11 @@ async function addSchool(e){ e.preventDefault(); const {error}=await _supabase.f
 
 async function openAssignCourseModal(){ 
     openModal('assignCourseModal'); 
-    const ss=document.getElementById('assign-school-select'); 
-    ss.innerHTML='<option disabled selected>Wybierz Szkołę</option>'; 
+    const ss=document.getElementById('assign-school-select'); ss.innerHTML='<option disabled selected>Wybierz Szkołę</option>'; 
     let query = _supabase.from('schools').select('id,name');
     if(currentUserRole !== 'admin') query = query.eq('id', currentUserSchoolId);
-    
-    const {data:s}=await query;
-    if(s) s.forEach(x=>ss.add(new Option(x.name,x.id))); 
-    
-    document.getElementById('assign-package-select').innerHTML='<option disabled selected>Najpierw Szkoła...</option>';
-    document.getElementById('assign-package-select').disabled = true;
+    const {data:s}=await query; if(s) s.forEach(x=>ss.add(new Option(x.name,x.id))); 
+    document.getElementById('assign-package-select').innerHTML='<option disabled selected>Najpierw Szkoła...</option>'; document.getElementById('assign-package-select').disabled = true;
 }
 
 async function assignCourseToClass(e){ e.preventDefault(); const p=document.getElementById('assign-package-select').value; const c=document.getElementById('assign-class-select').value; if(!c)return alert("Klasa!"); const {error}=await _supabase.from('package_classes').insert({package_id:p,class_id:c}); if(error)alert(error.message); else{alert("Przypisano"); closeModal('assignCourseModal');} }
