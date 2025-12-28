@@ -550,22 +550,54 @@ async function generateEmail() {
     const sid = document.getElementById('new-user-school').value; 
     const em = document.getElementById('new-email'); 
     
-    if(r==='admin') return; if(!sid) return; 
+    if(r==='admin') return; 
+    if(!sid) return; 
 
     em.value="..."; 
-    const s=schoolsCache.find(x=>x.id==sid); const abbr=s?s.abbreviation:"SC"; 
     
-    let query = _supabase.from('users').select('*',{count:'exact',head:true}).eq('school_id',sid);
+    const s = schoolsCache.find(x=>x.id==sid); 
+    const abbr = s ? s.abbreviation : "SC"; 
+    
+    // 1. Pobieramy WSZYSTKIE zajęte kody dla tej szkoły i roli
+    let query = _supabase.from('users')
+        .select('member_code')
+        .eq('school_id', sid);
+    
     if(r==='student') query = query.eq('role', 'student');
     else if(r==='parent') query = query.eq('role', 'parent'); 
     else query = query.in('role', ['teacher', 'manager', 'lecturer', 'admin']);
     
-    const {count} = await query; const n=(count||0)+1; generatedMemberCode=n; 
+    // Pobieramy posortowane rosnąco
+    const { data } = await query.order('member_code', { ascending: true });
+    
+    // 2. Szukamy pierwszej wolnej "dziury"
+    let newCode = 1;
+    
+    if (data && data.length > 0) {
+        // Sprawdzamy po kolei: czy zajęty numer to 1, potem 2, potem 3...
+        for (let i = 0; i < data.length; i++) {
+            // Jeśli numer z bazy jest większy niż ten, którego szukamy,
+            // to znaczy, że znaleźliśmy lukę!
+            if (data[i].member_code > newCode) {
+                break; // Mamy to! newCode jest wolny.
+            }
+            // Jeśli numer się zgadza, to znaczy że jest zajęty -> szukamy o 1 wyżej
+            if (data[i].member_code === newCode) {
+                newCode++;
+            }
+        }
+        // Jeśli pętla przeszła do końca i nie było przerw (np. 1, 2, 3), 
+        // to newCode będzie automatycznie ustawiony na 4 (MAX + 1).
+    }
+
+    generatedMemberCode = newCode; 
+    
     let suffix = 'kadra';
     if(r === 'student') suffix = 'student';
     if(r === 'parent') suffix = 'rodzic';
 
-    em.value = `${String(n).padStart(4,'0')}.${abbr}-${suffix}@muczelnia.pl`; 
+    // Formatowanie z zerami wiodącymi (np. 0005)
+    em.value = `${String(newCode).padStart(4,'0')}.${abbr}-${suffix}@muczelnia.pl`; 
 }
 
 async function addSchool(e){ e.preventDefault(); const {error}=await _supabase.from('schools').insert({name:document.getElementById('school-name').value, abbreviation:document.getElementById('school-abbr').value, level:document.getElementById('school-level').value, address:document.getElementById('school-address').value}); if(error)alert(error.message); else {alert("Dodano"); closeModal('addSchoolModal'); schoolsCache=[];} }
