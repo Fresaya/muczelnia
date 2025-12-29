@@ -129,7 +129,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Listeners
-    document.getElementById('avatarTrigger').addEventListener('click', (e) => { e.stopPropagation(); document.getElementById('profileDropdown').classList.toggle('show'); });
+    // Pokaż/Ukryj menu po kliknięciu w awatar
+    document.getElementById('avatarTrigger').addEventListener('click', (e) => { 
+        e.stopPropagation(); 
+        const menu = document.getElementById('profileDropdown');
+        // Przełączanie widoczności
+        menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+    });
+    
+    // Kliknięcie gdziekolwiek indziej zamyka menu
+    window.addEventListener('click', () => { 
+        document.getElementById('profileDropdown').style.display = 'none'; 
+    });
     window.addEventListener('click', () => document.getElementById('profileDropdown').classList.remove('show'));
     // Obsługa wylogowania (to już masz)
     document.getElementById('logoutBtn').addEventListener('click', async () => { 
