@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mUczelnia - Ustawienia</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .settings-container {
+            background: var(--panel-bg);
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            max-width: 500px;
+            margin: 0 auto; /* Wyśrodkowanie */
+            box-shadow: var(--shadow);
+        }
+        
+        .info-box {
+            background: rgba(33, 150, 243, 0.1);
+            color: #2196F3;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="layout-wrapper">
+        <aside class="sidebar-left">
+            <div class="top-section">
+                <div class="brand-area"><a href="dashboard.html" class="logo-text"><span>m</span>Uczelnia</a></div>
+                <ul class="nav-menu">
+                    <li class="nav-item"><a href="dashboard.html" class="nav-link"><span>Pulpit</span></a></li>
+                    <li class="nav-item"><a href="#" class="nav-link active"><span>Ustawienia</span></a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="welcome-header">
+                <div>
+                    <a href="dashboard.html" style="text-decoration:none; color:var(--text-muted); font-size:14px;">← Wróć do pulpitu</a>
+                    <h1>Ustawienia Konta</h1>
+                    <p>Zarządzaj swoim profilem i bezpieczeństwem.</p>
+                </div>
+            </div>
+
+            <div class="settings-container">
+                <h3 style="margin-top:0; border-bottom:1px solid var(--border-color); padding-bottom:15px; margin-bottom:20px;">Zmiana Hasła</h3>
+
+                <div class="info-box">
+                    <span>ℹ️</span>
+                    <span>Pamiętaj, aby nowe hasło było silne (min. 6 znaków). Po zmianie hasła pozostaniesz zalogowany.</span>
+                </div>
+
+                <form id="changePasswordForm">
+                    <label>Nowe Hasło</label>
+                    <input type="password" id="new-pass" class="edit-input" placeholder="Wpisz nowe hasło" required minlength="6">
+
+                    <label>Powtórz Nowe Hasło</label>
+                    <input type="password" id="confirm-pass" class="edit-input" placeholder="Powtórz hasło" required minlength="6">
+                    
+                    <div style="text-align:right; margin-top:20px;">
+                        <button type="submit" class="login-button" id="saveBtn" style="width:auto;">Zmień hasło</button>
+                    </div>
+                </form>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg'; 
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Sprawdzenie czy użytkownik jest zalogowany
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (!session) { window.location.href = 'login.html'; return; }
+        });
+
+        document.getElementById('changePasswordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const newPass = document.getElementById('new-pass').value;
+            const confirmPass = document.getElementById('confirm-pass').value;
+            const btn = document.getElementById('saveBtn');
+
+            // Walidacja
+            if (newPass !== confirmPass) {
+                alert("Hasła nie są identyczne!");
+                return;
+            }
+
+            if (newPass.length < 6) {
+                alert("Hasło musi mieć co najmniej 6 znaków.");
+                return;
+            }
+
+            // Zmiana hasła w Supabase
+            btn.disabled = true;
+            btn.textContent = "Zapisywanie...";
+
+            const { data, error } = await _supabase.auth.updateUser({
+                password: newPass
+            });
+
+            if (error) {
+                alert("Błąd: " + error.message);
+                btn.disabled = false;
+                btn.textContent = "Zmień hasło";
+            } else {
+                alert("✅ Hasło zostało zmienione pomyślnie!");
+                document.getElementById('changePasswordForm').reset();
+                btn.disabled = false;
+                btn.textContent = "Zmień hasło";
+            }
+        });
+    </script>
+</body>
+</html>
