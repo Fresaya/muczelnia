@@ -12,7 +12,7 @@
             border-radius: 12px;
             border: 1px solid var(--border-color);
             max-width: 500px;
-            margin: 0 auto; /* Wyśrodkowanie */
+            margin: 0 auto;
             box-shadow: var(--shadow);
         }
         
@@ -56,15 +56,18 @@
 
                 <div class="info-box">
                     <span>ℹ️</span>
-                    <span>Pamiętaj, aby nowe hasło było silne (min. 6 znaków). Po zmianie hasła pozostaniesz zalogowany.</span>
+                    <span>Dla bezpieczeństwa wymagamy podania aktualnego hasła przed ustawieniem nowego.</span>
                 </div>
 
                 <form id="changePasswordForm">
+                    <label>Stare Hasło</label>
+                    <input type="password" id="old-pass" class="edit-input" placeholder="Wpisz obecne hasło" required>
+
                     <label>Nowe Hasło</label>
-                    <input type="password" id="new-pass" class="edit-input" placeholder="Wpisz nowe hasło" required minlength="6">
+                    <input type="password" id="new-pass" class="edit-input" placeholder="Wpisz nowe hasło (min. 6 znaków)" required minlength="6">
 
                     <label>Powtórz Nowe Hasło</label>
-                    <input type="password" id="confirm-pass" class="edit-input" placeholder="Powtórz hasło" required minlength="6">
+                    <input type="password" id="confirm-pass" class="edit-input" placeholder="Powtórz nowe hasło" required minlength="6">
                     
                     <div style="text-align:right; margin-top:20px;">
                         <button type="submit" class="login-button" id="saveBtn" style="width:auto;">Zmień hasło</button>
@@ -82,7 +85,6 @@
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
         document.addEventListener('DOMContentLoaded', async () => {
-            // Sprawdzenie czy użytkownik jest zalogowany
             const { data: { session } } = await _supabase.auth.getSession();
             if (!session) { window.location.href = 'login.html'; return; }
         });
@@ -90,13 +92,14 @@
         document.getElementById('changePasswordForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
+            const oldPass = document.getElementById('old-pass').value;
             const newPass = document.getElementById('new-pass').value;
             const confirmPass = document.getElementById('confirm-pass').value;
             const btn = document.getElementById('saveBtn');
 
-            // Walidacja
+            // 1. Walidacja nowego hasła
             if (newPass !== confirmPass) {
-                alert("Hasła nie są identyczne!");
+                alert("Nowe hasła nie są identyczne!");
                 return;
             }
 
@@ -105,20 +108,38 @@
                 return;
             }
 
-            // Zmiana hasła w Supabase
             btn.disabled = true;
-            btn.textContent = "Zapisywanie...";
+            btn.textContent = "Weryfikacja...";
 
+            // 2. Pobieramy email (potrzebny do sprawdzenia starego hasła)
+            const { data: { session } } = await _supabase.auth.getSession();
+            const userEmail = session.user.email;
+
+            // 3. Sprawdzamy STARE hasło (próbując się zalogować w tle)
+            const { error: signInError } = await _supabase.auth.signInWithPassword({
+                email: userEmail,
+                password: oldPass
+            });
+
+            if (signInError) {
+                alert("Błąd: Stare hasło jest nieprawidłowe!");
+                btn.disabled = false;
+                btn.textContent = "Zmień hasło";
+                return;
+            }
+
+            // 4. Jeśli stare hasło OK -> Zmieniamy na nowe
+            btn.textContent = "Zapisywanie...";
             const { data, error } = await _supabase.auth.updateUser({
                 password: newPass
             });
 
             if (error) {
-                alert("Błąd: " + error.message);
+                alert("Błąd zmiany hasła: " + error.message);
                 btn.disabled = false;
                 btn.textContent = "Zmień hasło";
             } else {
-                alert("✅ Hasło zostało zmienione pomyślnie!");
+                alert("✅ Hasło zostało pomyślnie zmienione!");
                 document.getElementById('changePasswordForm').reset();
                 btn.disabled = false;
                 btn.textContent = "Zmień hasło";
