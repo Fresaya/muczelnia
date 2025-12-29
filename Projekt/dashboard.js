@@ -517,7 +517,35 @@ function updateSelectedChildrenUI() { document.getElementById('selected-children
 
 // --- POMOCNICZE FORMULARZA ---
 
-async function openCreateUserModal() { openModal('createUserModal'); await ensureSchoolsCache(); document.getElementById('new-user-level-filter').value = ""; const sSelect = document.getElementById('new-user-school'); sSelect.innerHTML = '<option value="" disabled selected>-- Wybierz typ najpierw --</option>'; sSelect.disabled = true; document.getElementById('class-select-container').style.display = 'none'; document.getElementById('new-email').value=""; }
+async function openCreateUserModal() { 
+    openModal('createUserModal'); 
+    await ensureSchoolsCache(); 
+
+    // 1. Reset formularza (czyści wpisane teksty)
+    document.getElementById('createUserForm').reset();
+
+    // 2. Reset filtrów szkoły
+    document.getElementById('new-user-level-filter').value = ""; 
+    const sSelect = document.getElementById('new-user-school'); 
+    sSelect.innerHTML = '<option value="" disabled selected>-- Wybierz typ najpierw --</option>'; 
+    sSelect.disabled = true; 
+
+    // 3. Wymuś rolę "Uczeń" (domyślną)
+    document.getElementById('new-role').value = 'student';
+
+    // 4. Sprzątanie po Rodzicu (To naprawia Twój błąd)
+    const pt = document.getElementById('parent-tools-container');
+    if (pt) pt.style.display = 'none'; // Ukryj kontener rodzica
+    selectedChildrenIds = [];          // Wyczyść tablicę ID
+    updateSelectedChildrenUI();        // Wyczyść wizualnie badge dzieci
+    document.getElementById('child-search-results').style.display = 'none'; // Ukryj wyniki szukania
+
+    // 5. Wywołaj handleRoleChange, żeby ustawić poprawne pola dla Studenta (np. pokazać klasę)
+    handleRoleChange();
+
+    // 6. Wyczyść e-mail
+    document.getElementById('new-email').value=""; 
+}
 
 function handleRoleChange() { 
     const role = document.getElementById('new-role').value; 
