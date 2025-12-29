@@ -59,12 +59,27 @@
                     <span>Dla bezpieczeństwa wymagamy podania aktualnego hasła przed ustawieniem nowego.</span>
                 </div>
 
-                <form id="changePasswordForm">
+                <form id="changePasswordForm" autocomplete="off">
+                    <input type="text" style="display:none">
+                    <input type="password" style="display:none">
+                
                     <label>Zalogowany jako:</label>
                     <input type="text" id="current-email" class="edit-input" style="background:#f0f0f0; color:#888;" readonly>
                 
-                    <label>Stare Hasło</label>
-                    <input type="password" id="old-pass" class="edit-input" placeholder="Wpisz obecne hasło" required autocomplete="current-password">
+                    <div style="margin-top: 15px;"></div>
+                
+                    <label>Stare Hasło (Wpisz ręcznie)</label>
+                    <input type="password" 
+                           id="verify-identity-input" 
+                           name="verify-identity-input" 
+                           class="edit-input" 
+                           placeholder="Wpisz obecne hasło" 
+                           required 
+                           autocomplete="new-password"
+                           readonly 
+                           onfocus="this.removeAttribute('readonly');"
+                    >
+                    <div style="margin-top: 15px;"></div>
                 
                     <label>Nowe Hasło</label>
                     <input type="password" id="new-pass" class="edit-input" placeholder="Wpisz nowe hasło (min. 6 znaków)" required minlength="6" autocomplete="new-password">
@@ -96,7 +111,7 @@
         document.getElementById('changePasswordForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const oldPass = document.getElementById('old-pass').value;
+            const oldPass = document.getElementById('verify-identity-input').value;
             const newPass = document.getElementById('new-pass').value;
             const confirmPass = document.getElementById('confirm-pass').value;
             const btn = document.getElementById('saveBtn');
