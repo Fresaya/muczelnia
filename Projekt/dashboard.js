@@ -131,8 +131,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Listeners
     document.getElementById('avatarTrigger').addEventListener('click', (e) => { e.stopPropagation(); document.getElementById('profileDropdown').classList.toggle('show'); });
     window.addEventListener('click', () => document.getElementById('profileDropdown').classList.remove('show'));
-    document.getElementById('logoutBtn').addEventListener('click', async () => { await _supabase.auth.signOut(); window.location.href = 'login.html'; });
+    // Obsługa wylogowania (to już masz)
+    document.getElementById('logoutBtn').addEventListener('click', async () => { 
+        await _supabase.auth.signOut(); 
+        window.location.href = 'login.html'; 
+    });
 
+    // NOWE: Obsługa przycisku "Zmień hasło"
+    const changePassBtn = document.getElementById('changePassBtn');
+    if (changePassBtn) {
+        changePassBtn.addEventListener('click', () => {
+            window.location.href = 'settings.html';
+        });
+    }
     document.getElementById('createUserForm').addEventListener('submit', createNewUser);
     document.getElementById('addSchoolForm').addEventListener('submit', addSchool);
     document.getElementById('assignCourseForm').addEventListener('submit', assignCourseToClass);
