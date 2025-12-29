@@ -186,10 +186,14 @@
 
         <aside class="sidebar-right">
             <div class="profile-card">
-                <div class="avatar" id="avatarTrigger" title="Kliknij, aby otworzyć opcje"></div>
-                <div class="dropdown-menu" id="profileDropdown">
-                    <a href="settings.html" style="text-decoration: none;">Zmień hasło</a>           
-                    <a href="#" id="logoutBtn" style="text-decoration: none;">Wyloguj</a>
+                <div class="avatar" id="avatarTrigger" title="Kliknij, aby otworzyć opcje"></div> 
+                <div class="dropdown-item" id="changePassBtn">
+                    <div class="icon-logout"></div> Zmień hasło
+                </div>
+                
+                <div class="dropdown-item" id="logoutBtn">
+                    <div class="icon-logout"></div>
+                    Wyloguj się
                 </div>
                 <h2 class="profile-name" id="profile-name-display">...</h2>
                 <p class="profile-id" id="profile-role-display">...</p>
@@ -359,6 +363,7 @@
     <script src="dashboard.js"></script>
 </body>
 </html>
+
 
 
 
