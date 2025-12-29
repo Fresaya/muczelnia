@@ -188,10 +188,15 @@
             <div class="profile-card">
                 <div class="avatar" id="avatarTrigger" title="Kliknij, aby otworzyć opcje"></div>
                 <div class="dropdown-menu" id="profileDropdown">
-                    <div class="dropdown-item" id="logoutBtn">
-                        <div class="icon-logout"></div>
-                        Wyloguj się
-                    </div>
+                    <a href="settings.html" style="display:flex; align-items:center; gap:8px;">
+                        <span>🔑</span> Zmień hasło
+                    </a>
+                    
+                    <hr style="margin:5px 0; border:0; border-top:1px solid #eee;">
+                    
+                    <a href="#" id="logoutBtn" style="color:var(--accent-color); display:flex; align-items:center; gap:8px;">
+                        <span>🚪</span> Wyloguj
+                    </a>
                 </div>
                 <h2 class="profile-name" id="profile-name-display">...</h2>
                 <p class="profile-id" id="profile-role-display">...</p>
@@ -361,6 +366,7 @@
     <script src="dashboard.js"></script>
 </body>
 </html>
+
 
 
 
