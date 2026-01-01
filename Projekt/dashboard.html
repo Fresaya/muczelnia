@@ -6,6 +6,21 @@
     <title>mUczelnia - Pulpit</title>
     <link rel="stylesheet" href="style.css">
     <style>
+
+                /* Ikona Planu Zajęć */
+        .icon-calendar {
+            background-color: rgba(156, 39, 176, 0.1); /* Jasny fiolet */
+            color: #9c27b0; /* Ciemny fiolet */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px; /* Lub 50% jeśli masz kółka */
+        }
+        
+        .icon-calendar::before {
+            content: '📅'; /* Emoji kalendarza lub inna ikona */
+            font-size: 24px;
+        }
        
         /* --- POPRAWKA DLA KALENDARZA (DARK MODE) --- */
         #calendar-teacher-tools {
@@ -182,6 +197,12 @@
                     <h3 style="color: #2196F3;">Terminarz</h3>
                     <p class="course-meta">Sprawdziany i Zadania</p>
                 </div>
+                <a href="schedule.html" id="widget-student-schedule" class="widget-tile">
+                    <div class="widget-icon icon-calendar"></div>
+                    <h3>Plan Zajęć</h3>
+                    <p class="course-meta">Rozkład lekcji</p>
+                </a>
+                
             </div>
         </main>
 
@@ -372,6 +393,7 @@
     
 </body>
 </html>
+
 
 
 
