@@ -73,16 +73,17 @@
                 <table class="grades-table">
                     <thead>
                         <tr>
-                            <th style="width: 25%;">Przedmiot</th>
+                            <th style="width: 20%;">Przedmiot</th>
                             <th style="width: 10%;">Ocena</th>
                             <th style="width: 10%;">Waga</th>
-                            <th style="width: 20%;">Kategoria</th>
+                            <th style="width: 15%;">Kategoria</th>
                             <th style="width: 20%;">Opis</th>
-                            <th style="width: 15%;">Data</th>
+                            <th style="width: 15%;">Nauczyciel</th>
+                            <th style="width: 10%;">Data</th>
                         </tr>
                     </thead>
                     <tbody id="grades-body">
-                        <tr><td colspan="6" style="text-align:center">Ładowanie ocen...</td></tr>
+                        <tr><td colspan="7" style="text-align:center">Ładowanie ocen...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -123,7 +124,7 @@
 
             const { data: relations } = await _supabase.from('parent_children').select('child_id').eq('parent_id', currentUser.id);
             if (!relations || relations.length === 0) {
-                document.getElementById('grades-body').innerHTML = '<tr><td colspan="6" style="text-align:center">Brak przypisanych dzieci.</td></tr>';
+                document.getElementById('grades-body').innerHTML = '<tr><td colspan="7" style="text-align:center">Brak przypisanych dzieci.</td></tr>';
                 return;
             }
 
@@ -153,26 +154,28 @@
 
         async function fetchGrades(studentId) {
             const tbody = document.getElementById('grades-body');
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">Pobieranie danych...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center">Pobieranie danych...</td></tr>';
 
-            // ZMIANA: Pobieramy oceny ORAZ tytuł pakietu (przedmiotu) przez relację package_id
+            // ZAPYTANIE DO BAZY
+            // Pobieramy ocenę, dołączamy tabelę 'packages' (żeby wziąć title) i 'users' jako teacher (żeby wziąć username)
             const { data: grades, error } = await _supabase
                 .from('grades')
                 .select(`
                     *,
-                    packages ( title )
+                    packages ( title ),
+                    teacher:users!grades_teacher_id_fkey ( username )
                 `)
                 .eq('user_id', studentId)
                 .order('created_at', { ascending: false });
 
             if (error) {
-                console.error(error);
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:red">Błąd: ${error.message}</td></tr>`;
+                console.error("Błąd pobierania ocen:", error);
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:red">Błąd: ${error.message}</td></tr>`;
                 return;
             }
 
             if (!grades || grades.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">Brak ocen.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center">Brak ocen.</td></tr>';
                 return;
             }
 
@@ -180,10 +183,13 @@
             grades.forEach(g => {
                 const date = new Date(g.created_at).toLocaleDateString('pl-PL');
                 
-                // Pobieramy tytuł z połączonej tabeli packages. 
-                // Jeśli ocena nie ma package_id, wyświetlamy "Ogólny".
-                const subjectName = g.packages ? g.packages.title : 'Ogólny'; 
+                // 1. Wyciągamy nazwę przedmiotu z obiektu packages
+                // Jeśli w Twojej bazie kolumna w packages nazywa się 'name', zmień .title na .name poniżej
+                const subjectName = g.packages ? g.packages.title : 'Ogólny/Inne'; 
                 
+                // 2. Wyciągamy nauczyciela
+                const teacherName = g.teacher ? g.teacher.username : 'Brak danych';
+
                 const row = `
                     <tr>
                         <td style="font-weight:600; color:var(--accent);">${subjectName}</td>
@@ -191,6 +197,7 @@
                         <td>${g.weight}</td>
                         <td>${g.category || '-'}</td>
                         <td style="font-size:0.85rem; color:var(--text-muted);">${g.description || '-'}</td>
+                        <td style="font-size:0.9rem;">${teacherName}</td>
                         <td>${date}</td>
                     </tr>
                 `;
