@@ -14,7 +14,7 @@
             box-shadow: var(--shadow);
             overflow-x: auto;
         }
-        .grades-table { width: 100%; border-collapse: collapse; min-width: 700px; }
+        .grades-table { width: 100%; border-collapse: collapse; min-width: 600px; }
         .grades-table th, .grades-table td {
             padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color);
         }
@@ -24,12 +24,13 @@
             background: #eef2ff; color: #4f46e5; border: 1px solid #c7d2fe;
         }
         
+        /* Styl dla selecta rodzica */
         .parent-controls {
             margin-bottom: 20px;
             padding: 15px;
             background: rgba(0,0,0,0.02);
             border-radius: 8px;
-            display: none;
+            display: none; /* Domyślnie ukryte */
         }
         .child-select {
             padding: 8px 12px;
@@ -73,17 +74,16 @@
                 <table class="grades-table">
                     <thead>
                         <tr>
-                            <th style="width: 20%;">Przedmiot</th>
-                            <th style="width: 10%;">Ocena</th>
-                            <th style="width: 10%;">Waga</th>
-                            <th style="width: 15%;">Kategoria</th>
-                            <th style="width: 20%;">Opis</th>
-                            <th style="width: 15%;">Nauczyciel</th>
-                            <th style="width: 10%;">Data</th>
+                            <th>Przedmiot</th>
+                            <th>Ocena</th>
+                            <th>Waga</th>
+                            <th>Kategoria</th>
+                            <th>Data</th>
+                            <th>Nauczyciel</th>
                         </tr>
                     </thead>
                     <tbody id="grades-body">
-                        <tr><td colspan="7" style="text-align:center">Ładowanie ocen...</td></tr>
+                        <tr><td colspan="6" style="text-align:center">Ładowanie ocen...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -102,6 +102,7 @@
             const { data: { session } } = await _supabase.auth.getSession();
             if (!session) { window.location.href = 'login.html'; return; }
 
+            // Pobierz dane usera
             const { data: userDetails } = await _supabase
                 .from('users')
                 .select('id, role, username')
@@ -113,22 +114,27 @@
             if (currentUser.role === 'parent') {
                 setupParentView();
             } else {
+                // Uczeń widzi swoje oceny
                 fetchGrades(currentUser.id);
             }
         }
 
+        // --- Logika dla Rodzica ---
         async function setupParentView() {
             document.getElementById('parent-controls').style.display = 'block';
             document.querySelector('h1').innerText = "Oceny Dziecka";
             document.getElementById('subtitle-text').innerText = "Wybierz ucznia, aby zobaczyć jego wyniki.";
 
+            // 1. Pobierz ID dzieci
             const { data: relations } = await _supabase.from('parent_children').select('child_id').eq('parent_id', currentUser.id);
             if (!relations || relations.length === 0) {
-                document.getElementById('grades-body').innerHTML = '<tr><td colspan="7" style="text-align:center">Brak przypisanych dzieci.</td></tr>';
+                document.getElementById('grades-body').innerHTML = '<tr><td colspan="6" style="text-align:center">Brak przypisanych dzieci.</td></tr>';
                 return;
             }
 
             const childIds = relations.map(r => r.child_id);
+
+            // 2. Pobierz imiona dzieci
             const { data: children } = await _supabase.from('users').select('id, username').in('id', childIds);
 
             const select = document.getElementById('childSelect');
@@ -141,6 +147,7 @@
                 select.appendChild(option);
             });
 
+            // Wybierz pierwsze dziecko i pobierz oceny
             if (children.length > 0) {
                 select.value = children[0].id;
                 fetchGrades(children[0].id);
@@ -152,53 +159,54 @@
             fetchGrades(childId);
         }
 
+        // --- Pobieranie Ocen (Wspólne) ---
         async function fetchGrades(studentId) {
             const tbody = document.getElementById('grades-body');
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center">Pobieranie danych...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">Pobieranie danych...</td></tr>';
 
-            // ZAPYTANIE DO BAZY
-            // Pobieramy ocenę, dołączamy tabelę 'packages' (żeby wziąć title) i 'users' jako teacher (żeby wziąć username)
+            // Pobieramy oceny + dane nauczyciela (join)
+            // Zakładam, że w tabeli grades jest teacher_id. Musimy pobrać imię nauczyciela z tabeli users.
             const { data: grades, error } = await _supabase
                 .from('grades')
                 .select(`
                     *,
-                    packages ( title ),
-                    teacher:users!grades_teacher_id_fkey ( username )
+                    teacher:users!grades_teacher_id_fkey(username) 
                 `)
                 .eq('user_id', studentId)
                 .order('created_at', { ascending: false });
 
+            // !grades_teacher_id_fkey to wskazówka dla Supabase, którego klucza obcego użyć, jeśli jest ich kilka.
+            // Jeśli to nie zadziała (bo nazwa klucza jest inna), uprościmy zapytanie.
+
             if (error) {
-                console.error("Błąd pobierania ocen:", error);
-                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:red">Błąd: ${error.message}</td></tr>`;
+                console.error(error);
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:red">Błąd: ${error.message}</td></tr>`;
                 return;
             }
 
             if (!grades || grades.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center">Brak ocen.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">Brak ocen.</td></tr>';
                 return;
             }
 
             tbody.innerHTML = '';
             grades.forEach(g => {
                 const date = new Date(g.created_at).toLocaleDateString('pl-PL');
+                // Jeśli join nie zadziałał idealnie, teacher może być null
+                const teacherName = g.teacher ? g.teacher.username : 'Nieznany'; 
+                // Zakładam pole 'subject_name' lub 'category' jako przedmiot. 
+                // W Twoim schemacie 'grades' ma 'category'. 
+                // Jeśli przedmiot jest w tabeli 'courses', musielibyśmy zrobić kolejny join.
+                // Przyjmijmy, że kategoria to przedmiot lub opis.
                 
-                // 1. Wyciągamy nazwę przedmiotu z obiektu packages
-                // Jeśli w Twojej bazie kolumna w packages nazywa się 'name', zmień .title na .name poniżej
-                const subjectName = g.packages ? g.packages.title : 'Ogólny/Inne'; 
-                
-                // 2. Wyciągamy nauczyciela
-                const teacherName = g.teacher ? g.teacher.username : 'Brak danych';
-
                 const row = `
                     <tr>
-                        <td style="font-weight:600; color:var(--accent);">${subjectName}</td>
+                        <td style="font-weight:600">${g.category || 'Ogólny'}</td>
                         <td><span class="grade-badge">${g.grade}</span></td>
                         <td>${g.weight}</td>
-                        <td>${g.category || '-'}</td>
-                        <td style="font-size:0.85rem; color:var(--text-muted);">${g.description || '-'}</td>
-                        <td style="font-size:0.9rem;">${teacherName}</td>
+                        <td>${g.description || '-'}</td>
                         <td>${date}</td>
+                        <td>${teacherName}</td>
                     </tr>
                 `;
                 tbody.innerHTML += row;
