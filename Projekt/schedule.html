@@ -105,7 +105,7 @@
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
         let currentUser = null;
-        let currentViewClassId = null; // ID klasy, której plan aktualnie oglądamy
+        let currentViewClassId = null;
         let isTeacher = false;
 
         // 1. Generowanie pustej siatki godzin 8-20
@@ -129,7 +129,7 @@
                     const td = document.createElement('td');
                     td.dataset.day = day;
                     td.dataset.hour = hour;
-                    td.id = `cell-${day}-${hour}`; // Unikalne ID komórki
+                    td.id = `cell-${day}-${hour}`;
                     td.innerHTML = '—';
                     tr.appendChild(td);
                 }
@@ -148,7 +148,7 @@
             // Pobranie danych użytkownika
             const { data: userDetails, error } = await _supabase
                 .from('users')
-                .select('id, role, school_id, class_id') // Pobieramy niezbędne pola
+                .select('id, role, school_id, class_id')
                 .eq('id', session.user.id)
                 .single();
 
@@ -161,7 +161,7 @@
             isTeacher = (currentUser.role === 'teacher');
 
             if (isTeacher) {
-                setupTeacherView();
+                await setupTeacherView();
             } else {
                 setupStudentView();
             }
@@ -183,16 +183,21 @@
             document.getElementById('teacher-controls').style.display = 'block';
             document.getElementById('schedule-info-text').innerText = "Wybierz klasę, aby edytować jej plan.";
             
-            [cite_start]// Pobierz listę klas ze szkoły nauczyciela [cite: 4, 17, 19]
-            // (Zakładamy relację: users.school_id -> classes.school_id)
+            // Pobierz listę klas ze szkoły nauczyciela
             const { data: classes, error } = await _supabase
                 .from('classes')
                 .select('id, name')
                 .eq('school_id', currentUser.school_id)
                 .order('name', { ascending: true });
 
+            if (error) {
+                console.error("Błąd pobierania klas:", error);
+                alert("Nie udało się pobrać listy klas.");
+                return;
+            }
+
             const select = document.getElementById('classSelect');
-            select.innerHTML = ''; // Wyczyść "Ładowanie..."
+            select.innerHTML = ''; 
 
             if (classes && classes.length > 0) {
                 classes.forEach(cls => {
@@ -202,11 +207,11 @@
                     select.appendChild(option);
                 });
                 
-                // Automatycznie wybierz pierwszą klasę
+                // Wybierz pierwszą klasę domyślnie
                 currentViewClassId = classes[0].id;
                 select.value = currentViewClassId;
                 fetchAndRenderSchedule(currentViewClassId);
-                enableEditing(); // Włącz możliwość klikania
+                enableEditing(); 
             } else {
                 const option = document.createElement('option');
                 option.textContent = "Brak klas w Twojej szkole";
@@ -218,9 +223,8 @@
         function changeClass() {
             const select = document.getElementById('classSelect');
             currentViewClassId = select.value;
-            // Czyścimy tabelę (reset do pustych kresek) przed załadowaniem nowych danych
             generateGrid(); 
-            if(isTeacher) enableEditing(); // Przywróć listenery kliknięć na nowo wygenerowanej siatce
+            if(isTeacher) enableEditing(); 
             fetchAndRenderSchedule(currentViewClassId);
         }
 
@@ -237,7 +241,7 @@
             }
 
             scheduleData.forEach(item => {
-                const hourPart = parseInt(item.start_time.split(':')[0]); // np. "08" -> 8
+                const hourPart = parseInt(item.start_time.split(':')[0]); 
                 const cell = document.getElementById(`cell-${item.day_of_week}-${hourPart}`);
                 
                 if (cell) {
@@ -247,8 +251,6 @@
                             <span class="subject-info">${item.room || ''}</span>
                         </div>
                     `;
-                    // Opcjonalnie: zapisz ID wpisu, jeśli chcemy robić UPDATE zamiast DELETE+INSERT
-                    cell.dataset.scheduleId = item.id; 
                 }
             });
         }
@@ -259,35 +261,31 @@
             cells.forEach(cell => {
                 cell.classList.add('editable');
                 
-                // Usuwamy stare event listenery (poprzez klonowanie) żeby nie dublować
+                // Usuwamy stare listenery przez klonowanie
                 const newCell = cell.cloneNode(true);
                 cell.parentNode.replaceChild(newCell, cell);
                 
                 newCell.onclick = async () => {
                     if (!currentViewClassId) return;
 
-                    // Pobieramy stare wartości (jeśli są) do prompta
                     const currentName = newCell.querySelector('.subject-name')?.innerText || "";
                     const currentRoom = newCell.querySelector('.subject-info')?.innerText || "";
 
                     const subject = prompt("Nazwa przedmiotu (zostaw puste aby usunąć):", currentName);
-                    
-                    // Anulowanie (kliknięcie Anuluj)
                     if (subject === null) return; 
 
-                    // Pobieramy dane o czasie
                     const day = newCell.dataset.day;
                     const hour = parseInt(newCell.dataset.hour);
                     const startTime = `${hour.toString().padStart(2,'0')}:00`;
                     const endTime = `${hour.toString().padStart(2,'0')}:45`;
 
-                    // 1. Usuń stary wpis (zawsze czyścimy slot)
+                    // Usuń stary wpis
                     await _supabase.from('weekly_schedule').delete()
                         .eq('class_id', currentViewClassId)
                         .eq('day_of_week', day)
                         .eq('start_time', startTime);
 
-                    // 2. Jeśli podano nazwę, dodaj nowy wpis
+                    // Jeśli podano nazwę, dodaj nowy wpis
                     if (subject.trim() !== "") {
                         const room = prompt("Sala lekcyjna:", currentRoom);
                         
@@ -298,7 +296,7 @@
                             end_time: endTime,
                             subject_name: subject,
                             room: room,
-                            teacher_id: currentUser.id // Zapisujemy, kto dodał
+                            teacher_id: currentUser.id
                         });
 
                         if (error) {
@@ -306,7 +304,6 @@
                             return;
                         }
 
-                        // Aktualizacja widoku (bez przeładowania)
                         newCell.innerHTML = `
                             <div class="subject-block">
                                 <span class="subject-name">${subject}</span>
@@ -314,7 +311,6 @@
                             </div>
                         `;
                     } else {
-                        // Jeśli puste, wyczyść komórkę
                         newCell.innerHTML = '—';
                     }
                 };
