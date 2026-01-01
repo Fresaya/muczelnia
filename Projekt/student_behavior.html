@@ -3,81 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>mUczelnia - Moje Zachowanie</title>
+    <title>mUczelnia - Zachowanie</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* --- STYLE DLA PUNKTACJI --- */
-        .score-banner {
-            background: var(--panel-bg);
-            border-radius: 12px;
+        .points-summary {
+            background: linear-gradient(135deg, var(--accent), #4338ca);
+            color: white;
             padding: 30px;
-            text-align: center;
-            border: 1px solid var(--border-color);
-            margin-bottom: 30px;
-            box-shadow: var(--shadow);
-            display: none; /* Domyślnie ukryte, JS pokaże jeśli trzeba */
-        }
-        
-        .score-circle {
-            width: 100px; height: 100px;
-            border-radius: 50%;
-            border: 4px solid var(--accent-color);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 36px; font-weight: bold;
-            margin: 0 auto 10px auto;
-            color: var(--text-main);
-        }
-
-        /* --- LISTA UWAG --- */
-        .history-container {
-            background: var(--panel-bg);
             border-radius: 12px;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+        .points-value { font-size: 3rem; font-weight: 800; display: block; margin: 10px 0; }
+        
+        .remarks-list { display: flex; flex-direction: column; gap: 15px; }
+        .remark-card {
+            background: var(--panel-bg);
             border: 1px solid var(--border-color);
             padding: 20px;
-            box-shadow: var(--shadow);
+            border-radius: 10px;
+            display: flex; justify-content: space-between; align-items: center;
         }
+        .remark-positive { border-left: 5px solid #10b981; }
+        .remark-negative { border-left: 5px solid #ef4444; }
+        .points-badge { font-weight: bold; padding: 5px 10px; border-radius: 6px; }
+        .points-pos { background: #d1fae5; color: #047857; }
+        .points-neg { background: #fee2e2; color: #b91c1c; }
 
-        .remark-card {
-            border-bottom: 1px solid var(--border-color);
-            padding: 15px 0;
-            display: flex;
-            gap: 15px;
-            align-items: flex-start;
+        .parent-controls {
+            margin-bottom: 20px; padding: 15px; background: rgba(0,0,0,0.02);
+            border-radius: 8px; display: none;
         }
-        .remark-card:last-child { border-bottom: none; }
-
-        .remark-icon {
-            font-size: 24px;
-            background: var(--bg-color);
-            width: 40px; height: 40px;
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0;
+        .child-select {
+            padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color);
+            font-size: 14px; min-width: 200px;
         }
-
-        .remark-details { flex: 1; }
-        .remark-header { display: flex; justify-content: space-between; margin-bottom: 5px; }
-        .remark-subject { font-weight: bold; font-size: 14px; color: var(--text-main); }
-        .remark-date { font-size: 12px; color: var(--text-muted); }
-        .remark-text { font-size: 14px; color: var(--text-main); line-height: 1.4; }
-        
-        .pts-badge {
-            font-size: 12px; font-weight: bold; padding: 2px 6px; border-radius: 4px; margin-left: 10px;
-        }
-        .pts-pos { color: #4CAF50; background: rgba(76, 175, 80, 0.1); }
-        .pts-neg { color: #F44336; background: rgba(244, 67, 54, 0.1); }
-
     </style>
 </head>
 <body>
-
     <div class="layout-wrapper">
         <aside class="sidebar-left">
             <div class="top-section">
                 <div class="brand-area"><a href="dashboard.html" class="logo-text"><span>m</span>Uczelnia</a></div>
                 <ul class="nav-menu">
                     <li class="nav-item"><a href="dashboard.html" class="nav-link"><span>Pulpit</span></a></li>
-                    <li class="nav-item"><a href="#" class="nav-link active"><span>Zachowanie</span></a></li>
+                    <li class="nav-item"><a href="grades.html" class="nav-link"><span>Oceny</span></a></li>
+                    <li class="nav-item"><a href="schedule.html" class="nav-link"><span>Plan Zajęć</span></a></li>
+                    <li class="nav-item"><a href="student_behavior.html" class="nav-link active"><span>Zachowanie</span></a></li>
                 </ul>
             </div>
         </aside>
@@ -85,114 +58,139 @@
         <main class="main-content">
             <div class="welcome-header">
                 <div>
-                    <a href="dashboard.html" style="text-decoration:none; color:var(--text-muted); font-size:14px;">← Wróć do pulpitu</a>
-                    <h1>Moje Zachowanie</h1>
-                    <p>Historia uwag i punktacja.</p>
+                    <h1>Zachowanie i Uwagi</h1>
+                    <p>Szczegóły punktacji z zachowania.</p>
                 </div>
             </div>
 
-            <div id="score-banner" class="score-banner">
-                <div class="score-circle" id="score-val">...</div>
-                <h3 style="margin:0;">Twoje Punkty Zachowania</h3>
-                <p style="color:var(--text-muted); font-size:13px; margin-top:5px;">Startowa pula: 100 pkt</p>
+            <div id="parent-controls" class="parent-controls">
+                <label for="childSelect"><strong>Wybierz dziecko:</strong> </label>
+                <select id="childSelect" class="child-select" onchange="changeChild()">
+                    <option value="" disabled selected>Ładowanie...</option>
+                </select>
             </div>
 
-            <div class="history-container">
-                <h3 style="margin-top:0; border-bottom:1px solid var(--border-color); padding-bottom:15px; margin-bottom:15px;">Dziennik Zdarzeń</h3>
-                <div id="remarks-list">
-                    <p style="text-align:center; padding:30px; color:#888;">Ładowanie danych...</p>
+            <div class="points-summary">
+                <span>Aktualna liczba punktów</span>
+                <span class="points-value" id="total-points">...</span>
+                <span id="behavior-grade-prediction">Ładowanie...</span>
+            </div>
+
+            <h3>Ostatnie uwagi</h3>
+            <div class="remarks-list" id="remarks-container">
                 </div>
-            </div>
-
         </main>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg'; 
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg';
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        document.addEventListener('DOMContentLoaded', async () => {
+        let currentUser = null;
+
+        async function init() {
             const { data: { session } } = await _supabase.auth.getSession();
             if (!session) { window.location.href = 'login.html'; return; }
 
-            const userId = session.user.id;
-            
-            // Pobierz dane usera ORAZ poziom szkoły
-            const { data: user } = await _supabase
-                .from('users')
-                .select('behavior_points, schools(level)')
-                .eq('id', userId)
-                .single();
+            const { data: userDetails } = await _supabase.from('users').select('*').eq('id', session.user.id).single();
+            currentUser = userDetails;
 
-            if(user) {
-                renderScore(user);
-                loadRemarks(userId);
-            }
-        });
-
-        function renderScore(user) {
-            const level = user.schools ? user.schools.level : 1;
-            
-            // Jeśli to nie jest podstawówka (level != 1), pokaż punkty
-            if (level != 1) {
-                const banner = document.getElementById('score-banner');
-                const val = document.getElementById('score-val');
-                
-                banner.style.display = 'block';
-                val.textContent = user.behavior_points;
-
-                // Kolorowanie kółka
-                if (user.behavior_points < 50) val.style.borderColor = '#F44336'; // Czerwony
-                else if (user.behavior_points > 100) val.style.borderColor = '#4CAF50'; // Zielony
-                else val.style.borderColor = '#2196F3'; // Niebieski (standard)
+            if (currentUser.role === 'parent') {
+                setupParentView();
+            } else {
+                fetchBehavior(currentUser.id, currentUser.behavior_points);
             }
         }
 
-        async function loadRemarks(userId) {
-            const list = document.getElementById('remarks-list');
+        async function setupParentView() {
+            document.getElementById('parent-controls').style.display = 'block';
             
-            const { data: remarks } = await _supabase
+            const { data: relations } = await _supabase.from('parent_children').select('child_id').eq('parent_id', currentUser.id);
+            if (!relations || relations.length === 0) return;
+
+            const childIds = relations.map(r => r.child_id);
+            // Pobieramy też 'behavior_points' z tabeli users dla dzieci
+            const { data: children } = await _supabase.from('users').select('id, username, behavior_points').in('id', childIds);
+
+            const select = document.getElementById('childSelect');
+            select.innerHTML = '';
+            
+            // Przechowujemy dane dzieci w pamięci, żeby nie robić requestu o punkty przy każdej zmianie
+            window.childDataCache = children;
+
+            children.forEach(child => {
+                const option = document.createElement('option');
+                option.value = child.id;
+                option.textContent = child.username;
+                select.appendChild(option);
+            });
+
+            if (children.length > 0) {
+                select.value = children[0].id;
+                fetchBehavior(children[0].id, children[0].behavior_points);
+            }
+        }
+
+        function changeChild() {
+            const childId = document.getElementById('childSelect').value;
+            // Znajdź punkty wybranego dziecka w cache
+            const child = window.childDataCache.find(c => c.id === childId);
+            fetchBehavior(childId, child ? child.behavior_points : 100);
+        }
+
+        async function fetchBehavior(studentId, currentPoints) {
+            // 1. Wyświetl punkty (z tabeli users)
+            document.getElementById('total-points').innerText = currentPoints !== undefined ? currentPoints : '100';
+            
+            let grade = "Wzorowe";
+            if(currentPoints < 50) grade = "Nieodpowiednie";
+            else if(currentPoints < 80) grade = "Poprawne";
+            else if(currentPoints < 150) grade = "Dobre";
+            else grade = "Wzorowe";
+            
+            document.getElementById('behavior-grade-prediction').innerText = `Przewidywana ocena: ${grade}`;
+
+            // 2. Pobierz uwagi (z tabeli remarks)
+            const container = document.getElementById('remarks-container');
+            container.innerHTML = '<p>Ładowanie uwag...</p>';
+
+            const { data: remarks, error } = await _supabase
                 .from('remarks')
                 .select('*')
-                .eq('student_id', userId)
+                .eq('student_id', studentId)
                 .order('created_at', { ascending: false });
 
-            list.innerHTML = '';
-            
+            if (error) { console.error(error); return; }
+
+            container.innerHTML = '';
             if (!remarks || remarks.length === 0) {
-                list.innerHTML = '<p style="text-align:center; padding:30px; color:#888;">Brak uwag w dzienniku. Tak trzymaj! 👍</p>';
+                container.innerHTML = '<p style="color:var(--text-muted)">Brak uwag w systemie.</p>';
                 return;
             }
 
-            const icons = { 'positive': '🏆', 'negative': '⚠️', 'neutral': 'ℹ️' };
-            const labels = { 'positive': 'Pochwała', 'negative': 'Uwaga', 'neutral': 'Info' };
-
-            remarks.forEach(r => {
-                const date = new Date(r.created_at).toLocaleDateString();
+            remarks.forEach(rem => {
+                const isPositive = rem.points >= 0;
+                const pointsClass = isPositive ? 'points-pos' : 'points-neg';
+                const cardClass = isPositive ? 'remark-positive' : 'remark-negative';
+                const sign = isPositive ? '+' : '';
                 
-                let pointsBadge = '';
-                if(r.points > 0) pointsBadge = `<span class="pts-badge pts-pos">+${r.points}</span>`;
-                if(r.points < 0) pointsBadge = `<span class="pts-badge pts-neg">${r.points}</span>`;
-
-                const div = document.createElement('div');
-                div.className = 'remark-card';
-                div.innerHTML = `
-                    <div class="remark-icon">${icons[r.category]}</div>
-                    <div class="remark-details">
-                        <div class="remark-header">
-                            <span class="remark-subject">${r.subject_name} ${pointsBadge}</span>
-                            <span class="remark-date">${date}</span>
+                const html = `
+                    <div class="remark-card ${cardClass}">
+                        <div>
+                            <div style="font-weight:600; font-size:1.1rem;">${rem.category || 'Uwaga'}</div>
+                            <div style="color:var(--text-muted); font-size:0.9rem;">${rem.description}</div>
+                            <div style="font-size:0.8rem; margin-top:5px; color:#888;">${new Date(rem.created_at).toLocaleDateString()}</div>
                         </div>
-                        <div class="remark-text">
-                            <strong>${labels[r.category]}:</strong> ${r.description}
-                        </div>
+                        <div class="points-badge ${pointsClass}">${sign}${rem.points} pkt</div>
                     </div>
                 `;
-                list.appendChild(div);
+                container.innerHTML += html;
             });
         }
+
+        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
