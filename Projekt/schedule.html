@@ -6,7 +6,7 @@
     <title>mUczelnia - Plan Zajęć</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* --- STYLE POZOSTAJĄ BEZ ZMIAN --- */
+        /* --- STYLE --- */
         .schedule-container {
             background: var(--panel-bg);
             padding: 20px;
@@ -27,16 +27,15 @@
         .subject-name { font-weight: 600; color: var(--text-main); }
         .subject-info { font-size: 10px; color: var(--text-muted); background: rgba(0,0,0,0.05); padding: 2px 4px; border-radius: 4px; display: inline-block; margin: 0 auto; }
 
-        /* Styl edycji i selecta */
         .editable:hover { background-color: #f0f8ff; cursor: pointer; outline: 1px dashed #007bff; }
         
-        .class-selector-container {
+        .controls-container {
             margin-bottom: 15px;
             display: inline-flex;
             align-items: center;
             gap: 10px;
         }
-        .class-select {
+        .custom-select {
             padding: 8px 12px;
             border-radius: 6px;
             border: 1px solid var(--border-color);
@@ -66,13 +65,11 @@
                     <a href="dashboard.html" style="text-decoration:none; color:var(--text-muted); font-size:14px;">← Wróć do pulpitu</a>
                     <h1>Plan Zajęć</h1>
                     
-                    <div id="teacher-controls" style="display:none; margin-top: 10px;">
-                        <div class="class-selector-container">
-                            <label for="classSelect">Wybierz klasę do edycji:</label>
-                            <select id="classSelect" class="class-select" onchange="changeClass()">
-                                <option value="" disabled selected>Ładowanie klas...</option>
-                            </select>
-                        </div>
+                    <div id="view-controls" class="controls-container" style="display:none; margin-top: 10px;">
+                        <label id="selectLabel" for="viewSelect">Wybierz:</label>
+                        <select id="viewSelect" class="custom-select" onchange="changeView()">
+                            <option value="" disabled selected>Ładowanie...</option>
+                        </select>
                     </div>
                     
                     <p id="schedule-info-text">Ładowanie planu...</p>
@@ -105,18 +102,17 @@
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
         let currentUser = null;
-        let currentViewClassId = null;
+        let currentViewClassId = null; // ID klasy aktualnie wyświetlanej
         let isTeacher = false;
+        let isParent = false;
 
-        // 1. Generowanie pustej siatki godzin 8-20
+        // 1. Generowanie siatki
         function generateGrid() {
             const tbody = document.getElementById('schedule-body');
             tbody.innerHTML = '';
             
             for (let hour = 8; hour < 20; hour++) {
                 const tr = document.createElement('tr');
-                
-                // Kolumna z godziną
                 const timeCell = document.createElement('td');
                 timeCell.className = 'hour-col';
                 const start = `${hour.toString().padStart(2, '0')}:00`;
@@ -124,7 +120,6 @@
                 timeCell.innerHTML = `${start}<br>-<br>${end}`;
                 tr.appendChild(timeCell);
 
-                // Kolumny dni (1-5)
                 for (let day = 1; day <= 5; day++) {
                     const td = document.createElement('td');
                     td.dataset.day = day;
@@ -141,33 +136,30 @@
         async function init() {
             generateGrid();
 
-            // Sprawdzenie sesji
             const { data: { session } } = await _supabase.auth.getSession();
             if (!session) { window.location.href = 'login.html'; return; }
 
-            // Pobranie danych użytkownika
             const { data: userDetails, error } = await _supabase
                 .from('users')
                 .select('id, role, school_id, class_id')
                 .eq('id', session.user.id)
                 .single();
 
-            if (error || !userDetails) {
-                console.error("Błąd pobierania użytkownika", error);
-                return;
-            }
+            if (error || !userDetails) return;
 
             currentUser = userDetails;
             isTeacher = (currentUser.role === 'teacher');
+            isParent = (currentUser.role === 'parent');
 
             if (isTeacher) {
                 await setupTeacherView();
+            } else if (isParent) {
+                await setupParentView();
             } else {
                 setupStudentView();
             }
         }
 
-        // --- Widok dla studenta ---
         function setupStudentView() {
             if (currentUser.class_id) {
                 currentViewClassId = currentUser.class_id;
@@ -178,25 +170,72 @@
             }
         }
 
-        // --- Widok dla nauczyciela ---
+        // --- Logika dla RODZICA ---
+        async function setupParentView() {
+            document.getElementById('view-controls').style.display = 'block';
+            document.getElementById('selectLabel').innerText = "Wybierz dziecko:";
+            document.getElementById('schedule-info-text').innerText = "Podgląd planu zajęć dziecka.";
+
+            // 1. Pobierz ID dzieci z tabeli relacji
+            const { data: relations } = await _supabase
+                .from('parent_children')
+                .select('child_id')
+                .eq('parent_id', currentUser.id);
+
+            if (!relations || relations.length === 0) {
+                const select = document.getElementById('viewSelect');
+                select.innerHTML = '<option disabled selected>Brak przypisanych dzieci</option>';
+                return;
+            }
+
+            const childIds = relations.map(r => r.child_id);
+
+            // 2. Pobierz imiona i klasy dzieci
+            const { data: children, error } = await _supabase
+                .from('users')
+                .select('id, username, class_id')
+                .in('id', childIds);
+
+            const select = document.getElementById('viewSelect');
+            select.innerHTML = '';
+
+            if (children && children.length > 0) {
+                children.forEach(child => {
+                    const option = document.createElement('option');
+                    // Jako value używamy class_id dziecka, bo to nas interesuje
+                    option.value = child.class_id; 
+                    option.textContent = child.username || "Dziecko bez nazwy";
+                    // Jeśli dziecko nie ma klasy, zablokuj opcję
+                    if(!child.class_id) {
+                        option.disabled = true;
+                        option.textContent += " (brak klasy)";
+                    }
+                    select.appendChild(option);
+                });
+
+                // Wybierz pierwsze dostępne dziecko z klasą
+                const firstValid = children.find(c => c.class_id);
+                if (firstValid) {
+                    select.value = firstValid.class_id;
+                    currentViewClassId = firstValid.class_id;
+                    fetchAndRenderSchedule(currentViewClassId);
+                }
+            }
+        }
+
+        // --- Logika dla NAUCZYCIELA ---
         async function setupTeacherView() {
-            document.getElementById('teacher-controls').style.display = 'block';
-            document.getElementById('schedule-info-text').innerText = "Wybierz klasę, aby edytować jej plan.";
+            document.getElementById('view-controls').style.display = 'block';
+            document.getElementById('selectLabel').innerText = "Wybierz klasę do edycji:";
+            document.getElementById('schedule-info-text').innerText = "Tryb edycji planu zajęć.";
             
-            // Pobierz listę klas ze szkoły nauczyciela
-            const { data: classes, error } = await _supabase
+            const { data: classes } = await _supabase
                 .from('classes')
                 .select('id, name')
                 .eq('school_id', currentUser.school_id)
                 .order('name', { ascending: true });
 
-            if (error) {
-                console.error("Błąd pobierania klas:", error);
-                alert("Nie udało się pobrać listy klas.");
-                return;
-            }
-
-            const select = document.getElementById('classSelect');
+            const select = document.getElementById('viewSelect');
             select.innerHTML = ''; 
 
             if (classes && classes.length > 0) {
@@ -207,43 +246,39 @@
                     select.appendChild(option);
                 });
                 
-                // Wybierz pierwszą klasę domyślnie
                 currentViewClassId = classes[0].id;
                 select.value = currentViewClassId;
                 fetchAndRenderSchedule(currentViewClassId);
-                enableEditing(); 
-            } else {
-                const option = document.createElement('option');
-                option.textContent = "Brak klas w Twojej szkole";
-                select.appendChild(option);
+                enableEditing(); // Tylko nauczyciel może edytować
             }
         }
 
-        // Obsługa zmiany selecta
-        function changeClass() {
-            const select = document.getElementById('classSelect');
+        // Wspólna funkcja zmiany selecta (dla rodzica i nauczyciela)
+        function changeView() {
+            const select = document.getElementById('viewSelect');
             currentViewClassId = select.value;
             generateGrid(); 
+            // Jeśli to nauczyciel, włącz edycję ponownie na nowej siatce
             if(isTeacher) enableEditing(); 
             fetchAndRenderSchedule(currentViewClassId);
         }
 
-        // --- Pobieranie i renderowanie planu ---
         async function fetchAndRenderSchedule(classId) {
+            if (!classId) return;
+
             const { data: scheduleData, error } = await _supabase
                 .from('weekly_schedule')
                 .select('*')
                 .eq('class_id', classId);
 
             if (error) {
-                console.error("Błąd pobierania planu:", error);
+                console.error(error);
                 return;
             }
 
             scheduleData.forEach(item => {
                 const hourPart = parseInt(item.start_time.split(':')[0]); 
                 const cell = document.getElementById(`cell-${item.day_of_week}-${hourPart}`);
-                
                 if (cell) {
                     cell.innerHTML = `
                         <div class="subject-block">
@@ -255,23 +290,18 @@
             });
         }
 
-        // --- Logika edycji (tylko dla nauczyciela) ---
         function enableEditing() {
             const cells = document.querySelectorAll('td[data-day]');
             cells.forEach(cell => {
                 cell.classList.add('editable');
-                
-                // Usuwamy stare listenery przez klonowanie
                 const newCell = cell.cloneNode(true);
                 cell.parentNode.replaceChild(newCell, cell);
                 
                 newCell.onclick = async () => {
                     if (!currentViewClassId) return;
-
                     const currentName = newCell.querySelector('.subject-name')?.innerText || "";
                     const currentRoom = newCell.querySelector('.subject-info')?.innerText || "";
-
-                    const subject = prompt("Nazwa przedmiotu (zostaw puste aby usunąć):", currentName);
+                    const subject = prompt("Nazwa przedmiotu (puste = usuń):", currentName);
                     if (subject === null) return; 
 
                     const day = newCell.dataset.day;
@@ -279,17 +309,14 @@
                     const startTime = `${hour.toString().padStart(2,'0')}:00`;
                     const endTime = `${hour.toString().padStart(2,'0')}:45`;
 
-                    // Usuń stary wpis
                     await _supabase.from('weekly_schedule').delete()
                         .eq('class_id', currentViewClassId)
                         .eq('day_of_week', day)
                         .eq('start_time', startTime);
 
-                    // Jeśli podano nazwę, dodaj nowy wpis
                     if (subject.trim() !== "") {
-                        const room = prompt("Sala lekcyjna:", currentRoom);
-                        
-                        const { error } = await _supabase.from('weekly_schedule').insert({
+                        const room = prompt("Sala:", currentRoom);
+                        await _supabase.from('weekly_schedule').insert({
                             class_id: currentViewClassId,
                             day_of_week: day,
                             start_time: startTime,
@@ -298,18 +325,7 @@
                             room: room,
                             teacher_id: currentUser.id
                         });
-
-                        if (error) {
-                            alert("Błąd zapisu: " + error.message);
-                            return;
-                        }
-
-                        newCell.innerHTML = `
-                            <div class="subject-block">
-                                <span class="subject-name">${subject}</span>
-                                <span class="subject-info">${room || ''}</span>
-                            </div>
-                        `;
+                        newCell.innerHTML = `<div class="subject-block"><span class="subject-name">${subject}</span><span class="subject-info">${room||''}</span></div>`;
                     } else {
                         newCell.innerHTML = '—';
                     }
