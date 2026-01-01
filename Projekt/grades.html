@@ -15,84 +15,215 @@
         .grade-item:last-child { border-bottom: none; }
         
         .grade-value { font-size: 18px; font-weight: bold; color: var(--accent-color); width: 50px; text-align: center; }
-        .grade-details { flex: 1; margin-left: 10px; }
-        .grade-cat { font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: bold; }
-        .grade-desc { font-size: 14px; color: var(--text-main); }
-        .grade-date { font-size: 12px; color: var(--text-muted); }
+        .grade-details { flex: 1; margin-left: 15px; }
+        .grade-cat { font-size: 14px; font-weight: bold; color: var(--text-main); }
+        .grade-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+        .grade-date { font-size: 12px; color: var(--text-muted); width: 80px; text-align: right; }
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* --- NOWE STYLE DLA RODZICA --- */
+        .parent-controls {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(0,0,0,0.02);
+            border-radius: 12px;
+            display: none; /* Domyślnie ukryte */
+            border: 1px solid var(--border-color);
+        }
+        .child-select {
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            font-size: 14px;
+            min-width: 250px;
+            background: var(--panel-bg);
+            color: var(--text-main);
+        }
     </style>
 </head>
 <body>
+
     <div class="layout-wrapper">
         <aside class="sidebar-left">
             <div class="top-section">
                 <div class="brand-area"><a href="dashboard.html" class="logo-text"><span>m</span>Uczelnia</a></div>
                 <ul class="nav-menu">
                     <li class="nav-item"><a href="dashboard.html" class="nav-link"><span>Pulpit</span></a></li>
-                    <li class="nav-item"><a href="#" class="nav-link active"><span>Oceny</span></a></li>
-                </ul>
+                    <li class="nav-item"><a href="grades.html" class="nav-link active"><span>Oceny</span></a></li>
+                    <li class="nav-item"><a href="schedule.html" class="nav-link"><span>Plan Zajęć</span></a></li>
+                    <li class="nav-item"><a href="student_behavior.html" class="nav-link"><span>Zachowanie</span></a></li>
+                    </ul>
             </div>
         </aside>
 
         <main class="main-content">
             <div class="welcome-header">
                 <div>
-                    <a href="dashboard.html" style="text-decoration:none; color:var(--text-muted);">← Wróć</a>
-                    <h1>Moje Oceny</h1>
+                    <h1>Oceny</h1>
+                    <p>Wykaz ocen z podziałem na przedmioty.</p>
                 </div>
             </div>
-            <div id="grades-container">Ładowanie...</div>
+
+            <div id="parent-controls" class="parent-controls">
+                <label for="childSelect" style="margin-right: 10px; font-weight: 600;">Wybierz dziecko:</label>
+                <select id="childSelect" class="child-select" onchange="changeChild()">
+                    <option value="" disabled selected>Ładowanie listy...</option>
+                </select>
+            </div>
+
+            <div id="grades-container">
+                <p style="text-align:center; margin-top:20px; color:var(--text-muted);">Ładowanie...</p>
+            </div>
         </main>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg'; 
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg';
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        document.addEventListener('DOMContentLoaded', async () => {
+        let currentUser = null;
+
+        // Główna funkcja startowa
+        async function init() {
+            // 1. Sprawdź sesję
             const { data: { session } } = await _supabase.auth.getSession();
             if (!session) { window.location.href = 'login.html'; return; }
 
-            const container = document.getElementById('grades-container');
-            
-            // 1. Pobierz oceny z informacją o pakiecie (przedmiocie)
-            const { data: grades } = await _supabase
-                .from('grades')
-                .select('id, grade, weight, category, description, created_at, package_id, packages(title)')
-                .eq('user_id', session.user.id)
-                .order('created_at', { ascending: false });
+            // 2. Pobierz rolę użytkownika
+            const { data: userDetails, error } = await _supabase
+                .from('users')
+                .select('id, role, username')
+                .eq('id', session.user.id)
+                .single();
 
-            if (!grades || grades.length === 0) {
-                container.innerHTML = '<p style="text-align:center; padding:40px; color:var(--text-muted);">Brak ocen.</p>';
+            if (error || !userDetails) {
+                console.error("Błąd pobierania usera:", error);
                 return;
             }
 
-            // 2. Grupuj oceny po Przedmiotach (Pakietach)
+            currentUser = userDetails;
+
+            // 3. Rozwidlenie logiki: Rodzic vs Uczeń
+            if (currentUser.role === 'parent') {
+                setupParentView();
+            } else {
+                // Jeśli uczeń -> ładuj jego oceny (currentUser.id)
+                loadGrades(currentUser.id);
+            }
+        }
+
+        // --- Logika RODZICA ---
+        async function setupParentView() {
+            // Pokaż panel wyboru
+            document.getElementById('parent-controls').style.display = 'block';
+
+            // Pobierz powiązania rodzic-dziecko
+            const { data: relations } = await _supabase
+                .from('parent_children')
+                .select('child_id')
+                .eq('parent_id', currentUser.id);
+
+            if (!relations || relations.length === 0) {
+                document.getElementById('grades-container').innerHTML = '<p style="text-align:center">Brak przypisanych dzieci.</p>';
+                return;
+            }
+
+            const childIds = relations.map(r => r.child_id);
+
+            // Pobierz dane dzieci (imiona)
+            const { data: children } = await _supabase
+                .from('users')
+                .select('id, username')
+                .in('id', childIds);
+
+            const select = document.getElementById('childSelect');
+            select.innerHTML = '';
+
+            // Wypełnij select
+            children.forEach(child => {
+                const option = document.createElement('option');
+                option.value = child.id;
+                option.textContent = child.username;
+                select.appendChild(option);
+            });
+
+            // Wybierz domyślnie pierwsze dziecko i załaduj jego oceny
+            if (children.length > 0) {
+                select.value = children[0].id;
+                loadGrades(children[0].id);
+            }
+        }
+
+        // Obsługa zmiany w select
+        function changeChild() {
+            const selectedChildId = document.getElementById('childSelect').value;
+            loadGrades(selectedChildId);
+        }
+
+        // --- Logika Pobierania Ocen (Zmodyfikowana, przyjmuje targetUserId) ---
+        async function loadGrades(targetUserId) {
+            const container = document.getElementById('grades-container');
+            container.innerHTML = '<p style="text-align:center; margin-top:20px;">Pobieranie ocen...</p>';
+
+            // Pobieramy oceny dla WSKAZANEGO użytkownika (targetUserId)
+            const { data: grades, error } = await _supabase
+                .from('grades')
+                .select('*, packages(title)') // Join z packages by mieć nazwę przedmiotu
+                .eq('user_id', targetUserId)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error(error);
+                container.innerHTML = `<p style="color:red; text-align:center">Błąd: ${error.message}</p>`;
+                return;
+            }
+
+            if (!grades || grades.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:var(--text-muted);">Brak ocen do wyświetlenia.</p>';
+                return;
+            }
+
+            // --- Twoja Oryginalna Logika Grupowania (bez zmian) ---
+            
+            // Grupowanie wg przedmiotu (packages.title)
             const subjects = {};
+
             grades.forEach(g => {
-                // Jeśli ocena nie ma pakietu, wrzuć do "Inne"
-                const pkgTitle = g.packages ? g.packages.title : "Inne / Ogólne";
-                if (!subjects[pkgTitle]) subjects[pkgTitle] = [];
-                subjects[pkgTitle].push(g);
+                // Jeśli package jest null, dajemy "Inne / Bez przedmiotu"
+                const title = (g.packages && g.packages.title) ? g.packages.title : 'Inne';
+                
+                if (!subjects[title]) {
+                    subjects[title] = [];
+                }
+                subjects[title].push(g);
             });
 
             container.innerHTML = '';
-            
-            // 3. Renderuj
-            for (const [title, list] of Object.entries(subjects)) {
-                // Oblicz średnią (uproszczona)
-                let sum = 0; let count = 0;
+
+            // Renderowanie kafelków
+            Object.keys(subjects).sort().forEach(title => {
+                const list = subjects[title];
+                
+                // Oblicz średnią (tylko numeryczne)
+                let sum = 0; 
+                let count = 0;
                 list.forEach(g => {
+                    // Zakładamy, że ocena może być np. "5" albo "4+" -> parsujemy float
+                    // Jeśli w bazie masz np. "4+", parseFloat weźmie 4. 
+                    // To prosta średnia, można rozbudować.
                     const val = parseFloat(g.grade);
                     if (!isNaN(val)) { sum += val; count++; }
                 });
                 const avg = count > 0 ? (sum / count).toFixed(2) : "-";
 
+                // Tworzenie HTML
                 const section = document.createElement('div');
                 section.className = 'subject-group';
+                
+                // HTML w środku (zachowany styl)
                 section.innerHTML = `
                     <div class="subject-header" onclick="this.nextElementSibling.classList.toggle('active')">
                         <span>${title}</span>
@@ -112,8 +243,11 @@
                     </div>
                 `;
                 container.appendChild(section);
-            }
-        });
+            });
+        }
+
+        // Start
+        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
