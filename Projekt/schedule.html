@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mUczelnia - Plan Zajęć</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* --- STYLE SPECYFICZNE DLA PLANU --- */
+        .schedule-container {
+            background: var(--panel-bg);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+            overflow-x: auto; /* Przewijanie na boki na telefonie */
+        }
+
+        .schedule-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px; /* Minimalna szerokość, żeby się nie ściskało */
+        }
+
+        .schedule-table th, 
+        .schedule-table td {
+            padding: 15px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-color);
+        }
+
+        .schedule-table th:last-child, 
+        .schedule-table td:last-child {
+            border-right: none;
+        }
+
+        .schedule-table th {
+            background-color: rgba(0,0,0,0.02);
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
+
+        .schedule-table td {
+            font-size: 14px;
+            height: 80px; /* Wysokość komórki */
+            vertical-align: middle;
+            transition: background 0.2s;
+        }
+
+        .schedule-table tr:hover td {
+            background-color: var(--hover-bg);
+        }
+
+        /* Stylizacja przedmiotów */
+        .subject-block {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .subject-name {
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .subject-info {
+            font-size: 11px;
+            color: var(--text-muted);
+            background: rgba(0,0,0,0.05);
+            padding: 2px 6px;
+            border-radius: 4px;
+            display: inline-block;
+            margin: 0 auto;
+        }
+
+        .hour-col {
+            font-weight: bold;
+            color: var(--text-muted);
+            font-size: 12px;
+            background: rgba(0,0,0,0.02);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="layout-wrapper">
+        <aside class="sidebar-left">
+            <div class="top-section">
+                <div class="brand-area"><a href="dashboard.html" class="logo-text"><span>m</span>Uczelnia</a></div>
+                <ul class="nav-menu">
+                    <li class="nav-item"><a href="dashboard.html" class="nav-link"><span>Pulpit</span></a></li>
+                    <li class="nav-item"><a href="schedule.html" class="nav-link active"><span>Plan Zajęć</span></a></li>
+                    <li class="nav-item"><a href="settings.html" class="nav-link"><span>Ustawienia</span></a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="welcome-header">
+                <div>
+                    <a href="dashboard.html" style="text-decoration:none; color:var(--text-muted); font-size:14px;">← Wróć do pulpitu</a>
+                    <h1>Plan Zajęć</h1>
+                    <p>Twój tygodniowy rozkład lekcji.</p>
+                </div>
+            </div>
+
+            <div class="schedule-container">
+                <table class="schedule-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 80px;">Godzina</th>
+                            <th>Poniedziałek</th>
+                            <th>Wtorek</th>
+                            <th>Środa</th>
+                            <th>Czwartek</th>
+                            <th>Piątek</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="hour-col">08:00<br>-<br>08:45</td>
+                            <td>
+                                <div class="subject-block">
+                                    <span class="subject-name">Matematyka</span>
+                                    <span class="subject-info">s. 102</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="subject-block">
+                                    <span class="subject-name">J. Polski</span>
+                                    <span class="subject-info">s. 24</span>
+                                </div>
+                            </td>
+                            <td>—</td>
+                            <td>
+                                <div class="subject-block">
+                                    <span class="subject-name">WF</span>
+                                    <span class="subject-info">Hala</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="subject-block">
+                                    <span class="subject-name">Historia</span>
+                                    <span class="subject-info">s. 15</span>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td class="hour-col">08:55<br>-<br>09:40</td>
+                            <td>
+                                <div class="subject-block">
+                                    <span class="subject-name">Informatyka</span>
+                                    <span class="subject-info">s. 301</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="subject-block">
+                                    <span class="subject-name">Biologia</span>
+                                    <span class="subject-info">s. 44</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="subject-block">
+                                    <span class="subject-name">Matematyka</span>
+                                    <span class="subject-info">s. 102</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="subject-block">
+                                    <span class="subject-name">Geografia</span>
+                                    <span class="subject-info">s. 11</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="subject-block">
+                                    <span class="subject-name">Angielski</span>
+                                    <span class="subject-info">s. 202</span>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td class="hour-col">09:50<br>-<br>10:35</td>
+                            <td>—</td>
+                            <td>
+                                <div class="subject-block">
+                                    <span class="subject-name">Fizyka</span>
+                                    <span class="subject-info">s. 108</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="subject-block">
+                                    <span class="subject-name">Chemia</span>
+                                    <span class="subject-info">s. 105</span>
+                                </div>
+                            </td>
+                            <td>—</td>
+                            <td>
+                                <div class="subject-block">
+                                    <span class="subject-name">WOS</span>
+                                    <span class="subject-info">s. 15</span>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        </tbody>
+                </table>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
+        // Tutaj wklej swój klucz API z dashboard.js, żeby działało sprawdzanie logowania
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg';
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        // Zabezpieczenie strony (skopiowane z dashboard.js)
+        document.addEventListener('DOMContentLoaded', async () => {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (!session) { window.location.href = 'login.html'; return; }
+        });
+    </script>
+</body>
+</html>
