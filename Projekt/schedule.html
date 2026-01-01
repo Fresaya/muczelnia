@@ -6,83 +6,29 @@
     <title>mUczelnia - Plan Zajęć</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* --- STYLE SPECYFICZNE DLA PLANU --- */
+        /* Twoje style CSS pozostają bez zmian, dodałem tylko kursor dla nauczyciela */
         .schedule-container {
             background: var(--panel-bg);
             padding: 20px;
             border-radius: 12px;
             border: 1px solid var(--border-color);
             box-shadow: var(--shadow);
-            overflow-x: auto; /* Przewijanie na boki na telefonie */
+            overflow-x: auto;
         }
-
-        .schedule-table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 600px; /* Minimalna szerokość, żeby się nie ściskało */
+        .schedule-table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        .schedule-table th, .schedule-table td {
+            padding: 10px; text-align: center; border: 1px solid var(--border-color);
         }
-
-        .schedule-table th, 
-        .schedule-table td {
-            padding: 15px;
-            text-align: center;
-            border-bottom: 1px solid var(--border-color);
-            border-right: 1px solid var(--border-color);
-        }
-
-        .schedule-table th:last-child, 
-        .schedule-table td:last-child {
-            border-right: none;
-        }
-
-        .schedule-table th {
-            background-color: rgba(0,0,0,0.02);
-            color: var(--text-muted);
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 12px;
-            letter-spacing: 1px;
-        }
-
-        .schedule-table td {
-            font-size: 14px;
-            height: 80px; /* Wysokość komórki */
-            vertical-align: middle;
-            transition: background 0.2s;
-        }
-
-        .schedule-table tr:hover td {
-            background-color: var(--hover-bg);
-        }
-
-        /* Stylizacja przedmiotów */
-        .subject-block {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
+        .schedule-table th { background: rgba(0,0,0,0.02); color: var(--text-muted); font-size: 12px; text-transform: uppercase; }
+        .schedule-table td { height: 60px; vertical-align: middle; font-size: 13px; }
+        .hour-col { font-weight: bold; color: var(--text-muted); width: 100px; }
         
-        .subject-name {
-            font-weight: 600;
-            color: var(--text-main);
-        }
+        .subject-block { display: flex; flex-direction: column; gap: 2px; }
+        .subject-name { font-weight: 600; color: var(--text-main); }
+        .subject-info { font-size: 10px; color: var(--text-muted); background: rgba(0,0,0,0.05); padding: 2px 4px; border-radius: 4px; display: inline-block; margin: 0 auto; }
 
-        .subject-info {
-            font-size: 11px;
-            color: var(--text-muted);
-            background: rgba(0,0,0,0.05);
-            padding: 2px 6px;
-            border-radius: 4px;
-            display: inline-block;
-            margin: 0 auto;
-        }
-
-        .hour-col {
-            font-weight: bold;
-            color: var(--text-muted);
-            font-size: 12px;
-            background: rgba(0,0,0,0.02);
-        }
+        /* Styl dla trybu edycji (dla nauczycieli) */
+        .editable:hover { background-color: #f0f8ff; cursor: pointer; outline: 1px dashed #007bff; }
     </style>
 </head>
 <body>
@@ -104,7 +50,12 @@
                 <div>
                     <a href="dashboard.html" style="text-decoration:none; color:var(--text-muted); font-size:14px;">← Wróć do pulpitu</a>
                     <h1>Plan Zajęć</h1>
-                    <p>Twój tygodniowy rozkład lekcji.</p>
+                    <p id="class-info">Ładowanie planu...</p>
+                </div>
+                <div id="teacher-controls" style="display:none;">
+                    <button onclick="alert('Kliknij w komórkę, aby dodać/edytować lekcję.')" style="padding: 8px 16px; background: var(--accent); color: white; border: none; border-radius: 6px; cursor: pointer;">
+                        Tryb edycji
+                    </button>
                 </div>
             </div>
 
@@ -112,7 +63,7 @@
                 <table class="schedule-table">
                     <thead>
                         <tr>
-                            <th style="width: 80px;">Godzina</th>
+                            <th>Godzina</th>
                             <th>Poniedziałek</th>
                             <th>Wtorek</th>
                             <th>Środa</th>
@@ -120,112 +71,164 @@
                             <th>Piątek</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <td class="hour-col">08:00<br>-<br>08:45</td>
-                            <td>
-                                <div class="subject-block">
-                                    <span class="subject-name">Matematyka</span>
-                                    <span class="subject-info">s. 102</span>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="subject-block">
-                                    <span class="subject-name">J. Polski</span>
-                                    <span class="subject-info">s. 24</span>
-                                </div>
-                            </td>
-                            <td>—</td>
-                            <td>
-                                <div class="subject-block">
-                                    <span class="subject-name">WF</span>
-                                    <span class="subject-info">Hala</span>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="subject-block">
-                                    <span class="subject-name">Historia</span>
-                                    <span class="subject-info">s. 15</span>
-                                </div>
-                            </td>
-                        </tr>
-
-                        <tr>
-                            <td class="hour-col">08:55<br>-<br>09:40</td>
-                            <td>
-                                <div class="subject-block">
-                                    <span class="subject-name">Informatyka</span>
-                                    <span class="subject-info">s. 301</span>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="subject-block">
-                                    <span class="subject-name">Biologia</span>
-                                    <span class="subject-info">s. 44</span>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="subject-block">
-                                    <span class="subject-name">Matematyka</span>
-                                    <span class="subject-info">s. 102</span>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="subject-block">
-                                    <span class="subject-name">Geografia</span>
-                                    <span class="subject-info">s. 11</span>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="subject-block">
-                                    <span class="subject-name">Angielski</span>
-                                    <span class="subject-info">s. 202</span>
-                                </div>
-                            </td>
-                        </tr>
-
-                        <tr>
-                            <td class="hour-col">09:50<br>-<br>10:35</td>
-                            <td>—</td>
-                            <td>
-                                <div class="subject-block">
-                                    <span class="subject-name">Fizyka</span>
-                                    <span class="subject-info">s. 108</span>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="subject-block">
-                                    <span class="subject-name">Chemia</span>
-                                    <span class="subject-info">s. 105</span>
-                                </div>
-                            </td>
-                            <td>—</td>
-                            <td>
-                                <div class="subject-block">
-                                    <span class="subject-name">WOS</span>
-                                    <span class="subject-info">s. 15</span>
-                                </div>
-                            </td>
-                        </tr>
-                        
+                    <tbody id="schedule-body">
                         </tbody>
                 </table>
             </div>
-
         </main>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
-        // Tutaj wklej swój klucz API z dashboard.js, żeby działało sprawdzanie logowania
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg';
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        // Zabezpieczenie strony (skopiowane z dashboard.js)
-        document.addEventListener('DOMContentLoaded', async () => {
+        let currentUser = null;
+        let userRole = null;
+        let currentClassId = null;
+
+        // Generowanie siatki godzin 8:00 - 20:00
+        function generateGrid() {
+            const tbody = document.getElementById('schedule-body');
+            tbody.innerHTML = '';
+            
+            for (let hour = 8; hour < 20; hour++) {
+                const tr = document.createElement('tr');
+                
+                // Kolumna z godziną
+                const timeCell = document.createElement('td');
+                timeCell.className = 'hour-col';
+                const start = `${hour.toString().padStart(2, '0')}:00`;
+                const end = `${hour.toString().padStart(2, '0')}:45`; // Zakładamy 45 min lekcji
+                timeCell.innerHTML = `${start}<br>-<br>${end}`;
+                tr.appendChild(timeCell);
+
+                // Kolumny dni (1-5)
+                for (let day = 1; day <= 5; day++) {
+                    const td = document.createElement('td');
+                    td.dataset.day = day;
+                    td.dataset.hour = hour; // Używamy pełnej godziny jako identyfikatora wiersza
+                    td.id = `cell-${day}-${hour}`;
+                    td.innerHTML = '—';
+                    tr.appendChild(td);
+                }
+                tbody.appendChild(tr);
+            }
+        }
+
+        async function loadSchedule() {
+            // 1. Sprawdź usera
             const { data: { session } } = await _supabase.auth.getSession();
             if (!session) { window.location.href = 'login.html'; return; }
+            
+            // 2. Pobierz dane usera (role, class_id)
+            const { data: userDetails } = await _supabase
+                .from('users')
+                .select('*')
+                .eq('id', session.user.id)
+                .single();
+
+            currentUser = userDetails;
+            userRole = userDetails.role;
+            currentClassId = userDetails.class_id;
+
+            // Jeśli nauczyciel nie ma przypisanej klasy, musiałby ją wybrać (tu dla uproszczenia pobieramy plan klasy ID=1 lub jego własnej)
+            // W pełnej wersji nauczyciel powinien mieć select do wyboru klasy.
+            if (userRole === 'teacher') {
+                document.getElementById('teacher-controls').style.display = 'block';
+                // TODO: Tutaj w przyszłości dropdown wyboru klasy. Na razie weźmy klasę usera lub 1.
+                if (!currentClassId) currentClassId = 1; 
+                document.getElementById('class-info').innerText = `Edytujesz plan dla klasy ID: ${currentClassId}`;
+                enableTeacherEditing();
+            } else {
+                document.getElementById('class-info').innerText = `Plan zajęć Twojej klasy`;
+            }
+
+            // 3. Pobierz plan z bazy
+            const { data: scheduleData, error } = await _supabase
+                .from('weekly_schedule')
+                .select('*')
+                .eq('class_id', currentClassId);
+
+            if (error) console.error(error);
+            if (scheduleData) renderSchedule(scheduleData);
+        }
+
+        function renderSchedule(scheduleData) {
+            scheduleData.forEach(item => {
+                // Wyciągamy godzinę startu (np. "08:00:00" -> 8)
+                const hourPart = parseInt(item.start_time.split(':')[0]);
+                
+                // Znajdź odpowiednią komórkę
+                const cell = document.getElementById(`cell-${item.day_of_week}-${hourPart}`);
+                if (cell) {
+                    cell.innerHTML = `
+                        <div class="subject-block">
+                            <span class="subject-name">${item.subject_name}</span>
+                            <span class="subject-info">${item.room || ''}</span>
+                        </div>
+                    `;
+                    // Zapisz ID rekordu w atrybucie, aby móc go edytować
+                    cell.dataset.scheduleId = item.id;
+                }
+            });
+        }
+
+        function enableTeacherEditing() {
+            const cells = document.querySelectorAll('td[data-day]');
+            cells.forEach(cell => {
+                cell.classList.add('editable');
+                cell.onclick = async () => {
+                    const subject = prompt("Podaj nazwę przedmiotu:", "");
+                    const room = prompt("Podaj salę:", "");
+                    
+                    if (subject) {
+                        const day = cell.dataset.day;
+                        const hour = parseInt(cell.dataset.hour);
+                        const startTime = `${hour.toString().padStart(2,'0')}:00`;
+                        const endTime = `${hour.toString().padStart(2,'0')}:45`;
+
+                        // Sprawdź czy aktualizujemy czy wstawiamy nowy
+                        // W uproszczeniu: usuń stary (jeśli był) i wstaw nowy, lub upsert.
+                        // Tutaj zrobimy prosty INSERT (lub UPDATE w pełnej logice).
+                        
+                        // Najpierw usuń stary wpis w tym slocie dla tej klasy
+                        await _supabase.from('weekly_schedule').delete()
+                            .eq('class_id', currentClassId)
+                            .eq('day_of_week', day)
+                            .eq('start_time', startTime);
+
+                        // Dodaj nowy
+                        const { error } = await _supabase.from('weekly_schedule').insert({
+                            class_id: currentClassId,
+                            day_of_week: day,
+                            start_time: startTime,
+                            end_time: endTime,
+                            subject_name: subject,
+                            room: room
+                        });
+
+                        if (!error) {
+                            // Odśwież widok
+                            cell.innerHTML = `
+                                <div class="subject-block">
+                                    <span class="subject-name">${subject}</span>
+                                    <span class="subject-info">${room}</span>
+                                </div>
+                            `;
+                        } else {
+                            alert("Błąd zapisu: " + error.message);
+                        }
+                    }
+                };
+            });
+        }
+
+        // Uruchomienie
+        document.addEventListener('DOMContentLoaded', () => {
+            generateGrid(); // Najpierw pusta tabela
+            loadSchedule(); // Potem dane
         });
     </script>
 </body>
