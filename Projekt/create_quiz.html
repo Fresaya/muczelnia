@@ -6,151 +6,40 @@
     <title>mUczelnia - Kreator Quizu</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* (Style analogiczne do create_course - skrócone dla czytelności) */
         .editor-tabs { display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
         .tab-btn { background: none; border: none; font-size: 14px; font-weight: 600; color: var(--text-muted); cursor: pointer; padding: 5px 10px; border-radius: 5px; transition: 0.2s; }
         .tab-btn:hover { color: var(--text-main); background: var(--hover-bg); }
         .tab-btn.active { color: #9C27B0; background: rgba(156, 39, 176, 0.1); }
         .edit-area { min-height: 200px; font-family: sans-serif; background: var(--panel-bg); color: var(--text-main); border: 1px solid var(--border-color); width: 100%; box-sizing: border-box; padding: 10px; border-radius: 8px;}
         .quiz-editor-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-        .correct-radio { width: 20px; height: 20px; cursor: pointer; accent-color: #4CAF50; }
+        /* Style dla inputów wyboru */
+        .correct-input { width: 20px; height: 20px; cursor: pointer; accent-color: #4CAF50; }
+        
         .lesson-item { cursor: grab; user-select: none; display: flex; justify-content: space-between; align-items: center; color: var(--text-main);}
         .lesson-item:active { cursor: grabbing; }
         .big-add-btn { display: inline-block; margin-top: 20px; padding: 15px 30px; border: 2px dashed #9C27B0; color: #9C27B0; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 16px; background: var(--panel-bg); }
         .big-add-btn:hover { background: rgba(156, 39, 176, 0.05); }
-        /* --- STYL DOLNEGO PASKA (DODAJ TO DO <STYLE>) --- */
+        
         .bottom-bar {
-            position: fixed;       /* Przyklej do ekranu */
-            bottom: 0;
-            right: 0;
-            width: 100%;           /* Szerokość ekranu */
-            background: var(--panel-bg);
-            border-top: 1px solid var(--border-color);
-            padding: 15px 40px;
-            display: flex;
-            justify-content: flex-end; /* Przycisk po prawej */
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.1);
-            z-index: 1000;         /* Zawsze na wierzchu */
-            box-sizing: border-box;
+            position: fixed; bottom: 0; right: 0; width: 100%; background: var(--panel-bg); border-top: 1px solid var(--border-color);
+            padding: 15px 40px; display: flex; justify-content: flex-end; box-shadow: 0 -5px 20px rgba(0,0,0,0.1); z-index: 1000; box-sizing: border-box;
         }
-
-        /* Odsunięcie treści, żeby pasek jej nie zasłaniał */
-
-        /* Wygląd samego przycisku */
         .save-button {
-            background-color: var(--accent-color);
-            color: white;
-            border: none;
-            padding: 12px 30px;
-            font-size: 16px;
-            font-weight: bold;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            background-color: var(--accent-color); color: white; border: none; padding: 12px 30px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s; display: flex; align-items: center; gap: 10px;
         }
+        .save-button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(240, 74, 74, 0.4); }
+        .save-button:disabled { background-color: #ccc; cursor: not-allowed; transform: none; box-shadow: none; }
 
-        .save-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(240, 74, 74, 0.4);
-        }
+        .course-layout { display: flex; height: calc(100vh - 70px); width: 100%; overflow: hidden; margin-top: 0; }
+        .course-sidebar { width: 260px; min-width: 260px; background: var(--panel-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; height: 100%; z-index: 10; }
+        .lesson-list { flex: 1; overflow-y: auto; padding: 0; margin: 0; list-style: none; }
+        .add-lesson-btn { padding: 20px; text-align: center; background: var(--hover-bg); cursor: pointer; font-weight: bold; color: var(--accent-color); border-top: 1px solid var(--border-color); flex-shrink: 0; }
+        .course-content { flex: 1; background-color: var(--bg-color); overflow-y: auto; padding: 40px; display: flex; justify-content: center; align-items: flex-start; }
+        .lesson-card { background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 40px; width: 100%; max-width: 850px; box-shadow: var(--shadow); margin-bottom: 50px; }
 
-        .save-button:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        /* Dodatkowo upewnij się, że lista się przewija, a przycisk jest zawsze widoczny */
-
-        .add-lesson-btn {
-            padding: 15px;
-            text-align: center;
-            background: var(--hover-bg);
-            cursor: pointer;
-            font-weight: bold;
-            color: var(--accent-color);
-            border-top: 1px solid var(--border-color);
-            transition: 0.2s;
-            flex-shrink: 0; /* Nie zgniataj przycisku */
-        }
-        
-        .add-lesson-btn:hover {
-            background: rgba(33, 150, 243, 0.1);
-        }
-
-        /* --- UKŁAD GŁÓWNY (FLEXBOX) --- */
-        
-        /* 1. Kontener na całą stronę (bez paska dolnego) */
-        .course-layout {
-            display: flex;           /* Układ: Pasek obok Treści */
-            height: calc(100vh - 70px); /* Wysokość ekranu MINUS dolny pasek */
-            width: 100%;
-            overflow: hidden;        /* Ukryj paski przewijania całego okna */
-            margin-top: 0;           /* Upewnij się, że nie ma marginesów */
-        }
-
-        /* 2. Pasek Boczny (Zwykły element, nie fixed) */
-        .course-sidebar {
-            width: 260px;            /* Sztywna szerokość */
-            min-width: 260px;        /* Nie ściskaj go */
-            background: var(--panel-bg);
-            border-right: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-            height: 100%;            /* Wypełnij wysokość kontenera */
-            z-index: 10;
-        }
-
-        /* Lista lekcji przewija się wewnątrz paska */
-        .lesson-list {
-            flex: 1;                 /* Zajmij wolne miejsce */
-            overflow-y: auto;        /* Przewijaj, jeśli długa lista */
-            padding: 0;
-            margin: 0;
-            list-style: none;
-        }
-
-        .add-lesson-btn {
-            padding: 20px;
-            text-align: center;
-            background: var(--hover-bg);
-            cursor: pointer;
-            font-weight: bold;
-            color: var(--accent-color);
-            border-top: 1px solid var(--border-color);
-            flex-shrink: 0;          /* Przycisk zawsze widoczny na dole */
-        }
-
-        /* 3. Główna Treść (Prawa strona) */
-        .course-content {
-            flex: 1;                 /* Zajmij całą resztę szerokości */
-            background-color: var(--bg-color); /* Tło pod kartą */
-            overflow-y: auto;        /* Przewijaj treść, nie pasek boczny */
-            padding: 40px;           /* Odstęp dookoła */
-            
-            /* Wyśrodkowanie zawartości (Centrowanie) */
-            display: flex;
-            justify-content: center; 
-            align-items: flex-start; 
-        }
-
-        /* 4. Karta Edycji (Biała kartka na środku) */
-        .lesson-card {
-            background: var(--panel-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 40px;
-            width: 100%;
-            max-width: 850px;        /* Maksymalna szerokość (żeby nie była za szeroka) */
-            box-shadow: var(--shadow);
-            margin-bottom: 50px;     /* Luz na dole przy przewijaniu */
-        }
-
-        
+        /* Styl dla opcji typu pytania */
+        .question-type-toggle { margin-bottom: 20px; padding: 10px; background: rgba(0,0,0,0.03); border-radius: 8px; border: 1px solid var(--border-color); display: flex; align-items: center; gap: 10px; }
     </style>
 </head>
 <body>
@@ -207,8 +96,15 @@
                     </div>
 
                     <div id="mode-edit">
-                        <textarea id="question-text-input" class="edit-area" placeholder="Treść pytania..." oninput="updateQuestionState()" style="height:100px; margin-bottom:20px; font-size:16px; font-weight:bold;"></textarea>
-                        <label style="font-size:12px; color:var(--text-muted); font-weight:bold; display:block; margin-bottom:10px;">ODPOWIEDZI (Zaznacz poprawną):</label>
+                        <textarea id="question-text-input" class="edit-area" placeholder="Treść pytania..." oninput="updateQuestionState()" style="height:100px; margin-bottom:15px; font-size:16px; font-weight:bold;"></textarea>
+                        
+                        <div class="question-type-toggle">
+                            <input type="checkbox" id="q-multi-check" style="width: 18px; height: 18px; accent-color: #9C27B0;" onchange="updateQuestionType(this.checked)">
+                            <label for="q-multi-check" style="font-size:14px; font-weight:bold; color:var(--text-main); cursor:pointer;">Wielokrotny wybór</label>
+                            <span style="font-size:12px; color:var(--text-muted);">(Zaznacz, jeśli poprawnych jest więcej niż jedna odpowiedź)</span>
+                        </div>
+
+                        <label style="font-size:12px; color:var(--text-muted); font-weight:bold; display:block; margin-bottom:10px;">ODPOWIEDZI (Zaznacz poprawne):</label>
                         <div id="answers-container"></div>
                         <button class="login-button" style="width:auto; padding:5px 15px; margin-top:10px; font-size:12px;" onclick="addAnswerChoice()">+ Dodaj opcję</button>
                     </div>
@@ -292,14 +188,16 @@
             document.getElementById('quiz-attempt-limit').value = course.attempt_limit || 1;
             document.getElementById('quiz-randomize').checked = course.randomize_answers ?? true;
 
+            // ZMIANA: Pobieramy kolumnę is_multiple_choice z bazy
             const { data: lessons } = await _supabase.from('lessons')
-                .select(`id, title, order_index, lesson_components ( content_text_blocks ( content ) ), lesson_answers ( answer_text, is_correct )`)
+                .select(`id, title, order_index, is_multiple_choice, lesson_components ( content_text_blocks ( content ) ), lesson_answers ( answer_text, is_correct )`)
                 .eq('course_id', id).order('order_index');
 
             if (lessons) {
                 questions = lessons.map(l => ({
                     id: l.id,
                     title: l.title || "",
+                    isMultiple: l.is_multiple_choice || false, // Odczytujemy flagę
                     answers: l.lesson_answers.map(a => ({ text: a.answer_text, isCorrect: a.is_correct }))
                 }));
                 renderSidebar();
@@ -321,7 +219,8 @@
 
         function addNewQuestion() {
             const id = 'new-' + Date.now();
-            questions.push({ id, title: "", answers: [{text:"", isCorrect:false}, {text:"", isCorrect:false}] });
+            // ZMIANA: Domyślnie pytanie nie jest wielokrotne
+            questions.push({ id, title: "", isMultiple: false, answers: [{text:"", isCorrect:false}, {text:"", isCorrect:false}] });
             renderSidebar(); selectQuestion(id);
         }
 
@@ -333,18 +232,49 @@
             
             const q = questions.find(x => x.id === id);
             document.getElementById('question-text-input').value = q.title;
+            // Ustawiamy stan checkboxa "Wielokrotny wybór"
+            document.getElementById('q-multi-check').checked = q.isMultiple; 
+            
             renderAnswers(q);
             renderSidebar();
+        }
+
+        function updateQuestionType(isMulti) {
+            const q = questions.find(x => x.id === activeQId);
+            q.isMultiple = isMulti;
+            
+            // Jeśli przełączono na JEDNOKROTNY wybór, a zaznaczonych jest kilka - zostawiamy tylko pierwszą
+            if (!isMulti) {
+                let foundCorrect = false;
+                q.answers.forEach(a => {
+                    if (a.isCorrect && !foundCorrect) {
+                        foundCorrect = true; // Zostawiamy tę
+                    } else {
+                        a.isCorrect = false; // Odznaczamy resztę
+                    }
+                });
+            }
+            renderAnswers(q);
         }
 
         function renderAnswers(q) {
             const c = document.getElementById('answers-container');
             c.innerHTML = '';
+            // Jeśli isMultiple = true -> używamy typu 'checkbox', jeśli false -> 'radio'
+            const inputType = q.isMultiple ? 'checkbox' : 'radio';
+            
             q.answers.forEach((ans, idx) => {
                 const row = document.createElement('div');
                 row.className = 'quiz-editor-row';
+                
+                // ZMIANA: Obsługa logiczna radio vs checkbox
+                // Dla radio: setCorrect (tylko jeden). Dla checkbox: toggleCorrect (przełącz)
+                const onClickAction = q.isMultiple ? `toggleCorrect(${idx})` : `setCorrect(${idx})`;
+                
                 row.innerHTML = `
-                    <input type="radio" name="correctAns" class="correct-radio" ${ans.isCorrect ? 'checked' : ''} onchange="setCorrect(${idx})">
+                    <input type="${inputType}" name="correctAns" class="correct-input" 
+                           ${ans.isCorrect ? 'checked' : ''} 
+                           onchange="${onClickAction}">
                     <input type="text" class="edit-input" value="${ans.text}" oninput="updateAnsText(${idx}, this.value)" placeholder="Odpowiedź ${idx+1}" style="flex:1;">
                     <span style="color:red; cursor:pointer;" onclick="removeAns(${idx})">&times;</span>
                 `;
@@ -365,9 +295,19 @@
             renderAnswers(q);
         }
 
+        // Ustawia tylko jedną poprawną (dla Radio)
         function setCorrect(idx) {
             const q = questions.find(x => x.id === activeQId);
             q.answers.forEach((a, i) => a.isCorrect = (i === idx));
+            // Dla pewności przerysowujemy, żeby zaktualizować widok (np. odznaczyć inne)
+            renderAnswers(q); 
+        }
+
+        // Przełącza poprawność (dla Checkbox)
+        function toggleCorrect(idx) {
+            const q = questions.find(x => x.id === activeQId);
+            q.answers[idx].isCorrect = !q.answers[idx].isCorrect;
+            // Tutaj nie trzeba renderAnswers, bo checkbox sam zmienia stan wizualny, ale dla spójności danych można
         }
 
         function updateAnsText(idx, val) {
@@ -403,9 +343,13 @@
             else {
                 edit.style.display='none'; prev.style.display='block';
                 const q = questions.find(x => x.id === activeQId);
-                let html = `<h3>${q.title || '???'}</h3>`;
+                let html = `<h3>${q.title || '???'} ${q.isMultiple ? '<span style="font-size:12px;color:#888;">(Wielokrotny)</span>' : ''}</h3>`;
                 q.answers.forEach(a => {
-                    html += `<div style="padding:10px; border:1px solid #eee; margin:5px; border-radius:5px; background:${a.isCorrect ? '#E8F5E9' : '#fff'};">${a.text}</div>`;
+                    // W podglądzie też pokazujemy, które są poprawne
+                    html += `<div style="padding:10px; border:1px solid #eee; margin:5px; border-radius:5px; background:${a.isCorrect ? '#E8F5E9' : '#fff'}; display:flex; align-items:center;">
+                        <input type="${q.isMultiple ? 'checkbox' : 'radio'}" disabled ${a.isCorrect ? 'checked' : ''}>
+                        <span style="margin-left:10px;">${a.text}</span>
+                    </div>`;
                 });
                 prev.innerHTML = html;
             }
@@ -443,7 +387,7 @@
                     if (pkgOpt === 'new') {
                         const { data: pkg } = await _supabase.from('packages').insert({ 
                             title: document.getElementById('new-pkg-name').value, 
-                            description: document.getElementById('new-pkg-desc').value, // OPIS
+                            description: document.getElementById('new-pkg-desc').value,
                             level: document.getElementById('new-pkg-level').value 
                         }).select().single();
                         packageId = pkg.id;
@@ -471,13 +415,25 @@
                 for (let i = 0; i < questions.length; i++) {
                     const q = questions[i];
                     let lessonId = q.id;
+                    
+                    // Payload z nową kolumną is_multiple_choice
+                    const lessonPayload = { 
+                        title: q.title, 
+                        order_index: i+1,
+                        is_multiple_choice: q.isMultiple // ZAPISUJEMY TO!
+                    };
+
                     if (String(q.id).startsWith('new-')) {
-                        const { data: l } = await _supabase.from('lessons').insert({ course_id: courseId, title: q.title, order_index: i+1 }).select().single();
+                        // Insert
+                        lessonPayload.course_id = courseId;
+                        const { data: l } = await _supabase.from('lessons').insert(lessonPayload).select().single();
                         lessonId = l.id;
+                        // Dodajemy pusty blok tekstu jako kompatybilność ze starym systemem (opcjonalne)
                         const { data: c } = await _supabase.from('content_text_blocks').insert({ content: "Pytanie" }).select().single();
                         await _supabase.from('lesson_components').insert({ lesson_id: lessonId, order_index: 1, component_type: 'text', content_text_block_id: c.id });
                     } else {
-                        await _supabase.from('lessons').update({ title: q.title, order_index: i+1 }).eq('id', lessonId);
+                        // Update
+                        await _supabase.from('lessons').update(lessonPayload).eq('id', lessonId);
                         await _supabase.from('lesson_answers').delete().eq('lesson_id', lessonId);
                     }
                     const ansPayload = q.answers.filter(a => a.text).map(a => ({ lesson_id: lessonId, answer_text: a.text, is_correct: a.isCorrect }));
