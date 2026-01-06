@@ -89,7 +89,7 @@
             transition: transform 0.3s ease;
         }
         .chat-toggle-btn:hover { transform: scale(1.1); }
-        .chat-toggle-btn.hidden { display: none; }
+        /* Usunięto klasę .hidden, aby przycisk nie znikał */
 
         .chat-container {
             position: fixed;
@@ -547,10 +547,10 @@
             isChatOpen = !isChatOpen;
             if (isChatOpen) {
                 chatWindow.classList.add('active');
-                toggleBtn.classList.add('hidden');
+                // Usunięto: toggleBtn.classList.add('hidden');
             } else {
                 chatWindow.classList.remove('active');
-                toggleBtn.classList.remove('hidden');
+                // Usunięto: toggleBtn.classList.remove('hidden');
             }
         }
 
