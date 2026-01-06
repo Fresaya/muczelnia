@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>mUczelnia - Zarządzaj Rodzicami</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Style tabeli i filtrów takie same jak wyżej */
+        .filter-bar { background: var(--panel-bg); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; gap: 15px; margin-bottom: 20px; }
+        .data-table { width: 100%; border-collapse: collapse; background: var(--panel-bg); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow); }
+        .data-table th, .data-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        .data-table th { background: rgba(0,0,0,0.02); font-weight: 600; color: var(--text-muted); }
+        
+        .child-tag { display: inline-flex; align-items: center; background: rgba(33, 150, 243, 0.1); color: #2196F3; padding: 2px 8px; border-radius: 10px; font-size: 12px; margin-right: 5px; margin-bottom: 2px; }
+        .remove-child { cursor: pointer; color: red; margin-left: 5px; font-weight: bold; }
+        
+        .btn-add-child { background: #4CAF50; color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; border: none; }
+        .table-btn { cursor: pointer; padding: 5px; border-radius: 5px; display: inline-block; margin-right: 5px; }
+        
+        /* Modal */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-overlay.active { display: flex; }
+        .modal-window { background: var(--panel-bg); padding: 30px; border-radius: 12px; width: 400px; max-width: 90%; }
+    </style>
+</head>
+<body>
+    <div class="layout-wrapper">
+        <aside class="sidebar-left">
+            <div class="top-section">
+                <div class="brand-area"><a href="dashboard.html" class="logo-text"><span>m</span>Uczelnia</a></div>
+                <ul class="nav-menu">
+                    <li class="nav-item"><a href="dashboard.html" class="nav-link"><span>Pulpit</span></a></li>
+                    <li class="nav-item"><a href="#" class="nav-link active"><span>Rodzice</span></a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="welcome-header">
+                <div>
+                    <a href="dashboard.html" style="text-decoration:none; color:var(--text-muted);">← Wróć</a>
+                    <h1>Zarządzaj Rodzicami</h1>
+                </div>
+            </div>
+
+            <div class="filter-bar">
+                <input type="text" id="search-parent" class="edit-input" placeholder="Szukaj rodzica..." style="max-width: 300px;">
+            </div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Rodzic</th>
+                        <th>Email</th>
+                        <th>Przypisane Dzieci</th>
+                        <th>Akcje</th>
+                    </tr>
+                </thead>
+                <tbody id="parents-body">
+                    <tr><td colspan="4" style="text-align:center;">Ładowanie...</td></tr>
+                </tbody>
+            </table>
+        </main>
+    </div>
+
+    <div class="modal-overlay" id="assignChildModal">
+        <div class="modal-window">
+            <h3>Przypisz Dziecko</h3>
+            <p id="modal-parent-name" style="color:var(--text-muted); margin-bottom:15px;"></p>
+            <input type="text" id="search-student-input" class="edit-input" placeholder="Wpisz nazwisko ucznia...">
+            <button class="login-button" style="width:auto; margin-top:5px; background:#2196F3;" onclick="searchStudent()">Szukaj</button>
+            
+            <ul id="student-results" style="list-style:none; padding:0; margin-top:10px; border:1px solid var(--border-color); max-height:150px; overflow-y:auto; display:none;"></ul>
+            
+            <div style="text-align:right; margin-top:20px;">
+                <button class="login-button" style="background:#ccc; width:auto; color:#333;" onclick="closeModal()">Anuluj</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg'; 
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        let allParents = [];
+        let activeParentId = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (!session) { window.location.href = 'login.html'; return; }
+            
+            const { data: user } = await _supabase.from('users').select('role, school_id').eq('id', session.user.id).single();
+            if (!['admin', 'manager'].includes(user.role)) { alert("Brak uprawnień."); window.location.href='dashboard.html'; return; }
+
+            loadParents(user);
+            document.getElementById('search-parent').addEventListener('input', renderTable);
+        });
+
+        async function loadParents(currentUser) {
+            // Pobieramy rodziców. Managera filtrujemy po szkole (jeśli rodzic ma przypisaną szkołę)
+            let query = _supabase.from('users').select('id, username, email, parent_children(child_id)').eq('role', 'parent').order('username');
+            if (currentUser.role === 'manager') query = query.eq('school_id', currentUser.school_id);
+
+            const { data, error } = await query;
+            if (error) { alert(error.message); return; }
+
+            // Dla każdego rodzica pobierz dane dzieci (imiona)
+            const parents = data || [];
+            
+            // Pobieramy wszystkie relacje żeby dociągnąć imiona dzieci
+            for (let p of parents) {
+                p.childrenDetails = [];
+                if (p.parent_children && p.parent_children.length > 0) {
+                    const childIds = p.parent_children.map(pc => pc.child_id);
+                    const { data: kids } = await _supabase.from('users').select('id, username').in('id', childIds);
+                    if (kids) p.childrenDetails = kids;
+                }
+            }
+            
+            allParents = parents;
+            renderTable();
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('parents-body');
+            tbody.innerHTML = '';
+            const search = document.getElementById('search-parent').value.toLowerCase();
+
+            const filtered = allParents.filter(p => 
+                (p.username && p.username.toLowerCase().includes(search)) || 
+                (p.email && p.email.toLowerCase().includes(search))
+            );
+
+            if(filtered.length === 0) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Brak wyników.</td></tr>'; return; }
+
+            filtered.forEach(p => {
+                let childrenHtml = '';
+                p.childrenDetails.forEach(kid => {
+                    childrenHtml += `<span class="child-tag">${kid.username} <span class="remove-child" onclick="removeChild('${p.id}', '${kid.id}')">&times;</span></span>`;
+                });
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-weight:bold;">${p.username}</td>
+                    <td>${p.email}</td>
+                    <td>
+                        ${childrenHtml}
+                        <button class="btn-add-child" onclick="openAssignModal('${p.id}', '${p.username}')">+ Przypisz</button>
+                    </td>
+                    <td>
+                        <div class="table-btn" style="background:#F44336; color:white;" onclick="deleteUser('${p.id}')" title="Usuń konto">❌</div>
+                        <div class="table-btn" style="background:#FF9800; color:white;" onclick="resetPass('${p.id}', '${p.username}')" title="Hasło">🔑</div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- Zarządzanie dziećmi ---
+
+        function openAssignModal(parentId, parentName) {
+            activeParentId = parentId;
+            document.getElementById('modal-parent-name').innerText = `Rodzic: ${parentName}`;
+            document.getElementById('assignChildModal').classList.add('active');
+            document.getElementById('student-results').style.display = 'none';
+            document.getElementById('search-student-input').value = '';
+        }
+
+        function closeModal() { document.getElementById('assignChildModal').classList.remove('active'); }
+
+        async function searchStudent() {
+            const term = document.getElementById('search-student-input').value;
+            if(term.length < 3) return alert("Wpisz min. 3 znaki.");
+            
+            const list = document.getElementById('student-results');
+            list.style.display = 'block'; list.innerHTML = '<li>Szukanie...</li>';
+
+            const { data } = await _supabase.from('users').select('id, username, email').eq('role', 'student').ilike('username', `%${term}%`).limit(5);
+            
+            list.innerHTML = '';
+            if(!data || data.length === 0) { list.innerHTML = '<li>Brak wyników</li>'; return; }
+
+            data.forEach(s => {
+                const li = document.createElement('li');
+                li.style.padding = "10px"; li.style.borderBottom = "1px solid #eee"; li.style.cursor = "pointer";
+                li.innerHTML = `<b>${s.username}</b> <small>(${s.email})</small>`;
+                li.onclick = () => assignChildToParent(s);
+                li.onmouseover = () => li.style.background = "#f0f0f0";
+                li.onmouseout = () => li.style.background = "#fff";
+                list.appendChild(li);
+            });
+        }
+
+        async function assignChildToParent(student) {
+            if(!confirm(`Przypisać ${student.username} do rodzica?`)) return;
+            
+            const { error } = await _supabase.from('parent_children').insert({ parent_id: activeParentId, child_id: student.id });
+            if(error) alert("Błąd: " + error.message);
+            else {
+                alert("Przypisano!");
+                closeModal();
+                // Odśwież dane
+                const parent = allParents.find(p => p.id === activeParentId);
+                parent.childrenDetails.push(student); // Aktualizacja lokalna
+                renderTable();
+            }
+        }
+
+        async function removeChild(parentId, childId) {
+            if(!confirm("Odpisać dziecko od tego rodzica?")) return;
+            const { error } = await _supabase.from('parent_children').delete().eq('parent_id', parentId).eq('child_id', childId);
+            if(error) alert("Błąd: " + error.message);
+            else {
+                const parent = allParents.find(p => p.id === parentId);
+                parent.childrenDetails = parent.childrenDetails.filter(k => k.id !== childId);
+                renderTable();
+            }
+        }
+
+        async function deleteUser(id) {
+            if(confirm("Usunąć konto rodzica?")) {
+                await _supabase.from('users').delete().eq('id', id);
+                allParents = allParents.filter(p => p.id !== id);
+                renderTable();
+            }
+        }
+        
+        async function resetPass(id, name) {
+            const p = prompt(`Nowe hasło dla ${name}:`, "rodzic123");
+            if(p) await _supabase.rpc('admin_reset_password', { target_user_id: id, new_password: p });
+        }
+    </script>
+</body>
+</html>
