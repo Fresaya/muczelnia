@@ -6,7 +6,7 @@
     <title>mUczelnia - Kreator Quizu</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        .editor-tabs { display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+        .editor-tabs { display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 1px sClid var(--border-color); padding-bottom: 10px; }
         .tab-btn { background: none; border: none; font-size: 14px; font-weight: 600; color: var(--text-muted); cursor: pointer; padding: 5px 10px; border-radius: 5px; transition: 0.2s; }
         .tab-btn:hover { color: var(--text-main); background: var(--hover-bg); }
         .tab-btn.active { color: #9C27B0; background: rgba(156, 39, 176, 0.1); }
@@ -358,6 +358,13 @@
         function handleSaveClick() {
             if (!quizData.title) return alert("Podaj nazwę quizu!");
             if (questions.length === 0) return alert("Dodaj pytania!");
+            for (let i = 0; i < questions.length; i++) {
+                const q = questions[i];
+                const hasCorrect = q.answers.some(a => a.isCorrect);
+                if (!hasCorrect) {
+                    return alert(`Pytanie nr ${i + 1} ("${q.title.substring(0, 20)}...") nie ma zaznaczonej poprawnej odpowiedzi!`);
+                }
+            }
             if (editId) saveQuizToDB(false);
             else { document.getElementById('packageModal').classList.add('active'); openPackageModal(); }
         }
