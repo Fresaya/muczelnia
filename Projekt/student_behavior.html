@@ -7,13 +7,15 @@
     <link rel="stylesheet" href="style.css">
     <style>
         .points-summary {
-            background: linear-gradient(135deg, var(--accent), #4338ca);
+            /* ZMIANA: Solidny ciemnoszary kolor tła zamiast gradientu */
+            background: #4b5563; 
             color: white;
             padding: 30px;
             border-radius: 12px;
             text-align: center;
             margin-bottom: 30px;
-            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+            /* ZMIANA: Cień bardziej neutralny */
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
         .points-value { font-size: 3rem; font-weight: 800; display: block; margin: 10px 0; }
         
@@ -111,13 +113,11 @@
             if (!relations || relations.length === 0) return;
 
             const childIds = relations.map(r => r.child_id);
-            // Pobieramy też 'behavior_points' z tabeli users dla dzieci
             const { data: children } = await _supabase.from('users').select('id, username, behavior_points').in('id', childIds);
 
             const select = document.getElementById('childSelect');
             select.innerHTML = '';
             
-            // Przechowujemy dane dzieci w pamięci, żeby nie robić requestu o punkty przy każdej zmianie
             window.childDataCache = children;
 
             children.forEach(child => {
@@ -135,13 +135,11 @@
 
         function changeChild() {
             const childId = document.getElementById('childSelect').value;
-            // Znajdź punkty wybranego dziecka w cache
             const child = window.childDataCache.find(c => c.id === childId);
             fetchBehavior(childId, child ? child.behavior_points : 100);
         }
 
         async function fetchBehavior(studentId, currentPoints) {
-            // 1. Wyświetl punkty (z tabeli users)
             document.getElementById('total-points').innerText = currentPoints !== undefined ? currentPoints : '100';
             
             let grade = "Wzorowe";
@@ -152,7 +150,6 @@
             
             document.getElementById('behavior-grade-prediction').innerText = `Przewidywana ocena: ${grade}`;
 
-            // 2. Pobierz uwagi (z tabeli remarks)
             const container = document.getElementById('remarks-container');
             container.innerHTML = '<p>Ładowanie uwag...</p>';
 
