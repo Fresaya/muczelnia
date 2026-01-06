@@ -6,7 +6,17 @@
     <title>mUczelnia - Zarządzaj Nauczycielami</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        .filter-bar { background: var(--panel-bg); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 20px; align-items: center; }
+        .filter-bar { 
+            background: var(--panel-bg); 
+            padding: 15px; 
+            border-radius: 12px; 
+            border: 1px solid var(--border-color); 
+            display: flex; 
+            gap: 15px; 
+            flex-wrap: wrap; 
+            margin-bottom: 20px; 
+            align-items: center; 
+        }
         .data-table { width: 100%; border-collapse: collapse; background: var(--panel-bg); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow); }
         .data-table th, .data-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); }
         .data-table th { background: rgba(0,0,0,0.02); font-weight: 600; color: var(--text-muted); }
@@ -36,6 +46,10 @@
             </div>
 
             <div class="filter-bar">
+                <select id="filter-school" class="edit-input" style="max-width: 250px;">
+                    <option value="">Wszystkie szkoły</option>
+                </select>
+                
                 <input type="text" id="search-teacher" class="edit-input" placeholder="Szukaj (imię, email)..." style="max-width: 300px;">
             </div>
 
@@ -73,34 +87,77 @@
                 alert("Brak dostępu."); window.location.href = 'dashboard.html'; return;
             }
 
-            loadTeachers(user);
+            await initData(user);
+            
+            // Listenery filtrów
             document.getElementById('search-teacher').addEventListener('input', renderTable);
+            document.getElementById('filter-school').addEventListener('change', renderTable);
         });
 
-        async function loadTeachers(currentUser) {
-            let query = _supabase.from('users').select('id, username, email, schools(name)').eq('role', 'teacher').order('username');
+        async function initData(currentUser) {
+            // 1. Ładowanie Szkół do Filtra
+            const schoolSelect = document.getElementById('filter-school');
+            let schoolQuery = _supabase.from('schools').select('id, name').order('name');
             
-            // Manager widzi tylko nauczycieli ze swojej szkoły
+            // Jeśli manager -> pobierz tylko jego szkołę
             if (currentUser.role === 'manager') {
-                query = query.eq('school_id', currentUser.school_id);
+                schoolQuery = schoolQuery.eq('id', currentUser.school_id);
             }
 
-            const { data, error } = await query;
+            const { data: schools } = await schoolQuery;
+            
+            if (schools) {
+                // Jeśli to Manager, wyczyść opcję "Wszystkie" bo i tak ma widzieć tylko jedną
+                if (currentUser.role === 'manager') {
+                    schoolSelect.innerHTML = '';
+                }
+
+                schools.forEach(s => {
+                    schoolSelect.add(new Option(s.name, s.id));
+                });
+
+                // Jeśli Manager -> ustaw jego szkołę i zablokuj select
+                if (currentUser.role === 'manager') {
+                    schoolSelect.value = currentUser.school_id;
+                    schoolSelect.disabled = true; // Zablokowanie edycji
+                }
+            }
+
+            // 2. Ładowanie Nauczycieli
+            let teacherQuery = _supabase.from('users')
+                .select('id, username, email, school_id, schools(name)')
+                .eq('role', 'teacher')
+                .order('username');
+            
+            // Jeśli Manager -> pobierz tylko z jego szkoły (zabezpieczenie backendowe)
+            if (currentUser.role === 'manager') {
+                teacherQuery = teacherQuery.eq('school_id', currentUser.school_id);
+            }
+
+            const { data: teachers, error } = await teacherQuery;
             if (error) { alert("Błąd: " + error.message); return; }
             
-            allTeachers = data || [];
+            allTeachers = teachers || [];
             renderTable();
         }
 
         function renderTable() {
             const tbody = document.getElementById('teachers-body');
             tbody.innerHTML = '';
-            const search = document.getElementById('search-teacher').value.toLowerCase();
+            
+            const searchVal = document.getElementById('search-teacher').value.toLowerCase();
+            const schoolVal = document.getElementById('filter-school').value;
 
-            const filtered = allTeachers.filter(t => 
-                (t.username && t.username.toLowerCase().includes(search)) || 
-                (t.email && t.email.toLowerCase().includes(search))
-            );
+            const filtered = allTeachers.filter(t => {
+                // Filtr wyszukiwania
+                const matchSearch = (t.username && t.username.toLowerCase().includes(searchVal)) || 
+                                    (t.email && t.email.toLowerCase().includes(searchVal));
+                
+                // Filtr szkoły (jeśli wybrana "Wszystkie" czyli "", to true)
+                const matchSchool = schoolVal === "" || (t.school_id == schoolVal);
+
+                return matchSearch && matchSchool;
+            });
 
             if (filtered.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">Brak wyników.</td></tr>';
@@ -126,7 +183,7 @@
         async function resetPass(userId, name) {
             const newPw = prompt(`Nowe hasło dla ${name}:`, "nauczyciel123");
             if (!newPw) return;
-            // Zakładam istnienie funkcji RPC (tej samej co dla studentów)
+            
             const { error } = await _supabase.rpc('admin_reset_password', { target_user_id: userId, new_password: newPw });
             if (error) alert("Błąd: " + error.message);
             else alert("Hasło zmienione!");
