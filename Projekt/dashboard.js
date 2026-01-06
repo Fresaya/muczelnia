@@ -8,7 +8,6 @@ let currentUserClassId = null;
 let schoolsCache = [];
 let generatedMemberCode = null;
 
-// --- NOWE ZMIENNE DLA RODZICA ---
 let selectedChildrenIds = []; 
 let currentChildId = null;
 
@@ -27,8 +26,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         currentUserClassId = profile.class_id;
         
         document.getElementById('profile-name-display').textContent = profile.username;
-        // Mapa ról rozszerzona o Rodzica
-        const roleMap = { 'student': 'UCZEŃ', 'teacher': 'NAUCZYCIEL', 'manager': 'MANAGER', 'admin': 'ADMIN', 'lecturer': 'WYKŁADOWCA', 'parent': 'RODZIC' };
+        // ZMIANA NAZWY ROLI
+        const roleMap = { 'student': 'UCZEŃ', 'teacher': 'NAUCZYCIEL', 'manager': 'SEKRETARIAT', 'admin': 'ADMIN', 'lecturer': 'WYKŁADOWCA', 'parent': 'RODZIC' };
         document.getElementById('profile-role-display').textContent = (roleMap[profile.role] || profile.role).toUpperCase();
         
         let schoolInfo = "";
@@ -41,21 +40,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         // 1. RODZIC
         if (currentUserRole === 'parent') {
-            // Rodzic widzi sekcję studenta (ale dla dziecka)
             show('student-sidebar-content'); 
             show('widget-student-grades');
             show('widget-student-calendar');
             show('widget-student-behavior');
             
-            // Ukrywamy widgety kadry
             ['widget-assign-course', 'widget-teacher-results', 'widget-teacher-grades', 'widget-calendar', 'widget-teacher-behavior'].forEach(hide);
-            // Ukrywamy widget kursów (chyba że rodzic ma je widzieć)
             hide('widget-student-courses');
 
-            // Kliknięcie w kalendarz otwiera modal
             document.getElementById('widget-student-calendar').onclick = () => openCalendarModal();
 
-            // Pobieramy dzieci
             const { data: relations } = await _supabase.from('parent_children')
                 .select('child_id, users:child_id(username)')
                 .eq('parent_id', userId);
@@ -70,30 +64,30 @@ document.addEventListener('DOMContentLoaded', async () => {
                     selector.add(new Option(rel.users.username, rel.child_id));
                     if(index === 0) currentChildId = rel.child_id;
                 });
-
-                // Załaduj dane pierwszego dziecka
                 switchChildView(currentChildId);
             } else {
                 alert("Brak przypisanych dzieci.");
             }
 
         } 
-        // 2. KADRA (Admin, Nauczyciel, Manager, Wykładowca)
+        // 2. KADRA (Admin, Manager, Teacher, Lecturer)
         else if (['admin', 'manager', 'teacher', 'lecturer'].includes(currentUserRole)) {
-            show('widget-assign-course');
             show('widget-teacher-results');
             show('widget-teacher-grades');
             show('widget-calendar');
             show('widget-teacher-behavior');
             
-            document.getElementById('widget-assign-course').onclick = () => openAssignCourseModal();
             document.getElementById('widget-calendar').onclick = () => openCalendarModal();
 
+            // POPRAWKA: Nauczyciel NIE widzi "Przypisz Materiał"
+            if (['admin', 'manager', 'lecturer'].includes(currentUserRole)) {
+                show('widget-assign-course');
+                document.getElementById('widget-assign-course').onclick = () => openAssignCourseModal();
+            }
+
             if (currentUserRole === 'admin') {
-                ['widget-admin-content', 'widget-create-course', 'widget-create-quiz', 'widget-add-user', 'widget-add-school', 'widget-manage-classes', 'widget-manage-students'].forEach(show);
+                ['widget-admin-content', 'widget-create-course', 'widget-create-quiz', 'widget-add-user', 'widget-add-school', 'widget-manage-classes', 'widget-manage-students', 'widget-manage-teachers', 'widget-manage-parents'].forEach(show);
                 ['widget-student-courses', 'widget-student-grades', 'widget-student-calendar', 'widget-student-behavior'].forEach(hide);
-                show('widget-manage-teachers');
-                show('widget-manage-parents');
                 
                 document.getElementById('widget-add-user').onclick = () => openCreateUserModal();
                 document.getElementById('widget-add-school').onclick = () => openModal('addSchoolModal');
@@ -121,7 +115,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // 3. STUDENT
         else {
             show('student-sidebar-content'); 
-            currentChildId = userId; // Uczeń patrzy na siebie
+            currentChildId = userId;
             switchChildView(userId);
             
             show('widget-student-courses');
@@ -129,30 +123,25 @@ document.addEventListener('DOMContentLoaded', async () => {
             show('widget-student-calendar');
             document.getElementById('widget-student-calendar').onclick = () => openCalendarModal();
             show('widget-student-behavior');
+            show('widget-student-schedule');
         }
     }
 
-    // Listeners
-    // Pokaż/Ukryj menu po kliknięciu w awatar
     document.getElementById('avatarTrigger').addEventListener('click', (e) => { 
         e.stopPropagation(); 
         const menu = document.getElementById('profileDropdown');
-        // Przełączanie widoczności
         menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
     });
     
-    // Kliknięcie gdziekolwiek indziej zamyka menu
     window.addEventListener('click', () => { 
         document.getElementById('profileDropdown').style.display = 'none'; 
     });
-    window.addEventListener('click', () => document.getElementById('profileDropdown').classList.remove('show'));
-    // Obsługa wylogowania (to już masz)
+    
     document.getElementById('logoutBtn').addEventListener('click', async () => { 
         await _supabase.auth.signOut(); 
         window.location.href = 'login.html'; 
     });
 
-    // NOWE: Obsługa przycisku "Zmień hasło"
     const changePassBtn = document.getElementById('changePassBtn');
     if (changePassBtn) {
         changePassBtn.addEventListener('click', () => {
@@ -168,7 +157,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('new-user-school').addEventListener('change', async function() { await loadClassesForSchool(this.value); generateEmail(); });
     document.getElementById('new-user-class').addEventListener('change', generateEmail);
 
-    // ASSIGN COURSE LOGIC
     document.getElementById('assign-school-select').addEventListener('change', async function() {
         const sid = parseInt(this.value); 
         const cSelect = document.getElementById('assign-class-select');
@@ -197,7 +185,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 });
 
-// --- COMMON FUNCTIONS ---
 function show(id) { const el=document.getElementById(id); if(el)el.style.display='flex'; }
 function hide(id) { const el=document.getElementById(id); if(el)el.style.display='none'; }
 function openModal(id) { document.getElementById(id).classList.add('active'); }
@@ -210,8 +197,6 @@ async function ensureSchoolsCache() {
     }
 }
 
-// --- NOWE FUNKCJE DLA RODZICA ---
-
 function switchChildView(childId) {
     currentChildId = childId;
     loadSidebarCalendar(childId);
@@ -219,17 +204,12 @@ function switchChildView(childId) {
     loadSidebarRemarks(childId);
 }
 
-// Zmodyfikowane funkcje ładowania (przyjmują targetUserId)
-
 async function loadSidebarCalendar(targetUserId) {
     const list = document.getElementById('sidebar-calendar-list');
-    
-    // Musimy pobrać klasę konkretnego użytkownika (dziecka)
     const { data: user } = await _supabase.from('users').select('class_id').eq('id', targetUserId).single();
     if(!user || !user.class_id) { list.innerHTML = '<p class="empty-sidebar">Brak klasy.</p>'; return; }
 
     const today = new Date().toISOString().split('T')[0];
-    
     const { data } = await _supabase.from('calendar_events')
         .select('title, event_date, subject_name')
         .eq('class_id', user.class_id)
@@ -244,20 +224,13 @@ async function loadSidebarCalendar(targetUserId) {
         const d = new Date(e.event_date);
         const dateStr = `${d.getDate()}.${d.getMonth()+1}`;
         const subj = e.subject_name ? `<b>${e.subject_name}:</b> ` : '';
-
-        list.innerHTML += `
-            <div class="sidebar-list-item">
-                <div class="sidebar-list-date">${dateStr}</div>
-                <div class="sidebar-list-content">${subj}${e.title}</div>
-            </div>`;
+        list.innerHTML += `<div class="sidebar-list-item"><div class="sidebar-list-date">${dateStr}</div><div class="sidebar-list-content">${subj}${e.title}</div></div>`;
     });
 }
 
 async function loadSidebarGrades(targetUserId) {
     const list = document.getElementById('sidebar-grades-list');
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-    
-    // targetUserId zamiast session.user.id
     const { data: grades } = await _supabase.from('grades')
         .select('grade, packages(title)')
         .eq('user_id', targetUserId)
@@ -270,18 +243,12 @@ async function loadSidebarGrades(targetUserId) {
 
     grades.forEach(g => {
         const pkgTitle = g.packages ? g.packages.title : 'Inne';
-        list.innerHTML += `
-            <div class="sidebar-list-item">
-                <div class="sidebar-grade-circle">${g.grade}</div>
-                <div class="sidebar-list-content">${pkgTitle}</div>
-            </div>`;
+        list.innerHTML += `<div class="sidebar-list-item"><div class="sidebar-grade-circle">${g.grade}</div><div class="sidebar-list-content">${pkgTitle}</div></div>`;
     });
 }
 
 async function loadSidebarRemarks(targetUserId) {
     const list = document.getElementById('sidebar-remarks-list');
-    
-    // targetUserId zamiast student_id z sesji
     const { data: remarks } = await _supabase.from('remarks')
         .select('category, subject_name, created_at, points')
         .eq('student_id', targetUserId)
@@ -289,36 +256,18 @@ async function loadSidebarRemarks(targetUserId) {
         .limit(3);
 
     list.innerHTML = '';
-    if (!remarks || remarks.length === 0) { 
-        list.innerHTML = '<p class="empty-sidebar">Brak uwag.</p>'; 
-        return; 
-    }
+    if (!remarks || remarks.length === 0) { list.innerHTML = '<p class="empty-sidebar">Brak uwag.</p>'; return; }
 
     remarks.forEach(r => {
         const d = new Date(r.created_at);
         const dateStr = `${d.getDate()}.${d.getMonth() + 1}`;
-        
         let pts = r.points || 0;
         let txt = pts > 0 ? "+" + pts : pts; 
-        let color = '#757575'; 
+        let color = pts > 0 ? '#4CAF50' : (pts < 0 ? '#F44336' : '#757575'); 
 
-        if (pts > 0) color = '#4CAF50'; 
-        if (pts < 0) color = '#F44336'; 
-
-        list.innerHTML += `
-            <div class="sidebar-list-item">
-                <div class="sidebar-grade-circle" style="color:${color}; border-color:${color}; font-size:14px; width:35px; height:35px;">
-                    ${txt}
-                </div>
-                <div class="sidebar-list-content">
-                    <span style="font-size:11px; color:#888;">${dateStr}</span><br>
-                    ${r.subject_name}
-                </div>
-            </div>`;
+        list.innerHTML += `<div class="sidebar-list-item"><div class="sidebar-grade-circle" style="color:${color}; border-color:${color}; font-size:14px; width:35px; height:35px;">${txt}</div><div class="sidebar-list-content"><span style="font-size:11px; color:#888;">${dateStr}</span><br>${r.subject_name}</div></div>`;
     });
 }
-
-// --- FULL CALENDAR MODAL ---
 
 async function openCalendarModal() {
     openModal('calendarModal');
@@ -326,7 +275,6 @@ async function openCalendarModal() {
     const tools = document.getElementById('calendar-teacher-tools');
     list.innerHTML = 'Ładowanie...';
 
-    // Reset formularza
     if(document.getElementById('cal-subject-select')) {
         document.getElementById('cal-subject-select').innerHTML = '<option value="" disabled selected>-- Najpierw klasa --</option>';
         document.getElementById('cal-subject-select').disabled = true;
@@ -340,18 +288,12 @@ async function openCalendarModal() {
         sel.innerHTML = '<option value="">Wybierz klasę...</option>';
         const { data: classes } = await _supabase.from('classes').select('id, name').eq('school_id', currentUserSchoolId).order('name');
         if(classes) classes.forEach(c => sel.add(new Option(c.name, c.id)));
-        
         loadFullCalendar(true); 
     } else {
         tools.style.display = 'none';
-        // Dla rodzica/studenta ładujemy kalendarz wybranego dziecka
         if(currentChildId) {
              const { data: user } = await _supabase.from('users').select('class_id').eq('id', currentChildId).single();
-             if(user && user.class_id) {
-                 loadFullCalendar(false, user.class_id); 
-             } else {
-                 list.innerHTML = '<p>To konto nie ma przypisanej klasy.</p>';
-             }
+             if(user && user.class_id) { loadFullCalendar(false, user.class_id); } else { list.innerHTML = '<p>To konto nie ma przypisanej klasy.</p>'; }
         }
     }
 }
@@ -379,23 +321,10 @@ async function loadFullCalendar(isTeacher, targetClassId) {
         const div = document.createElement('div'); div.className = 'event-item'; 
         const subjectDisplay = e.subject_name ? `<span style="display:block; font-size:11px; color:var(--accent-color); font-weight:bold; text-transform:uppercase; margin-bottom:2px;">${e.subject_name}</span>` : '';
 
-        div.innerHTML = `
-            <div class="event-date-box">
-                <span class="event-day">${d.getDate()}</span>
-                <span class="event-month">${mm[d.getMonth()]}</span>
-            </div>
-            <div class="event-details">
-                ${subjectDisplay}
-                <div class="event-title">${e.title}<span class="event-badge ${typeClass[e.type]}">${typeName[e.type]}</span></div>
-                <div class="event-meta">${isTeacher ? `ID Klasy: ${e.class_id}` : ''}</div>
-            </div>
-            ${isTeacher ? `<div class="delete-mini-btn" onclick="deleteCalendarEvent(${e.id})">&times;</div>` : ''}
-        `; 
+        div.innerHTML = `<div class="event-date-box"><span class="event-day">${d.getDate()}</span><span class="event-month">${mm[d.getMonth()]}</span></div><div class="event-details">${subjectDisplay}<div class="event-title">${e.title}<span class="event-badge ${typeClass[e.type]}">${typeName[e.type]}</span></div><div class="event-meta">${isTeacher ? `ID Klasy: ${e.class_id}` : ''}</div></div>${isTeacher ? `<div class="delete-mini-btn" onclick="deleteCalendarEvent(${e.id})">&times;</div>` : ''}`; 
         list.appendChild(div); 
     }); 
 }
-
-// --- LOGIKA KALENDARZA (PRZEDMIOTY) ---
 
 async function loadSubjectsForCalendar(classId) {
     const subjSelect = document.getElementById('cal-subject-select');
@@ -405,10 +334,7 @@ async function loadSubjectsForCalendar(classId) {
     manualInput.style.display = 'none';
     manualInput.value = '';
 
-    if (!classId) {
-        subjSelect.innerHTML = '<option value="" disabled selected>-- Najpierw klasa --</option>';
-        return;
-    }
+    if (!classId) { subjSelect.innerHTML = '<option value="" disabled selected>-- Najpierw klasa --</option>'; return; }
 
     const { data: links } = await _supabase.from('package_classes').select('package_id').eq('class_id', classId);
     subjSelect.innerHTML = '<option value="" disabled selected>-- Wybierz Przedmiot --</option>';
@@ -458,8 +384,6 @@ async function deleteCalendarEvent(id) {
     loadFullCalendar(true); 
 }
 
-// --- TWORZENIE UŻYTKOWNIKA I OBSŁUGA RODZICA ---
-
 async function createNewUser(e) { 
     e.preventDefault(); 
     const btn=document.getElementById('createBtn'); 
@@ -474,7 +398,6 @@ async function createNewUser(e) {
     
     const tmp=supabase.createClient(supabaseUrl,supabaseKey,{auth:{persistSession:false}}); 
     
-    // 1. Rejestracja
     const {data: newUser, error}=await tmp.auth.signUp({
         email:em, password:pw,
         options:{data:{username:un,role:ro,school_id:sid||null,class_id:cid,member_code:generatedMemberCode}}
@@ -482,7 +405,6 @@ async function createNewUser(e) {
     
     if(error) { alert(error.message); btn.disabled=false; btn.textContent = "Utwórz konto"; return; } 
 
-    // 2. Przypisanie dzieci (Rodzic)
     if (ro === 'parent' && selectedChildrenIds.length > 0 && newUser.user) {
         const parentId = newUser.user.id;
         const links = selectedChildrenIds.map(childId => ({ parent_id: parentId, child_id: childId }));
@@ -496,8 +418,6 @@ async function createNewUser(e) {
     selectedChildrenIds = []; updateSelectedChildrenUI();
     btn.disabled=false; btn.textContent = "Utwórz konto";
 }
-
-// --- WYSZUKIWANIE DZIECI ---
 
 async function searchStudentForParent() {
     const term = document.getElementById('child-search-input').value;
@@ -541,13 +461,10 @@ function removeChildFromSelection(id, elem) {
 
 function updateSelectedChildrenUI() { document.getElementById('selected-children-list').innerHTML = ''; }
 
-// --- POMOCNICZE FORMULARZA ---
-
 async function openCreateUserModal() { 
     openModal('createUserModal'); 
     await ensureSchoolsCache(); 
 
-    // Reset formularza
     document.getElementById('createUserForm').reset();
     document.getElementById('new-user-level-filter').value = ""; 
     const sSelect = document.getElementById('new-user-school'); 
@@ -556,24 +473,18 @@ async function openCreateUserModal() {
     document.getElementById('new-role').value = 'student';
     document.getElementById('new-email').value=""; 
 
-    // --- POPRAWKA: Ukrywanie opcji Administrator dla Managera ---
+    // UKRYWANIE OPCJI ADMINA DLA MANAGERA
     const roleSelect = document.getElementById('new-role');
-    
-    // 1. Przywróć opcję Admin (jeśli była usunięta), żeby Admin ją widział
     if (!roleSelect.querySelector('option[value="admin"]')) {
          let opt = document.createElement('option');
          opt.value = 'admin'; opt.innerText = 'Administrator';
          roleSelect.appendChild(opt);
     }
-    
-    // 2. Jeśli zalogowany jest Manager, usuń opcję Admin z listy
     if (currentUserRole === 'manager') {
         const adminOpt = roleSelect.querySelector('option[value="admin"]');
         if (adminOpt) adminOpt.remove();
     }
-    // -------------------------------------------------------------
 
-    // Sprzątanie widoku rodzica
     const pt = document.getElementById('parent-tools-container');
     if (pt) pt.style.display = 'none'; 
     selectedChildrenIds = [];          
@@ -582,6 +493,7 @@ async function openCreateUserModal() {
 
     handleRoleChange();
 }
+
 function handleRoleChange() { 
     const role = document.getElementById('new-role').value; 
     const sc = document.getElementById('school-select-container'); 
@@ -617,49 +529,26 @@ async function generateEmail() {
     if(!sid) return; 
 
     em.value="..."; 
-    
     const s = schoolsCache.find(x=>x.id==sid); 
     const abbr = s ? s.abbreviation : "SC"; 
     
-    // 1. Pobieramy WSZYSTKIE zajęte kody dla tej szkoły i roli
-    let query = _supabase.from('users')
-        .select('member_code')
-        .eq('school_id', sid);
-    
+    let query = _supabase.from('users').select('member_code').eq('school_id', sid);
     if(r==='student') query = query.eq('role', 'student');
     else if(r==='parent') query = query.eq('role', 'parent'); 
     else query = query.in('role', ['teacher', 'manager', 'lecturer', 'admin']);
     
-    // Pobieramy posortowane rosnąco
     const { data } = await query.order('member_code', { ascending: true });
-    
-    // 2. Szukamy pierwszej wolnej "dziury"
     let newCode = 1;
-    
     if (data && data.length > 0) {
-        // Sprawdzamy po kolei: czy zajęty numer to 1, potem 2, potem 3...
         for (let i = 0; i < data.length; i++) {
-            // Jeśli numer z bazy jest większy niż ten, którego szukamy,
-            // to znaczy, że znaleźliśmy lukę!
-            if (data[i].member_code > newCode) {
-                break; // Mamy to! newCode jest wolny.
-            }
-            // Jeśli numer się zgadza, to znaczy że jest zajęty -> szukamy o 1 wyżej
-            if (data[i].member_code === newCode) {
-                newCode++;
-            }
+            if (data[i].member_code > newCode) break;
+            if (data[i].member_code === newCode) newCode++;
         }
-        // Jeśli pętla przeszła do końca i nie było przerw (np. 1, 2, 3), 
-        // to newCode będzie automatycznie ustawiony na 4 (MAX + 1).
     }
-
     generatedMemberCode = newCode; 
-    
     let suffix = 'kadra';
     if(r === 'student') suffix = 'student';
     if(r === 'parent') suffix = 'rodzic';
-
-    // Formatowanie z zerami wiodącymi (np. 0005)
     em.value = `${String(newCode).padStart(4,'0')}.${abbr}-${suffix}@muczelnia.pl`; 
 }
 
@@ -686,16 +575,10 @@ async function assignCourseToClass(e){
     else {
         alert("Przypisano pomyślnie!"); 
         closeModal('assignCourseModal');
-        
-        // --- POPRAWKA: Resetowanie formularza po sukcesie ---
         document.getElementById('assignCourseForm').reset();
-        
-        // Reset selectów zależnych (żeby nie została stara klasa)
         document.getElementById('assign-class-select').innerHTML = '<option value="">-- Wybierz szkołę najpierw --</option>';
         document.getElementById('assign-class-select').disabled = true;
-        
         document.getElementById('assign-package-select').innerHTML = '<option value="" disabled selected>-- Wybierz Pakiet --</option>';
         document.getElementById('assign-package-select').disabled = true;
-        // ----------------------------------------------------
     } 
 }
