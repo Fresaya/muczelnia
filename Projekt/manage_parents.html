@@ -5,18 +5,26 @@
     <title>mUczelnia - Zarządzaj Rodzicami</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        .filter-bar { background: var(--panel-bg); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; gap: 15px; margin-bottom: 20px; }
+        .filter-bar { background: var(--panel-bg); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; gap: 15px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
         .data-table { width: 100%; border-collapse: collapse; background: var(--panel-bg); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow); }
         .data-table th, .data-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); }
         .data-table th { background: rgba(0,0,0,0.02); font-weight: 600; color: var(--text-muted); }
         
-        .child-tag { display: inline-flex; align-items: center; background: rgba(33, 150, 243, 0.1); color: #2196F3; padding: 2px 8px; border-radius: 10px; font-size: 12px; margin-right: 5px; margin-bottom: 2px; }
+        /* Style tagów dzieci */
+        .child-tag { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 10px; font-size: 12px; margin-right: 5px; margin-bottom: 2px; border: 1px solid transparent; }
+        
+        /* Dziecko z naszej szkoły (niebieskie) */
+        .child-local { background: rgba(33, 150, 243, 0.1); color: #2196F3; border-color: rgba(33, 150, 243, 0.2); }
+        
+        /* Dziecko z innej szkoły (szare, wyszarzone) */
+        .child-foreign { background: rgba(0, 0, 0, 0.05); color: #777; border-color: #ddd; cursor: not-allowed; }
+
         .remove-child { cursor: pointer; color: red; margin-left: 5px; font-weight: bold; }
+        .remove-child:hover { color: darkred; }
         
         .btn-add-child { background: #4CAF50; color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; border: none; }
         .table-btn { cursor: pointer; padding: 5px; border-radius: 5px; display: inline-block; margin-right: 5px; }
         
-        /* Modal */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
         .modal-overlay.active { display: flex; }
         .modal-window { background: var(--panel-bg); padding: 30px; border-radius: 12px; width: 400px; max-width: 90%; }
@@ -43,6 +51,10 @@
             </div>
 
             <div class="filter-bar">
+                <select id="filter-school" class="edit-input" style="max-width: 250px;">
+                    <option value="">Wszystkie szkoły</option>
+                </select>
+
                 <input type="text" id="search-parent" class="edit-input" placeholder="Szukaj rodzica..." style="max-width: 300px;">
             </div>
 
@@ -51,12 +63,13 @@
                     <tr>
                         <th>Rodzic</th>
                         <th>Email</th>
+                        <th>Szkoła (Rodzica)</th>
                         <th>Przypisane Dzieci</th>
                         <th>Akcje</th>
                     </tr>
                 </thead>
                 <tbody id="parents-body">
-                    <tr><td colspan="4" style="text-align:center;">Ładowanie...</td></tr>
+                    <tr><td colspan="5" style="text-align:center;">Ładowanie...</td></tr>
                 </tbody>
             </table>
         </main>
@@ -85,6 +98,7 @@
 
         let allParents = [];
         let activeParentId = null;
+        let currentUser = null;
 
         document.addEventListener('DOMContentLoaded', async () => {
             const { data: { session } } = await _supabase.auth.getSession();
@@ -92,33 +106,69 @@
             
             const { data: user } = await _supabase.from('users').select('role, school_id').eq('id', session.user.id).single();
             if (!['admin', 'manager'].includes(user.role)) { alert("Brak uprawnień."); window.location.href='dashboard.html'; return; }
+            
+            currentUser = user;
 
-            loadParents(user);
+            await initData();
+            
             document.getElementById('search-parent').addEventListener('input', renderTable);
+            document.getElementById('filter-school').addEventListener('change', renderTable);
         });
 
-        async function loadParents(currentUser) {
-            // POPRAWKA TUTAJ: Wskazujemy konkretny klucz obcy (parent_children_parent_id_fkey)
-            // Dzięki temu Supabase wie, że 'users' w tym zapytaniu to RODZICE, a nie dzieci.
+        async function initData() {
+            // 1. Ładowanie Szkół do Filtra
+            const schoolSelect = document.getElementById('filter-school');
+            let schoolQuery = _supabase.from('schools').select('id, name').order('name');
+            
+            if (currentUser.role === 'manager') {
+                schoolQuery = schoolQuery.eq('id', currentUser.school_id);
+            }
+
+            const { data: schools } = await schoolQuery;
+            
+            if (schools) {
+                if (currentUser.role === 'manager') schoolSelect.innerHTML = '';
+                
+                schools.forEach(s => {
+                    schoolSelect.add(new Option(s.name, s.id));
+                });
+
+                if (currentUser.role === 'manager') {
+                    schoolSelect.value = currentUser.school_id;
+                    schoolSelect.disabled = true;
+                }
+            }
+
+            // 2. Ładowanie Rodziców
+            await loadParents();
+        }
+
+        async function loadParents() {
+            // Pobieramy rodziców + ich szkołę + ID dzieci z tabeli relacji
             let query = _supabase.from('users')
-                .select('id, username, email, parent_children!parent_children_parent_id_fkey(child_id)')
+                .select('id, username, email, school_id, schools(name), parent_children!parent_children_parent_id_fkey(child_id)')
                 .eq('role', 'parent')
                 .order('username');
 
-            if (currentUser.role === 'manager') query = query.eq('school_id', currentUser.school_id);
+            // Jeśli Manager -> pobierz tylko rodziców przypisanych do TEJ szkoły
+            // (Chyba że wolisz widzieć wszystkich rodziców, ale edytować tylko "swoje" dzieci. 
+            //  Tutaj zakładam filtr: Manager widzi tylko rodziców zarejestrowanych w jego szkole)
+            if (currentUser.role === 'manager') {
+                query = query.eq('school_id', currentUser.school_id);
+            }
 
             const { data, error } = await query;
             if (error) { alert(error.message); return; }
 
             const parents = data || [];
             
-            // Pobieramy dane dzieci (imiona)
+            // Dociągamy imiona dzieci i ich school_id (Ważne do blokowania edycji!)
             for (let p of parents) {
                 p.childrenDetails = [];
                 if (p.parent_children && p.parent_children.length > 0) {
                     const childIds = p.parent_children.map(pc => pc.child_id);
-                    // Tutaj pobieramy imiona dzieci - to proste zapytanie, więc bez zmian
-                    const { data: kids } = await _supabase.from('users').select('id, username').in('id', childIds);
+                    // Pobieramy też school_id dziecka
+                    const { data: kids } = await _supabase.from('users').select('id, username, school_id').in('id', childIds);
                     if (kids) p.childrenDetails = kids;
                 }
             }
@@ -130,30 +180,54 @@
         function renderTable() {
             const tbody = document.getElementById('parents-body');
             tbody.innerHTML = '';
-            const search = document.getElementById('search-parent').value.toLowerCase();
+            
+            const searchVal = document.getElementById('search-parent').value.toLowerCase();
+            const schoolVal = document.getElementById('filter-school').value;
 
-            const filtered = allParents.filter(p => 
-                (p.username && p.username.toLowerCase().includes(search)) || 
-                (p.email && p.email.toLowerCase().includes(search))
-            );
+            const filtered = allParents.filter(p => {
+                const matchSearch = (p.username && p.username.toLowerCase().includes(searchVal)) || 
+                                    (p.email && p.email.toLowerCase().includes(searchVal));
+                // Filtr po szkole rodzica
+                const matchSchool = schoolVal === "" || (p.school_id == schoolVal);
+                return matchSearch && matchSchool;
+            });
 
-            if(filtered.length === 0) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Brak wyników.</td></tr>'; return; }
+            if(filtered.length === 0) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Brak wyników.</td></tr>'; return; }
 
             filtered.forEach(p => {
                 let childrenHtml = '';
                 if(p.childrenDetails) {
                     p.childrenDetails.forEach(kid => {
-                        childrenHtml += `<span class="child-tag">${kid.username} <span class="remove-child" onclick="removeChild('${p.id}', '${kid.id}')">&times;</span></span>`;
+                        // LOGIKA UPRAWNIEŃ DO DZIECKA
+                        // Admin może wszystko. Manager może tylko jeśli dziecko jest w jego szkole.
+                        const canManageChild = (currentUser.role === 'admin') || (kid.school_id === currentUser.school_id);
+                        
+                        if (canManageChild) {
+                            // Nasze dziecko - pełna edycja
+                            childrenHtml += `<span class="child-tag child-local">${kid.username} 
+                                <span class="remove-child" onclick="removeChildFromParent('${p.id}', '${kid.id}')">&times;</span>
+                            </span>`;
+                        } else {
+                            // Dziecko z innej szkoły - tylko podgląd (wyszarzone)
+                            childrenHtml += `<span class="child-tag child-foreign" title="Uczeń innej szkoły - brak edycji">
+                                ${kid.username} 🔒
+                            </span>`;
+                        }
                     });
                 }
+
+                const schoolName = p.schools ? p.schools.name : 'Brak';
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td style="font-weight:bold;">${p.username}</td>
                     <td>${p.email}</td>
+                    <td><small style="color:#888;">${schoolName}</small></td>
                     <td>
-                        ${childrenHtml}
-                        <button class="btn-add-child" onclick="openAssignModal('${p.id}', '${p.username}')">+ Przypisz</button>
+                        <div style="display:flex; flex-wrap:wrap; gap:5px; align-items:center;">
+                            ${childrenHtml}
+                            <button class="btn-add-child" onclick="openAssignModal('${p.id}', '${p.username}')">+ Dodaj</button>
+                        </div>
                     </td>
                     <td>
                         <div class="table-btn" style="background:#F44336; color:white;" onclick="deleteUser('${p.id}')" title="Usuń konto">❌</div>
@@ -183,10 +257,21 @@
             const list = document.getElementById('student-results');
             list.style.display = 'block'; list.innerHTML = '<li>Szukanie...</li>';
 
-            const { data } = await _supabase.from('users').select('id, username, email').eq('role', 'student').ilike('username', `%${term}%`).limit(5);
+            // Manager szuka TYLKO w swojej szkole
+            let query = _supabase.from('users')
+                .select('id, username, email, school_id')
+                .eq('role', 'student')
+                .ilike('username', `%${term}%`)
+                .limit(5);
+
+            if (currentUser.role === 'manager') {
+                query = query.eq('school_id', currentUser.school_id);
+            }
+
+            const { data } = await query;
             
             list.innerHTML = '';
-            if(!data || data.length === 0) { list.innerHTML = '<li>Brak wyników</li>'; return; }
+            if(!data || data.length === 0) { list.innerHTML = '<li>Brak wyników (lub uczeń w innej szkole)</li>'; return; }
 
             data.forEach(s => {
                 const li = document.createElement('li');
@@ -207,30 +292,27 @@
             else {
                 alert("Przypisano!");
                 closeModal();
-                // Szybki reload danych
-                const { data: { session } } = await _supabase.auth.getSession();
-                const { data: user } = await _supabase.from('users').select('role, school_id').eq('id', session.user.id).single();
-                loadParents(user);
+                loadParents(); // Odśwież widok
             }
         }
 
-        async function removeChild(parentId, childId) {
+        async function removeChildFromParent(parentId, childId) {
             if(!confirm("Odpisać dziecko od tego rodzica?")) return;
             const { error } = await _supabase.from('parent_children').delete().eq('parent_id', parentId).eq('child_id', childId);
             if(error) alert("Błąd: " + error.message);
             else {
-                // Szybki reload danych
-                const { data: { session } } = await _supabase.auth.getSession();
-                const { data: user } = await _supabase.from('users').select('role, school_id').eq('id', session.user.id).single();
-                loadParents(user);
+                loadParents();
             }
         }
 
         async function deleteUser(id) {
             if(confirm("Usunąć konto rodzica?")) {
-                await _supabase.from('users').delete().eq('id', id);
-                allParents = allParents.filter(p => p.id !== id);
-                renderTable();
+                const { error } = await _supabase.from('users').delete().eq('id', id);
+                if(error) alert("Błąd: " + error.message);
+                else {
+                    allParents = allParents.filter(p => p.id !== id);
+                    renderTable();
+                }
             }
         }
         
