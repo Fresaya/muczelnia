@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mUczelnia - Zarządzaj Nauczycielami</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .filter-bar { background: var(--panel-bg); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 20px; align-items: center; }
+        .data-table { width: 100%; border-collapse: collapse; background: var(--panel-bg); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow); }
+        .data-table th, .data-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        .data-table th { background: rgba(0,0,0,0.02); font-weight: 600; color: var(--text-muted); }
+        .table-btn { cursor: pointer; padding: 5px 10px; border-radius: 5px; display: inline-block; margin-right: 5px; font-size: 14px; }
+        .btn-pass { background: #FF9800; color: white; }
+        .btn-del { background: #F44336; color: white; }
+    </style>
+</head>
+<body>
+    <div class="layout-wrapper">
+        <aside class="sidebar-left">
+            <div class="top-section">
+                <div class="brand-area"><a href="dashboard.html" class="logo-text"><span>m</span>Uczelnia</a></div>
+                <ul class="nav-menu">
+                    <li class="nav-item"><a href="dashboard.html" class="nav-link"><span>Pulpit</span></a></li>
+                    <li class="nav-item"><a href="#" class="nav-link active"><span>Nauczyciele</span></a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="welcome-header">
+                <div>
+                    <a href="dashboard.html" style="text-decoration:none; color:var(--text-muted);">← Wróć</a>
+                    <h1>Zarządzaj Nauczycielami</h1>
+                </div>
+            </div>
+
+            <div class="filter-bar">
+                <input type="text" id="search-teacher" class="edit-input" placeholder="Szukaj (imię, email)..." style="max-width: 300px;">
+            </div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Nauczyciel</th>
+                        <th>Email</th>
+                        <th>Szkoła</th>
+                        <th>Akcje</th>
+                    </tr>
+                </thead>
+                <tbody id="teachers-body">
+                    <tr><td colspan="4" style="text-align:center;">Ładowanie...</td></tr>
+                </tbody>
+            </table>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg'; 
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        let allTeachers = [];
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (!session) { window.location.href = 'login.html'; return; }
+
+            // Sprawdź rolę
+            const { data: user } = await _supabase.from('users').select('role, school_id').eq('id', session.user.id).single();
+            if (!['admin', 'manager'].includes(user.role)) {
+                alert("Brak dostępu."); window.location.href = 'dashboard.html'; return;
+            }
+
+            loadTeachers(user);
+            document.getElementById('search-teacher').addEventListener('input', renderTable);
+        });
+
+        async function loadTeachers(currentUser) {
+            let query = _supabase.from('users').select('id, username, email, schools(name)').eq('role', 'teacher').order('username');
+            
+            // Manager widzi tylko nauczycieli ze swojej szkoły
+            if (currentUser.role === 'manager') {
+                query = query.eq('school_id', currentUser.school_id);
+            }
+
+            const { data, error } = await query;
+            if (error) { alert("Błąd: " + error.message); return; }
+            
+            allTeachers = data || [];
+            renderTable();
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('teachers-body');
+            tbody.innerHTML = '';
+            const search = document.getElementById('search-teacher').value.toLowerCase();
+
+            const filtered = allTeachers.filter(t => 
+                (t.username && t.username.toLowerCase().includes(search)) || 
+                (t.email && t.email.toLowerCase().includes(search))
+            );
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">Brak wyników.</td></tr>';
+                return;
+            }
+
+            filtered.forEach(t => {
+                const schoolName = t.schools ? t.schools.name : 'Brak';
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-weight:bold;">${t.username || 'Brak nazwy'}</td>
+                    <td>${t.email}</td>
+                    <td>${schoolName}</td>
+                    <td>
+                        <div class="table-btn btn-pass" title="Zmień hasło" onclick="resetPass('${t.id}', '${t.username}')">🔑</div>
+                        <div class="table-btn btn-del" title="Usuń konto" onclick="deleteUser('${t.id}')">❌</div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function resetPass(userId, name) {
+            const newPw = prompt(`Nowe hasło dla ${name}:`, "nauczyciel123");
+            if (!newPw) return;
+            // Zakładam istnienie funkcji RPC (tej samej co dla studentów)
+            const { error } = await _supabase.rpc('admin_reset_password', { target_user_id: userId, new_password: newPw });
+            if (error) alert("Błąd: " + error.message);
+            else alert("Hasło zmienione!");
+        }
+
+        async function deleteUser(userId) {
+            if (!confirm("Usunąć konto nauczyciela? To operacja nieodwracalna.")) return;
+            const { error } = await _supabase.from('users').delete().eq('id', userId);
+            if (error) alert("Błąd: " + error.message);
+            else {
+                allTeachers = allTeachers.filter(t => t.id !== userId);
+                renderTable();
+            }
+        }
+    </script>
+</body>
+</html>
