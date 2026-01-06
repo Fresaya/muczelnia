@@ -19,6 +19,17 @@
             font-size: 40px; /* Rozmiar ikon */
         }
 
+        /* --- NOWOŚĆ: EFEKT NAJECHANIA NA KAFELEK --- */
+        .widget-tile {
+            /* Płynne przejście dla efektu uniesienia (jeśli jest w style.css) */
+            transition: transform 0.2s, box-shadow 0.2s; 
+        }
+        
+        .widget-tile:hover {
+            /* Po najechaniu zamieniamy ramkę na ciągłą */
+            border-style: solid !important; 
+        }
+
         /* --- POPRAWKA DLA KALENDARZA (DARK MODE) --- */
         #calendar-teacher-tools {
             background: var(--panel-bg) !important;
@@ -100,7 +111,7 @@
 
             <div class="dashboard-grid">
                 
-                <a href="admin_content.html" id="widget-admin-content" class="widget-tile" style="display: none; border: 2px solid #333;">
+                <a href="admin_content.html" id="widget-admin-content" class="widget-tile" style="display: none; border: 2px dashed #333;">
                     <div class="widget-icon" style="color: #333;">
                         <span class="material-symbols-outlined">folder_open</span>
                     </div>
@@ -180,7 +191,7 @@
                     <p class="course-meta">Dodaj pakiet do klasy</p>
                 </div>
                 
-                <a href="teacher_results.html" id="widget-teacher-results" class="widget-tile" style="display: none; border: 2px solid #673AB7; text-decoration: none; color: inherit;">
+                <a href="teacher_results.html" id="widget-teacher-results" class="widget-tile" style="display: none; border: 2px dashed #673AB7; text-decoration: none; color: inherit;">
                     <div class="widget-icon" style="color: #673AB7;">
                         <span class="material-symbols-outlined">analytics</span>
                     </div>
@@ -188,7 +199,7 @@
                     <p class="course-meta">Podgląd i Poprawy</p>
                 </a>
 
-                <a href="teacher_grades.html" id="widget-teacher-grades" class="widget-tile" style="display: none; border: 2px solid #FF9800; text-decoration: none; color: inherit;">
+                <a href="teacher_grades.html" id="widget-teacher-grades" class="widget-tile" style="display: none; border: 2px dashed #FF9800; text-decoration: none; color: inherit;">
                     <div class="widget-icon" style="color: #FF9800;">
                         <span class="material-symbols-outlined">table_view</span>
                     </div>
@@ -196,7 +207,7 @@
                     <p class="course-meta">Wystawianie i edycja</p>
                 </a>
 
-                <a href="teacher_behavior.html" id="widget-teacher-behavior" class="widget-tile" style="display: none; border: 2px solid #E91E63; text-decoration: none; color: inherit;">
+                <a href="teacher_behavior.html" id="widget-teacher-behavior" class="widget-tile" style="display: none; border: 2px dashed #E91E63; text-decoration: none; color: inherit;">
                     <div class="widget-icon" style="color: #E91E63;">
                         <span class="material-symbols-outlined">gavel</span>
                     </div>
@@ -204,7 +215,7 @@
                     <p class="course-meta">Uwagi i Punkty</p>
                 </a>
 
-                <div id="widget-calendar" class="widget-tile" style="display:none; cursor: pointer; border: 2px solid #2196F3;">
+                <div id="widget-calendar" class="widget-tile" style="display:none; cursor: pointer; border: 2px dashed #2196F3;">
                     <div class="widget-icon" style="color: #2196F3;">
                         <span class="material-symbols-outlined">calendar_month</span>
                     </div>
@@ -212,7 +223,7 @@
                     <p class="course-meta">Dodaj wydarzenia dla klas</p>
                 </div>
 
-                <a href="courses_list.html" id="widget-student-courses" class="widget-tile" style="border: 2px solid var(--accent-color);">
+                <a href="courses_list.html" id="widget-student-courses" class="widget-tile" style="border: 2px dashed var(--accent-color);">
                     <div class="widget-icon" style="color: var(--accent-color);">
                         <span class="material-symbols-outlined">library_books</span>
                     </div>
@@ -220,7 +231,7 @@
                     <p class="course-meta">Przejdź do nauki</p>
                 </a>
 
-                <a href="grades.html" id="widget-student-grades" class="widget-tile" style="border: 2px solid #FF9800;">
+                <a href="grades.html" id="widget-student-grades" class="widget-tile" style="border: 2px dashed #FF9800;">
                     <div class="widget-icon" style="color: #FF9800;">
                         <span class="material-symbols-outlined">grade</span>
                     </div>
@@ -228,7 +239,7 @@
                     <p class="course-meta">Sprawdź wyniki</p>
                 </a>
 
-                <a href="student_behavior.html" id="widget-student-behavior" class="widget-tile" style="display: none; text-decoration: none; color: inherit; border: 2px solid #E91E63;">
+                <a href="student_behavior.html" id="widget-student-behavior" class="widget-tile" style="display: none; text-decoration: none; color: inherit; border: 2px dashed #E91E63;">
                     <div class="widget-icon" style="color: #E91E63;">
                         <span class="material-symbols-outlined">sentiment_satisfied</span>
                     </div>
@@ -236,7 +247,7 @@
                     <p class="course-meta">Punkty i Uwagi</p>
                 </a>
                 
-                <div id="widget-student-calendar" class="widget-tile" style="display: none; cursor: pointer; border: 2px solid #2196F3;" onclick="openCalendarModal()">
+                <div id="widget-student-calendar" class="widget-tile" style="display: none; cursor: pointer; border: 2px dashed #2196F3;" onclick="openCalendarModal()">
                     <div class="widget-icon" style="color: #2196F3;">
                         <span class="material-symbols-outlined">event</span>
                     </div>
@@ -244,7 +255,7 @@
                     <p class="course-meta">Sprawdziany i Zadania</p>
                 </div>
 
-                <a href="schedule.html" id="widget-student-schedule" class="widget-tile" style="border: 2px solid #9C27B0;">
+                <a href="schedule.html" id="widget-student-schedule" class="widget-tile" style="border: 2px dashed #9C27B0;">
                     <div class="widget-icon" style="color: #9C27B0;">
                         <span class="material-symbols-outlined">schedule</span>
                     </div>
