@@ -92,6 +92,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (currentUserRole === 'admin') {
                 ['widget-admin-content', 'widget-create-course', 'widget-create-quiz', 'widget-add-user', 'widget-add-school', 'widget-manage-classes', 'widget-manage-students'].forEach(show);
                 ['widget-student-courses', 'widget-student-grades', 'widget-student-calendar', 'widget-student-behavior'].forEach(hide);
+                show('widget-manage-teachers');
+                show('widget-manage-parents');
                 
                 document.getElementById('widget-add-user').onclick = () => openCreateUserModal();
                 document.getElementById('widget-add-school').onclick = () => openModal('addSchoolModal');
@@ -101,6 +103,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 show('widget-add-user');
                 show('widget-manage-classes');
                 show('widget-manage-students');
+                show('widget-manage-teachers');
+                show('widget-manage-parents');
                 document.getElementById('widget-add-user').onclick = () => openCreateUserModal();
             }
 
