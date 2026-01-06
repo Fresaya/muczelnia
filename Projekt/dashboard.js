@@ -543,32 +543,41 @@ async function openCreateUserModal() {
     openModal('createUserModal'); 
     await ensureSchoolsCache(); 
 
-    // 1. Reset formularza (czyści wpisane teksty)
+    // Reset formularza
     document.getElementById('createUserForm').reset();
-
-    // 2. Reset filtrów szkoły
     document.getElementById('new-user-level-filter').value = ""; 
     const sSelect = document.getElementById('new-user-school'); 
     sSelect.innerHTML = '<option value="" disabled selected>-- Wybierz typ najpierw --</option>'; 
     sSelect.disabled = true; 
-
-    // 3. Wymuś rolę "Uczeń" (domyślną)
     document.getElementById('new-role').value = 'student';
-
-    // 4. Sprzątanie po Rodzicu (To naprawia Twój błąd)
-    const pt = document.getElementById('parent-tools-container');
-    if (pt) pt.style.display = 'none'; // Ukryj kontener rodzica
-    selectedChildrenIds = [];          // Wyczyść tablicę ID
-    updateSelectedChildrenUI();        // Wyczyść wizualnie badge dzieci
-    document.getElementById('child-search-results').style.display = 'none'; // Ukryj wyniki szukania
-
-    // 5. Wywołaj handleRoleChange, żeby ustawić poprawne pola dla Studenta (np. pokazać klasę)
-    handleRoleChange();
-
-    // 6. Wyczyść e-mail
     document.getElementById('new-email').value=""; 
-}
 
+    // --- POPRAWKA: Ukrywanie opcji Administrator dla Managera ---
+    const roleSelect = document.getElementById('new-role');
+    
+    // 1. Przywróć opcję Admin (jeśli była usunięta), żeby Admin ją widział
+    if (!roleSelect.querySelector('option[value="admin"]')) {
+         let opt = document.createElement('option');
+         opt.value = 'admin'; opt.innerText = 'Administrator';
+         roleSelect.appendChild(opt);
+    }
+    
+    // 2. Jeśli zalogowany jest Manager, usuń opcję Admin z listy
+    if (currentUserRole === 'manager') {
+        const adminOpt = roleSelect.querySelector('option[value="admin"]');
+        if (adminOpt) adminOpt.remove();
+    }
+    // -------------------------------------------------------------
+
+    // Sprzątanie widoku rodzica
+    const pt = document.getElementById('parent-tools-container');
+    if (pt) pt.style.display = 'none'; 
+    selectedChildrenIds = [];          
+    updateSelectedChildrenUI();        
+    document.getElementById('child-search-results').style.display = 'none';
+
+    handleRoleChange();
+}
 function handleRoleChange() { 
     const role = document.getElementById('new-role').value; 
     const sc = document.getElementById('school-select-container'); 
@@ -661,4 +670,28 @@ async function openAssignCourseModal(){
     document.getElementById('assign-package-select').innerHTML='<option disabled selected>Najpierw Szkoła...</option>'; document.getElementById('assign-package-select').disabled = true;
 }
 
-async function assignCourseToClass(e){ e.preventDefault(); const p=document.getElementById('assign-package-select').value; const c=document.getElementById('assign-class-select').value; if(!c)return alert("Klasa!"); const {error}=await _supabase.from('package_classes').insert({package_id:p,class_id:c}); if(error)alert(error.message); else{alert("Przypisano"); closeModal('assignCourseModal');} }
+async function assignCourseToClass(e){ 
+    e.preventDefault(); 
+    const p=document.getElementById('assign-package-select').value; 
+    const c=document.getElementById('assign-class-select').value; 
+    if(!c) return alert("Wybierz klasę!"); 
+    
+    const {error}=await _supabase.from('package_classes').insert({package_id:p,class_id:c}); 
+    
+    if(error) alert(error.message); 
+    else {
+        alert("Przypisano pomyślnie!"); 
+        closeModal('assignCourseModal');
+        
+        // --- POPRAWKA: Resetowanie formularza po sukcesie ---
+        document.getElementById('assignCourseForm').reset();
+        
+        // Reset selectów zależnych (żeby nie została stara klasa)
+        document.getElementById('assign-class-select').innerHTML = '<option value="">-- Wybierz szkołę najpierw --</option>';
+        document.getElementById('assign-class-select').disabled = true;
+        
+        document.getElementById('assign-package-select').innerHTML = '<option value="" disabled selected>-- Wybierz Pakiet --</option>';
+        document.getElementById('assign-package-select').disabled = true;
+        // ----------------------------------------------------
+    } 
+}
