@@ -5,22 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>mUczelnia - Pulpit</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    
     <style>
-
-                /* Ikona Planu Zajęć */
-        .icon-calendar {
-            background-color: rgba(156, 39, 176, 0.1); /* Jasny fiolet */
-            color: #9c27b0; /* Ciemny fiolet */
+        /* Styl dla nowych ikon Google */
+        .widget-icon {
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 12px; /* Lub 50% jeśli masz kółka */
+            background: none !important; /* Wyłączamy stare tła */
         }
-        
-       
+        .material-symbols-outlined {
+            font-size: 40px; /* Rozmiar ikon */
+        }
+
         /* --- POPRAWKA DLA KALENDARZA (DARK MODE) --- */
         #calendar-teacher-tools {
-            background: var(--panel-bg) !important; /* Wymuszenie koloru tła z motywu */
+            background: var(--panel-bg) !important;
             color: var(--text-main) !important;
             border: 1px solid var(--border-color) !important;
         }
@@ -100,113 +101,153 @@
             <div class="dashboard-grid">
                 
                 <a href="admin_content.html" id="widget-admin-content" class="widget-tile" style="display: none; border: 2px solid #333;">
-                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23333%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z%22></path><polyline points=%2214 2 14 8 20 8%22></polyline><line x=%2216%22 y1=%2213%22 x2=%228%22 y2=%2213%22></line><line x=%2216%22 y1=%2217%22 x2=%228%22 y2=%2217%22></line><polyline points=%2210 9 9 9 8 9%22></polyline></svg>');"></div>
+                    <div class="widget-icon" style="color: #333;">
+                        <span class="material-symbols-outlined">folder_open</span>
+                    </div>
                     <h3>Baza Treści</h3>
                     <p class="course-meta">Przeglądaj i Edytuj</p>
                 </a>
 
                 <a href="create_course.html" id="widget-create-course" class="widget-tile" style="display: none; border: 2px dashed var(--accent-color);">
-                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23f04a4a%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><rect x=%223%22 y=%223%22 width=%2218%22 height=%2218%22 rx=%222%22 ry=%222%22></rect><line x=%2212%22 y=%228%22 x2=%2212%22 y2=%2216%22></line><line x=%228%22 y=%2212%22 x2=%2216%22 y2=%2212%22></line></svg>');"></div>
+                    <div class="widget-icon" style="color: var(--accent-color);">
+                        <span class="material-symbols-outlined">post_add</span>
+                    </div>
                     <h3 style="color: var(--accent-color);">Utwórz Kurs</h3>
                     <p class="course-meta">Administrator</p>
                 </a>
 
                 <a href="create_quiz.html" id="widget-create-quiz" class="widget-tile" style="display: none; border: 2px dashed #9C27B0;">
-                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%239C27B0%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z%22></path><polyline points=%2214 2 14 8 20 8%22></polyline><line x=%2212%22 y=%2218%22 x2=%2212%22 y2=%2218%22></line><line x=%2212%22 y=%2214%22 x2=%2212%22 y2=%2212%22></line></svg>');"></div>
+                    <div class="widget-icon" style="color: #9C27B0;">
+                        <span class="material-symbols-outlined">quiz</span>
+                    </div>
                     <h3 style="color: #9C27B0;">Utwórz Quiz</h3>
                     <p class="course-meta">Administrator</p>
                 </a>
                 
                 <div id="widget-add-user" class="widget-tile" style="display: none; border: 2px dashed #555; cursor: pointer;">
-                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23555%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2%22></path><circle cx=%228.5%22 cy=%227%22 r=%224%22></circle><line x=%2220%22 y=%2218%22 x2=%2220%22 y2=%2214%22></line><line x=%2223%22 y=%2211%22 x2=%2217%22 y2=%2211%22></line></svg>');"></div>
+                    <div class="widget-icon" style="color: #555;">
+                        <span class="material-symbols-outlined">person_add</span>
+                    </div>
                     <h3 style="color: #555;">Dodaj Użytkownika</h3>
-                    <p class="course-meta">Admin & Manager</p>
+                    <p class="course-meta">Admin & Sekretariat</p>
                 </div>
 
                 <div id="widget-add-school" class="widget-tile" style="display: none; border: 2px dashed #2196F3; cursor: pointer;">
-                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%232196F3%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M3 21h18M5 21V7l8-4 8 4v14M8 21v-4h8v4%22></path></svg>');"></div>
+                    <div class="widget-icon" style="color: #2196F3;">
+                        <span class="material-symbols-outlined">domain_add</span>
+                    </div>
                     <h3 style="color: #2196F3;">Dodaj Szkołę</h3>
                     <p class="course-meta">Administrator</p>
                 </div>
 
                 <a href="manage_classes.html" id="widget-manage-classes" class="widget-tile" style="display: none; border: 2px dashed #009688; text-decoration: none; color: inherit;">
-                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23009688%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M3 21h18M5 21V7l8-4 8 4v14M8 21v-4h8v4%22></path><path d=%22M18 7v3m3 0h-3m0 0h-3m3 0v-3%22 stroke=%22%23009688%22 stroke-width=%222%22/></svg>');"></div>
+                    <div class="widget-icon" style="color: #009688;">
+                        <span class="material-symbols-outlined">groups</span>
+                    </div>
                     <h3 style="color: #009688;">Zarządzaj Klasami</h3>
                     <p class="course-meta">Dodawanie i Edycja</p>
                 </a>
 
                 <a href="manage_students.html" id="widget-manage-students" class="widget-tile" style="display: none; border: 2px dashed #FF9800; text-decoration: none; color: inherit;">
-                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23FF9800%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2%22></path><circle cx=%229%22 cy=%227%22 r=%224%22></circle><path d=%22M23 21v-2a4 4 0 0 0-3-3.87%22></path><path d=%22M16 3.13a4 4 0 0 1 0 7.75%22></path></svg>');"></div>
+                    <div class="widget-icon" style="color: #FF9800;">
+                        <span class="material-symbols-outlined">face</span>
+                    </div>
                     <h3 style="color: #FF9800;">Zarządzaj Uczniami</h3>
                     <p class="course-meta">Edycja i Usuwanie</p>
                 </a>
 
                 <a href="manage_teachers.html" id="widget-manage-teachers" class="widget-tile" style="display: none; border: 2px dashed #FF5722; text-decoration: none; color: inherit;">
-                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23FF5722%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2%22></path><circle cx=%229%22 cy=%227%22 r=%224%22></circle><path d=%22M23 21v-2a4 4 0 0 0-3-3.87%22></path><path d=%22M16 3.13a4 4 0 0 1 0 7.75%22></path></svg>');"></div>
+                    <div class="widget-icon" style="color: #FF5722;">
+                        <span class="material-symbols-outlined">person_apron</span>
+                    </div>
                     <h3 style="color: #FF5722;">Nauczyciele</h3>
                     <p class="course-meta">Edycja kont</p>
                 </a>
-                
+
                 <a href="manage_parents.html" id="widget-manage-parents" class="widget-tile" style="display: none; border: 2px dashed #795548; text-decoration: none; color: inherit;">
-                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23795548%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2%22></path><circle cx=%229%22 cy=%227%22 r=%224%22></circle><path d=%22M16 3.13a4 4 0 0 1 0 7.75%22></path></svg>');"></div>
+                    <div class="widget-icon" style="color: #795548;">
+                        <span class="material-symbols-outlined">family_restroom</span>
+                    </div>
                     <h3 style="color: #795548;">Rodzice</h3>
                     <p class="course-meta">Przypisywanie dzieci</p>
                 </a>
 
                 <div id="widget-assign-course" class="widget-tile" style="display: none; border: 2px dashed #9C27B0; cursor: pointer;">
-                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%239C27B0%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M4 19.5A2.5 2.5 0 0 1 6.5 17H20%22></path><path d=%22M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z%22></path><path d=%22M12 11h5%22></path><path d=%22M12 8h5%22></path></svg>');"></div>
+                    <div class="widget-icon" style="color: #9C27B0;">
+                        <span class="material-symbols-outlined">assignment_turned_in</span>
+                    </div>
                     <h3 style="color: #9C27B0;">Przypisz Materiał</h3>
                     <p class="course-meta">Dodaj pakiet do klasy</p>
                 </div>
                 
                 <a href="teacher_results.html" id="widget-teacher-results" class="widget-tile" style="display: none; border: 2px solid #673AB7; text-decoration: none; color: inherit;">
-                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23673AB7%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z%22></path><polyline points=%2214 2 14 8 20 8%22></polyline><line x=%2216%22 y1=%2213%22 x2=%228%22 y2=%2213%22></line><line x=%2216%22 y1=%2217%22 x2=%228%22 y2=%2217%22></line><polyline points=%2210 9 9 9 8 9%22></polyline></svg>');"></div>
+                    <div class="widget-icon" style="color: #673AB7;">
+                        <span class="material-symbols-outlined">analytics</span>
+                    </div>
                     <h3 style="color: #673AB7;">Wyniki Uczniów</h3>
                     <p class="course-meta">Podgląd i Poprawy</p>
                 </a>
 
                 <a href="teacher_grades.html" id="widget-teacher-grades" class="widget-tile" style="display: none; border: 2px solid #FF9800; text-decoration: none; color: inherit;">
-                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23FF9800%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2%22></path><rect x=%228%22 y=%222%22 width=%228%22 height=%224%22 rx=%221%22 ry=%221%22></rect><path d=%22M9 14l2 2 4-4%22></path></svg>');"></div>
+                    <div class="widget-icon" style="color: #FF9800;">
+                        <span class="material-symbols-outlined">table_view</span>
+                    </div>
                     <h3 style="color: #FF9800;">Dziennik Ocen</h3>
                     <p class="course-meta">Wystawianie i edycja</p>
                 </a>
+
                 <a href="teacher_behavior.html" id="widget-teacher-behavior" class="widget-tile" style="display: none; border: 2px solid #E91E63; text-decoration: none; color: inherit;">
-                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23E91E63%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M2 21h18M5 21V7l8-4 8 4v14M8 21v-4h8v4%22></path><circle cx=%2212%22 cy=%2211%22 r=%223%22></circle><path d=%22M12 14v3%22></path></svg>');"></div>
+                    <div class="widget-icon" style="color: #E91E63;">
+                        <span class="material-symbols-outlined">gavel</span>
+                    </div>
                     <h3 style="color: #E91E63;">Zachowanie</h3>
                     <p class="course-meta">Uwagi i Punkty</p>
                 </a>
 
                 <div id="widget-calendar" class="widget-tile" style="display:none; cursor: pointer; border: 2px solid #2196F3;">
-                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%232196F3%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><rect x=%223%22 y=%224%22 width=%2218%22 height=%2218%22 rx=%222%22 ry=%222%22></rect><line x=%2216%22 y1=%222%22 x2=%2216%22 y2=%226%22></line><line x=%228%22 y=%222%22 x2=%228%22 y2=%226%22></line><line x=%223%22 y=%2210%22 x2=%2221%22 y2=%2210%22></line></svg>');"></div>
+                    <div class="widget-icon" style="color: #2196F3;">
+                        <span class="material-symbols-outlined">calendar_month</span>
+                    </div>
                     <h3 style="color: #2196F3;">Zarządzaj Terminarzem</h3>
                     <p class="course-meta">Dodaj wydarzenia dla klas</p>
                 </div>
 
-                <a href="courses_list.html" id="widget-student-courses" class="widget-tile">
-                    <div class="widget-icon icon-course-active"></div>
+                <a href="courses_list.html" id="widget-student-courses" class="widget-tile" style="border: 2px solid var(--accent-color);">
+                    <div class="widget-icon" style="color: var(--accent-color);">
+                        <span class="material-symbols-outlined">library_books</span>
+                    </div>
                     <h3>Moje Przedmioty</h3>
                     <p class="course-meta">Przejdź do nauki</p>
                 </a>
 
-                <a href="grades.html" id="widget-student-grades" class="widget-tile">
-                    <div class="widget-icon icon-grades"></div>
+                <a href="grades.html" id="widget-student-grades" class="widget-tile" style="border: 2px solid #FF9800;">
+                    <div class="widget-icon" style="color: #FF9800;">
+                        <span class="material-symbols-outlined">grade</span>
+                    </div>
                     <h3>Moje Oceny</h3>
                     <p class="course-meta">Sprawdź wyniki</p>
                 </a>
 
-                <a href="student_behavior.html" id="widget-student-behavior" class="widget-tile" style="display: none; text-decoration: none; color: inherit;">
-                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23E91E63%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z%22></path></svg>');"></div>
+                <a href="student_behavior.html" id="widget-student-behavior" class="widget-tile" style="display: none; text-decoration: none; color: inherit; border: 2px solid #E91E63;">
+                    <div class="widget-icon" style="color: #E91E63;">
+                        <span class="material-symbols-outlined">sentiment_satisfied</span>
+                    </div>
                     <h3 style="color: #E91E63;">Zachowanie</h3>
                     <p class="course-meta">Punkty i Uwagi</p>
                 </a>
                 
                 <div id="widget-student-calendar" class="widget-tile" style="display: none; cursor: pointer; border: 2px solid #2196F3;" onclick="openCalendarModal()">
-                    <div class="widget-icon" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%232196F3%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><rect x=%223%22 y=%224%22 width=%2218%22 height=%2218%22 rx=%222%22 ry=%222%22></rect><line x=%2216%22 y1=%222%22 x2=%2216%22 y2=%226%22></line><line x=%228%22 y=%222%22 x2=%228%22 y2=%226%22></line><line x=%223%22 y=%2210%22 x2=%2221%22 y2=%2210%22></line></svg>');"></div>
+                    <div class="widget-icon" style="color: #2196F3;">
+                        <span class="material-symbols-outlined">event</span>
+                    </div>
                     <h3 style="color: #2196F3;">Terminarz</h3>
                     <p class="course-meta">Sprawdziany i Zadania</p>
                 </div>
-                <a href="schedule.html" id="widget-student-schedule" class="widget-tile">
-                    <div class="widget-icon icon-calendar"></div>
+
+                <a href="schedule.html" id="widget-student-schedule" class="widget-tile" style="border: 2px solid #9C27B0;">
+                    <div class="widget-icon" style="color: #9C27B0;">
+                        <span class="material-symbols-outlined">schedule</span>
+                    </div>
                     <h3>Plan Zajęć</h3>
                     <p class="course-meta">Rozkład lekcji</p>
                 </a>
@@ -221,11 +262,11 @@
                 <div id="profileDropdown" style="display: none; position: absolute; top: 60px; left: 50%; transform: translateX(-50%); background: var(--panel-bg); border: 1px solid var(--border-color); padding: 5px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); z-index: 1000; width: 180px; text-align: left;">
                     
                     <div class="dropdown-item" id="changePassBtn" style="padding: 10px; border-bottom: 1px solid var(--border-color); cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 13px;">
-                        <div class="icon-logout"></div> Zmień hasło
+                        <div class="widget-icon" style="width:20px;height:20px;"><span class="material-symbols-outlined" style="font-size:18px">lock_reset</span></div> Zmień hasło
                     </div>
                     
                     <div class="dropdown-item" id="logoutBtn" style="padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 10px; color: red; font-size: 13px;">
-                        <div class="icon-logout"></div> Wyloguj się
+                        <div class="widget-icon" style="width:20px;height:20px;"><span class="material-symbols-outlined" style="font-size:18px">logout</span></div> Wyloguj się
                     </div>
             
                 </div>
@@ -276,7 +317,7 @@
                 <select id="new-role" class="edit-input" style="border:1px solid #ccc; margin-bottom: 15px;">
                     <option value="student" selected>Student</option>
                     <option value="teacher">Nauczyciel</option>
-                    <option value="manager">Dziekanat (Manager)</option>
+                    <option value="manager">Sekretariat (Manager)</option>
                     <option value="lecturer">Wykładowca</option>
                     <option value="admin">Administrator</option>
                     <option value="parent">Rodzic</option>
@@ -401,16 +442,3 @@
     
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
