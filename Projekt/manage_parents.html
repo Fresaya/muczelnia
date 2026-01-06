@@ -5,7 +5,6 @@
     <title>mUczelnia - Zarządzaj Rodzicami</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* Style tabeli i filtrów takie same jak wyżej */
         .filter-bar { background: var(--panel-bg); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; gap: 15px; margin-bottom: 20px; }
         .data-table { width: 100%; border-collapse: collapse; background: var(--panel-bg); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow); }
         .data-table th, .data-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); }
@@ -99,21 +98,26 @@
         });
 
         async function loadParents(currentUser) {
-            // Pobieramy rodziców. Managera filtrujemy po szkole (jeśli rodzic ma przypisaną szkołę)
-            let query = _supabase.from('users').select('id, username, email, parent_children(child_id)').eq('role', 'parent').order('username');
+            // POPRAWKA TUTAJ: Wskazujemy konkretny klucz obcy (parent_children_parent_id_fkey)
+            // Dzięki temu Supabase wie, że 'users' w tym zapytaniu to RODZICE, a nie dzieci.
+            let query = _supabase.from('users')
+                .select('id, username, email, parent_children!parent_children_parent_id_fkey(child_id)')
+                .eq('role', 'parent')
+                .order('username');
+
             if (currentUser.role === 'manager') query = query.eq('school_id', currentUser.school_id);
 
             const { data, error } = await query;
             if (error) { alert(error.message); return; }
 
-            // Dla każdego rodzica pobierz dane dzieci (imiona)
             const parents = data || [];
             
-            // Pobieramy wszystkie relacje żeby dociągnąć imiona dzieci
+            // Pobieramy dane dzieci (imiona)
             for (let p of parents) {
                 p.childrenDetails = [];
                 if (p.parent_children && p.parent_children.length > 0) {
                     const childIds = p.parent_children.map(pc => pc.child_id);
+                    // Tutaj pobieramy imiona dzieci - to proste zapytanie, więc bez zmian
                     const { data: kids } = await _supabase.from('users').select('id, username').in('id', childIds);
                     if (kids) p.childrenDetails = kids;
                 }
@@ -137,9 +141,11 @@
 
             filtered.forEach(p => {
                 let childrenHtml = '';
-                p.childrenDetails.forEach(kid => {
-                    childrenHtml += `<span class="child-tag">${kid.username} <span class="remove-child" onclick="removeChild('${p.id}', '${kid.id}')">&times;</span></span>`;
-                });
+                if(p.childrenDetails) {
+                    p.childrenDetails.forEach(kid => {
+                        childrenHtml += `<span class="child-tag">${kid.username} <span class="remove-child" onclick="removeChild('${p.id}', '${kid.id}')">&times;</span></span>`;
+                    });
+                }
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
@@ -201,10 +207,10 @@
             else {
                 alert("Przypisano!");
                 closeModal();
-                // Odśwież dane
-                const parent = allParents.find(p => p.id === activeParentId);
-                parent.childrenDetails.push(student); // Aktualizacja lokalna
-                renderTable();
+                // Szybki reload danych
+                const { data: { session } } = await _supabase.auth.getSession();
+                const { data: user } = await _supabase.from('users').select('role, school_id').eq('id', session.user.id).single();
+                loadParents(user);
             }
         }
 
@@ -213,9 +219,10 @@
             const { error } = await _supabase.from('parent_children').delete().eq('parent_id', parentId).eq('child_id', childId);
             if(error) alert("Błąd: " + error.message);
             else {
-                const parent = allParents.find(p => p.id === parentId);
-                parent.childrenDetails = parent.childrenDetails.filter(k => k.id !== childId);
-                renderTable();
+                // Szybki reload danych
+                const { data: { session } } = await _supabase.auth.getSession();
+                const { data: user } = await _supabase.from('users').select('role, school_id').eq('id', session.user.id).single();
+                loadParents(user);
             }
         }
 
@@ -229,7 +236,11 @@
         
         async function resetPass(id, name) {
             const p = prompt(`Nowe hasło dla ${name}:`, "rodzic123");
-            if(p) await _supabase.rpc('admin_reset_password', { target_user_id: id, new_password: p });
+            if(p) {
+                const { error } = await _supabase.rpc('admin_reset_password', { target_user_id: id, new_password: p });
+                if(error) alert("Błąd: " + error.message);
+                else alert("Hasło zmienione.");
+            }
         }
     </script>
 </body>
