@@ -12,12 +12,11 @@
             padding: 30px;
             border-radius: 12px;
             border: 1px solid var(--border-color);
-            max-width: 1000px; /* Szerszy kontener */
+            max-width: 1000px;
             margin: 0 auto;
             box-shadow: var(--shadow);
         }
         
-        /* Sekcja górna: Filtry Szkoły i Klasy */
         .top-filters {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -29,7 +28,6 @@
         
         .form-group label { display: block; margin-bottom: 8px; font-weight: bold; color: var(--text-muted); font-size: 13px; text-transform: uppercase; }
         
-        /* Sekcja Pakietów */
         .packages-section-title { font-size: 16px; font-weight: bold; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
         
         .package-grid {
@@ -44,10 +42,9 @@
             background: rgba(0,0,0,0.02);
         }
 
-        /* Kafelek Pakietu */
         .package-card {
             background: var(--panel-bg);
-            border: 2px solid transparent; /* Rezerwa na border */
+            border: 2px solid transparent; 
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
             border-radius: 8px;
             padding: 15px;
@@ -99,7 +96,19 @@
             font-style: italic;
         }
 
-        /* Responsywność */
+        /* Dolny pasek podsumowania */
+        .selection-summary {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(33, 150, 243, 0.1);
+            border: 1px solid #2196F3;
+            color: #1565C0;
+            border-radius: 8px;
+            display: none; /* Domyślnie ukryte */
+            justify-content: space-between;
+            align-items: center;
+        }
+
         @media (max-width: 700px) {
             .top-filters { grid-template-columns: 1fr; }
         }
@@ -144,7 +153,7 @@
 
                     <div class="form-group">
                         <div class="packages-section-title">
-                            <span>Dostępne Pakiety</span>
+                            <span>Wybierz Pakiety</span>
                             <input type="text" id="package-filter" class="edit-input" placeholder="🔍 Filtruj pakiety..." style="width: 250px; margin: 0; font-size: 13px; padding: 8px;" disabled>
                         </div>
                         
@@ -153,10 +162,13 @@
                         </div>
                     </div>
 
-                    <input type="hidden" id="selected-package-id" required>
+                    <div id="selection-bar" class="selection-summary">
+                        <span style="font-weight: bold; font-size: 14px;">Zaznaczono: <span id="selection-count">0</span></span>
+                        <button type="button" class="login-button" style="width:auto; padding: 8px 15px; font-size: 12px; background: #666;" onclick="clearAllSelections()">Wyczyść</button>
+                    </div>
 
                     <button type="submit" class="login-button full-width-btn" style="background: #9C27B0; margin-top: 20px;">
-                        Zapisz Przypisanie
+                        Zapisz Przypisania
                     </button>
                 </form>
             </div>
@@ -170,7 +182,8 @@
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
         let currentUser = null;
-        let allPackages = []; // Przechowuje pobrane pakiety
+        let allPackages = []; 
+        let selectedPackageIds = new Set(); // Przechowujemy zaznaczone ID
 
         document.addEventListener('DOMContentLoaded', async () => {
             const { data: { session } } = await _supabase.auth.getSession();
@@ -227,7 +240,7 @@
             cSelect.innerHTML = '<option>Ładowanie...</option>'; cSelect.disabled = true;
             grid.innerHTML = '<div class="empty-state">Ładowanie pakietów...</div>';
             filterInput.disabled = true; filterInput.value = "";
-            document.getElementById('selected-package-id').value = "";
+            clearAllSelections();
             allPackages = [];
 
             // 1. Pobierz klasy
@@ -241,7 +254,7 @@
                 cSelect.innerHTML = '<option disabled>Brak klas w tej szkole</option>';
             }
 
-            // 2. Pobierz pakiety (wszystkie dla danego poziomu)
+            // 2. Pobierz pakiety
             const { data: packages } = await _supabase.from('packages')
                 .select('id, title, description')
                 .eq('level', schoolLevel)
@@ -252,6 +265,8 @@
             
             if (allPackages.length > 0) {
                 filterInput.disabled = false;
+            } else {
+                grid.innerHTML = '<div class="empty-state">Brak pakietów dla tego poziomu.</div>';
             }
         }
 
@@ -259,21 +274,17 @@
             const grid = document.getElementById('package-grid');
             grid.innerHTML = '';
 
-            if (list.length === 0) {
-                grid.innerHTML = '<div class="empty-state">Brak dostępnych pakietów dla tego poziomu.</div>';
-                return;
-            }
+            if (list.length === 0) return; // Pusty stan obsłużony wyżej lub przez filtr
 
             list.forEach(pkg => {
                 const card = document.createElement('div');
                 card.className = 'package-card';
-                card.dataset.id = pkg.id; // Przechowujemy ID w atrybucie
+                card.dataset.id = pkg.id; 
                 
-                // Jeśli ten pakiet jest już wybrany (np. po filtrowaniu), dodaj klasę selected
-                const currentSelectedId = document.getElementById('selected-package-id').value;
-                if(pkg.id == currentSelectedId) card.classList.add('selected');
+                // Przywróć zaznaczenie, jeśli było
+                if(selectedPackageIds.has(pkg.id)) card.classList.add('selected');
 
-                card.onclick = () => selectPackageUI(pkg.id, card);
+                card.onclick = () => toggleSelection(pkg.id, card);
 
                 card.innerHTML = `
                     <div>
@@ -285,19 +296,31 @@
             });
         }
 
-        function selectPackageUI(id, cardElem) {
-            // Zapisz ID do ukrytego inputa
-            document.getElementById('selected-package-id').value = id;
-
-            // Usuń zaznaczenie ze wszystkich kafelków
-            const allCards = document.querySelectorAll('.package-card');
-            allCards.forEach(c => c.classList.remove('selected'));
-
-            // Dodaj zaznaczenie do klikniętego
-            cardElem.classList.add('selected');
+        function toggleSelection(id, cardElem) {
+            if (selectedPackageIds.has(id)) {
+                selectedPackageIds.delete(id);
+                cardElem.classList.remove('selected');
+            } else {
+                selectedPackageIds.add(id);
+                cardElem.classList.add('selected');
+            }
+            updateSelectionUI();
         }
 
-        // --- FILTROWANIE ---
+        function updateSelectionUI() {
+            const count = selectedPackageIds.size;
+            const bar = document.getElementById('selection-bar');
+            document.getElementById('selection-count').innerText = count > 0 ? `${count} pakiet(y)` : '0';
+            
+            bar.style.display = count > 0 ? 'flex' : 'none';
+        }
+
+        function clearAllSelections() {
+            selectedPackageIds.clear();
+            document.querySelectorAll('.package-card.selected').forEach(c => c.classList.remove('selected'));
+            updateSelectionUI();
+        }
+
         function setupFilterListener() {
             const input = document.getElementById('package-filter');
             input.addEventListener('input', (e) => {
@@ -310,38 +333,47 @@
             });
         }
 
-        // --- ZAPIS ---
+        // --- ZAPIS (Bulk Insert) ---
         document.getElementById('assignForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const classId = document.getElementById('class-select').value;
-            const packageId = document.getElementById('selected-package-id').value;
+            const packageIds = Array.from(selectedPackageIds);
 
             if (!classId) return alert("Wybierz klasę!");
-            if (!packageId) return alert("Wybierz pakiet z listy!");
+            if (packageIds.length === 0) return alert("Zaznacz przynajmniej jeden pakiet!");
 
-            // Sprawdź duplikaty
+            // 1. Sprawdź, co już jest przypisane (żeby nie było błędów)
             const { data: existing } = await _supabase.from('package_classes')
-                .select('id')
+                .select('package_id')
                 .eq('class_id', classId)
-                .eq('package_id', packageId)
-                .maybeSingle();
+                .in('package_id', packageIds);
 
-            if (existing) {
-                return alert("Ten pakiet jest już przypisany do tej klasy.");
+            const existingIds = existing ? existing.map(x => x.package_id) : [];
+            
+            // 2. Filtruj tylko nowe
+            const newIds = packageIds.filter(id => !existingIds.includes(id));
+
+            if (newIds.length === 0) {
+                return alert("Wszystkie wybrane pakiety są już przypisane do tej klasy.");
             }
 
-            const { error } = await _supabase.from('package_classes').insert({
+            // 3. Przygotuj dane do insertu
+            const toInsert = newIds.map(pid => ({
                 class_id: classId,
-                package_id: packageId
-            });
+                package_id: pid
+            }));
+
+            const { error } = await _supabase.from('package_classes').insert(toInsert);
 
             if (error) {
                 alert("Błąd: " + error.message);
             } else {
-                alert("✅ Przypisano pomyślnie!");
-                // Opcjonalnie: odznacz kafelek, ale nie czyść wszystkiego, żeby można było dodać kolejny do tej samej klasy
-                document.getElementById('selected-package-id').value = "";
-                document.querySelectorAll('.package-card.selected').forEach(c => c.classList.remove('selected'));
+                let msg = `✅ Przypisano pomyślnie ${newIds.length} pakiet(ów)!`;
+                if (existingIds.length > 0) {
+                    msg += `\n(Pominięto ${existingIds.length}, które już były przypisane).`;
+                }
+                alert(msg);
+                clearAllSelections();
             }
         });
     </script>
