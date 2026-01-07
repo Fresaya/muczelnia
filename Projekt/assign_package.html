@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mUczelnia - Przypisz Materiał</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <style>
+        .form-container {
+            background: var(--panel-bg);
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            max-width: 600px;
+            margin: 0 auto;
+            box-shadow: var(--shadow);
+        }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: bold; color: var(--text-muted); font-size: 13px; text-transform: uppercase; }
+        .info-box {
+            background: rgba(33, 150, 243, 0.1);
+            border: 1px solid rgba(33, 150, 243, 0.3);
+            color: #1565C0;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="layout-wrapper">
+        <aside class="sidebar-left">
+            <div class="top-section">
+                <div class="brand-area"><a href="dashboard.html" class="logo-text"><span>m</span>Uczelnia</a></div>
+                <ul class="nav-menu">
+                    <li class="nav-item"><a href="dashboard.html" class="nav-link"><span>Pulpit</span></a></li>
+                    <li class="nav-item"><a href="#" class="nav-link active"><span>Przypisz</span></a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="welcome-header">
+                <div>
+                    <a href="dashboard.html" style="text-decoration:none; color:var(--text-muted);">← Wróć</a>
+                    <h1>Przypisz Materiał do Klasy</h1>
+                </div>
+            </div>
+
+            <div class="form-container">
+                <div class="info-box">
+                    <span class="material-symbols-outlined">info</span>
+                    <div>
+                        Wybierz klasę oraz pakiet materiałów (przedmiot), który ma być dla niej dostępny.
+                        Pakiety są filtrowane wg poziomu szkoły.
+                    </div>
+                </div>
+
+                <form id="assignForm">
+                    <div class="form-group">
+                        <label>Szkoła</label>
+                        <select id="school-select" class="edit-input" required>
+                            <option value="" disabled selected>Ładowanie...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Klasa</label>
+                        <select id="class-select" class="edit-input" disabled required>
+                            <option value="" disabled selected>-- Najpierw wybierz szkołę --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Pakiet (Przedmiot / Kurs)</label>
+                        <select id="package-select" class="edit-input" disabled required>
+                            <option value="" disabled selected>-- Najpierw wybierz klasę --</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="login-button full-width-btn" style="background: #9C27B0; margin-top: 10px;">
+                        Przypisz Pakiet
+                    </button>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg'; 
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        let currentUser = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (!session) { window.location.href = 'login.html'; return; }
+
+            const { data: user } = await _supabase.from('users').select('role, school_id').eq('id', session.user.id).single();
+            // Sprawdzamy uprawnienia (Admin, Manager, Lecturer - bez zwykłego nauczyciela)
+            if (!['admin', 'manager', 'lecturer'].includes(user.role)) {
+                alert("Brak uprawnień."); window.location.href = 'dashboard.html'; return;
+            }
+            currentUser = user;
+
+            await initForm();
+        });
+
+        async function initForm() {
+            const sSelect = document.getElementById('school-select');
+            
+            // Logika ładowania szkół
+            let query = _supabase.from('schools').select('id, name, level').order('name');
+            
+            // Jeśli nie admin, pobieramy tylko szkołę użytkownika
+            if (currentUser.role !== 'admin') {
+                query = query.eq('id', currentUser.school_id);
+            }
+
+            const { data: schools } = await query;
+            sSelect.innerHTML = '<option value="" disabled selected>-- Wybierz Szkołę --</option>';
+
+            if (schools && schools.length > 0) {
+                schools.forEach(s => {
+                    // Dodajemy poziom szkoły do dataset opcji, żeby łatwo go pobrać
+                    const opt = new Option(s.name, s.id);
+                    opt.dataset.level = s.level;
+                    sSelect.add(opt);
+                });
+
+                // Auto-wybór dla managera/wykładowcy
+                if (currentUser.role !== 'admin') {
+                    sSelect.value = currentUser.school_id;
+                    sSelect.disabled = true; // Blokujemy zmianę
+                    loadDependentData(currentUser.school_id, schools[0].level);
+                }
+            }
+
+            // Obsługa zmiany szkoły (dla admina)
+            sSelect.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                const level = selectedOption.dataset.level;
+                loadDependentData(this.value, level);
+            });
+        }
+
+        async function loadDependentData(schoolId, schoolLevel) {
+            const cSelect = document.getElementById('class-select');
+            const pSelect = document.getElementById('package-select');
+
+            // Reset
+            cSelect.innerHTML = '<option>Ładowanie...</option>'; cSelect.disabled = true;
+            pSelect.innerHTML = '<option>Ładowanie...</option>'; pSelect.disabled = true;
+
+            // 1. Pobierz klasy dla tej szkoły
+            const { data: classes } = await _supabase.from('classes').select('id, name').eq('school_id', schoolId).order('name');
+            
+            cSelect.innerHTML = '<option value="" disabled selected>-- Wybierz Klasę --</option>';
+            if (classes && classes.length > 0) {
+                classes.forEach(c => cSelect.add(new Option(c.name, c.id)));
+                cSelect.disabled = false;
+            } else {
+                cSelect.innerHTML = '<option disabled>Brak klas w tej szkole</option>';
+            }
+
+            // 2. Pobierz pakiety zgodne z poziomem szkoły
+            const { data: packages } = await _supabase.from('packages').select('id, title').eq('level', schoolLevel).order('title');
+
+            pSelect.innerHTML = '<option value="" disabled selected>-- Wybierz Pakiet --</option>';
+            if (packages && packages.length > 0) {
+                packages.forEach(p => pSelect.add(new Option(p.title, p.id)));
+                pSelect.disabled = false;
+            } else {
+                pSelect.innerHTML = '<option disabled>Brak pakietów dla tego poziomu</option>';
+            }
+        }
+
+        document.getElementById('assignForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const classId = document.getElementById('class-select').value;
+            const packageId = document.getElementById('package-select').value;
+
+            if (!classId || !packageId) return alert("Wybierz klasę i pakiet!");
+
+            // Sprawdź czy już nie jest przypisany
+            const { data: existing } = await _supabase.from('package_classes')
+                .select('id')
+                .eq('class_id', classId)
+                .eq('package_id', packageId)
+                .maybeSingle();
+
+            if (existing) {
+                return alert("Ten pakiet jest już przypisany do tej klasy.");
+            }
+
+            const { error } = await _supabase.from('package_classes').insert({
+                class_id: classId,
+                package_id: packageId
+            });
+
+            if (error) {
+                alert("Błąd: " + error.message);
+            } else {
+                alert("✅ Przypisano pomyślnie!");
+                // Opcjonalnie: reset formularza klas/pakietów, ale zostawiamy szkołę
+                document.getElementById('class-select').value = "";
+                document.getElementById('package-select').value = "";
+            }
+        });
+    </script>
+</body>
+</html>
