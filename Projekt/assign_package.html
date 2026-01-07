@@ -30,6 +30,61 @@
             align-items: center;
             gap: 10px;
         }
+
+        /* --- STYL WYSZUKIWARKI --- */
+        .search-container { position: relative; }
+        
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 250px;
+            overflow-y: auto;
+            z-index: 100;
+            display: none;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        
+        .search-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border-color);
+            transition: background 0.1s;
+            font-size: 14px;
+            color: var(--text-main);
+        }
+        .search-item:last-child { border-bottom: none; }
+        .search-item:hover { background: var(--hover-bg); }
+        .search-item strong { color: var(--accent-color); }
+
+        /* Styl wybranego elementu */
+        .selected-pkg-display {
+            margin-top: 8px;
+            padding: 12px;
+            background: rgba(76, 175, 80, 0.1);
+            border: 1px solid #4CAF50;
+            color: #2E7D32;
+            border-radius: 8px;
+            display: none; /* Domyślnie ukryte */
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 500;
+        }
+        .remove-selection { 
+            cursor: pointer; 
+            font-weight: bold; 
+            padding: 5px; 
+            border-radius: 50%;
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+        }
+        .remove-selection:hover { background: rgba(0,0,0,0.1); }
     </style>
 </head>
 <body>
@@ -56,8 +111,7 @@
                 <div class="info-box">
                     <span class="material-symbols-outlined">info</span>
                     <div>
-                        Wybierz klasę oraz pakiet materiałów (przedmiot), który ma być dla niej dostępny.
-                        Pakiety są filtrowane wg poziomu szkoły.
+                        Wybierz klasę, a następnie wyszukaj pakiet materiałów (przedmiot), który chcesz przypisać.
                     </div>
                 </div>
 
@@ -77,10 +131,22 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Pakiet (Przedmiot / Kurs)</label>
-                        <select id="package-select" class="edit-input" disabled required>
-                            <option value="" disabled selected>-- Najpierw wybierz klasę --</option>
-                        </select>
+                        <label>Pakiet (Wyszukaj)</label>
+                        
+                        <div class="search-container">
+                            <input type="text" id="package-search" class="edit-input" placeholder="Zacznij pisać nazwę pakietu..." disabled autocomplete="off">
+                            <div id="package-results" class="search-results"></div>
+                        </div>
+                        
+                        <div id="selected-package-box" class="selected-pkg-display">
+                            <span style="display:flex; align-items:center; gap:8px;">
+                                <span class="material-symbols-outlined" style="font-size:20px;">check_circle</span>
+                                <span id="selected-package-name">Nazwa Pakietu</span>
+                            </span>
+                            <span class="remove-selection" onclick="clearPackageSelection()" title="Usuń wybór">✕</span>
+                        </div>
+
+                        <input type="hidden" id="selected-package-id" required>
                     </div>
 
                     <button type="submit" class="login-button full-width-btn" style="background: #9C27B0; margin-top: 10px;">
@@ -98,28 +164,26 @@
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
         let currentUser = null;
+        let availablePackages = []; // Tutaj przechowamy pobrane pakiety
 
         document.addEventListener('DOMContentLoaded', async () => {
             const { data: { session } } = await _supabase.auth.getSession();
             if (!session) { window.location.href = 'login.html'; return; }
 
             const { data: user } = await _supabase.from('users').select('role, school_id').eq('id', session.user.id).single();
-            // Sprawdzamy uprawnienia (Admin, Manager, Lecturer - bez zwykłego nauczyciela)
             if (!['admin', 'manager', 'lecturer'].includes(user.role)) {
                 alert("Brak uprawnień."); window.location.href = 'dashboard.html'; return;
             }
             currentUser = user;
 
             await initForm();
+            setupSearchListener();
         });
 
         async function initForm() {
             const sSelect = document.getElementById('school-select');
             
-            // Logika ładowania szkół
             let query = _supabase.from('schools').select('id, name, level').order('name');
-            
-            // Jeśli nie admin, pobieramy tylko szkołę użytkownika
             if (currentUser.role !== 'admin') {
                 query = query.eq('id', currentUser.school_id);
             }
@@ -129,21 +193,18 @@
 
             if (schools && schools.length > 0) {
                 schools.forEach(s => {
-                    // Dodajemy poziom szkoły do dataset opcji, żeby łatwo go pobrać
                     const opt = new Option(s.name, s.id);
                     opt.dataset.level = s.level;
                     sSelect.add(opt);
                 });
 
-                // Auto-wybór dla managera/wykładowcy
                 if (currentUser.role !== 'admin') {
                     sSelect.value = currentUser.school_id;
-                    sSelect.disabled = true; // Blokujemy zmianę
+                    sSelect.disabled = true; 
                     loadDependentData(currentUser.school_id, schools[0].level);
                 }
             }
 
-            // Obsługa zmiany szkoły (dla admina)
             sSelect.addEventListener('change', function() {
                 const selectedOption = this.options[this.selectedIndex];
                 const level = selectedOption.dataset.level;
@@ -153,13 +214,14 @@
 
         async function loadDependentData(schoolId, schoolLevel) {
             const cSelect = document.getElementById('class-select');
-            const pSelect = document.getElementById('package-select');
+            const searchInput = document.getElementById('package-search');
 
-            // Reset
+            // Reset UI
             cSelect.innerHTML = '<option>Ładowanie...</option>'; cSelect.disabled = true;
-            pSelect.innerHTML = '<option>Ładowanie...</option>'; pSelect.disabled = true;
+            clearPackageSelection();
+            searchInput.disabled = true; searchInput.value = ""; availablePackages = [];
 
-            // 1. Pobierz klasy dla tej szkoły
+            // 1. Pobierz klasy
             const { data: classes } = await _supabase.from('classes').select('id, name').eq('school_id', schoolId).order('name');
             
             cSelect.innerHTML = '<option value="" disabled selected>-- Wybierz Klasę --</option>';
@@ -170,26 +232,86 @@
                 cSelect.innerHTML = '<option disabled>Brak klas w tej szkole</option>';
             }
 
-            // 2. Pobierz pakiety zgodne z poziomem szkoły
+            // 2. Pobierz pakiety (wszystkie dla danego poziomu) i zapisz w zmiennej
             const { data: packages } = await _supabase.from('packages').select('id, title').eq('level', schoolLevel).order('title');
-
-            pSelect.innerHTML = '<option value="" disabled selected>-- Wybierz Pakiet --</option>';
+            
             if (packages && packages.length > 0) {
-                packages.forEach(p => pSelect.add(new Option(p.title, p.id)));
-                pSelect.disabled = false;
+                availablePackages = packages;
+                searchInput.disabled = false;
+                searchInput.placeholder = `Przeszukaj ${packages.length} pakietów...`;
             } else {
-                pSelect.innerHTML = '<option disabled>Brak pakietów dla tego poziomu</option>';
+                searchInput.placeholder = "Brak pakietów dla tego poziomu.";
             }
         }
 
+        // --- LOGIKA WYSZUKIWARKI ---
+        function setupSearchListener() {
+            const searchInput = document.getElementById('package-search');
+            const resultsDiv = document.getElementById('package-results');
+
+            searchInput.addEventListener('input', function(e) {
+                const term = e.target.value.toLowerCase();
+                resultsDiv.innerHTML = '';
+                
+                if(term.length < 1) {
+                    resultsDiv.style.display = 'none';
+                    return;
+                }
+
+                // Filtrowanie lokalne
+                const filtered = availablePackages.filter(p => p.title.toLowerCase().includes(term));
+                
+                if(filtered.length > 0) {
+                    resultsDiv.style.display = 'block';
+                    filtered.forEach(p => {
+                        const div = document.createElement('div');
+                        div.className = 'search-item';
+                        // Podświetlanie dopasowania (opcjonalne, prosty bold)
+                        div.innerHTML = p.title.replace(new RegExp(term, "gi"), (match) => `<strong>${match}</strong>`);
+                        div.onclick = () => selectPackage(p);
+                        resultsDiv.appendChild(div);
+                    });
+                } else {
+                    resultsDiv.style.display = 'block';
+                    resultsDiv.innerHTML = '<div class="search-item" style="cursor:default; color:gray;">Brak wyników</div>';
+                }
+            });
+
+            // Kliknięcie poza zamyka listę
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.search-container')) {
+                    resultsDiv.style.display = 'none';
+                }
+            });
+        }
+
+        function selectPackage(pkg) {
+            document.getElementById('selected-package-id').value = pkg.id;
+            document.getElementById('selected-package-name').innerText = pkg.title;
+            
+            document.getElementById('selected-package-box').style.display = 'flex'; // Pokaż kafelek
+            document.getElementById('package-search').style.display = 'none';     // Ukryj input
+            document.getElementById('package-results').style.display = 'none';    // Ukryj listę
+        }
+
+        function clearPackageSelection() {
+            document.getElementById('selected-package-id').value = "";
+            
+            document.getElementById('selected-package-box').style.display = 'none'; // Ukryj kafelek
+            const searchInput = document.getElementById('package-search');
+            searchInput.style.display = 'block'; // Pokaż input
+            searchInput.value = "";
+            searchInput.focus();
+        }
+
+        // --- WYSYŁANIE FORMULARZA ---
         document.getElementById('assignForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const classId = document.getElementById('class-select').value;
-            const packageId = document.getElementById('package-select').value;
+            const packageId = document.getElementById('selected-package-id').value;
 
             if (!classId || !packageId) return alert("Wybierz klasę i pakiet!");
 
-            // Sprawdź czy już nie jest przypisany
             const { data: existing } = await _supabase.from('package_classes')
                 .select('id')
                 .eq('class_id', classId)
@@ -209,9 +331,8 @@
                 alert("Błąd: " + error.message);
             } else {
                 alert("✅ Przypisano pomyślnie!");
-                // Opcjonalnie: reset formularza klas/pakietów, ale zostawiamy szkołę
-                document.getElementById('class-select').value = "";
-                document.getElementById('package-select').value = "";
+                // Czyścimy wybór pakietu, ale zostawiamy klasę (żeby można było dodać kolejny)
+                clearPackageSelection();
             }
         });
     </script>
