@@ -554,31 +554,4 @@ async function generateEmail() {
 
 async function addSchool(e){ e.preventDefault(); const {error}=await _supabase.from('schools').insert({name:document.getElementById('school-name').value, abbreviation:document.getElementById('school-abbr').value, level:document.getElementById('school-level').value, address:document.getElementById('school-address').value}); if(error)alert(error.message); else {alert("Dodano"); closeModal('addSchoolModal'); schoolsCache=[];} }
 
-async function openAssignCourseModal(){ 
-    openModal('assignCourseModal'); 
-    const ss=document.getElementById('assign-school-select'); ss.innerHTML='<option disabled selected>Wybierz Szkołę</option>'; 
-    let query = _supabase.from('schools').select('id,name');
-    if(currentUserRole !== 'admin') query = query.eq('id', currentUserSchoolId);
-    const {data:s}=await query; if(s) s.forEach(x=>ss.add(new Option(x.name,x.id))); 
-    document.getElementById('assign-package-select').innerHTML='<option disabled selected>Najpierw Szkoła...</option>'; document.getElementById('assign-package-select').disabled = true;
-}
 
-async function assignCourseToClass(e){ 
-    e.preventDefault(); 
-    const p=document.getElementById('assign-package-select').value; 
-    const c=document.getElementById('assign-class-select').value; 
-    if(!c) return alert("Wybierz klasę!"); 
-    
-    const {error}=await _supabase.from('package_classes').insert({package_id:p,class_id:c}); 
-    
-    if(error) alert(error.message); 
-    else {
-        alert("Przypisano pomyślnie!"); 
-        closeModal('assignCourseModal');
-        document.getElementById('assignCourseForm').reset();
-        document.getElementById('assign-class-select').innerHTML = '<option value="">-- Wybierz szkołę najpierw --</option>';
-        document.getElementById('assign-class-select').disabled = true;
-        document.getElementById('assign-package-select').innerHTML = '<option value="" disabled selected>-- Wybierz Pakiet --</option>';
-        document.getElementById('assign-package-select').disabled = true;
-    } 
-}
