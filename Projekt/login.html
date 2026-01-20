@@ -46,10 +46,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script>
-        // 2. CONFIGURATION
-        const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
 
-        // ⚠️ PASTE YOUR PUBLIC ANON KEY HERE
+        const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg';
 
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
@@ -60,14 +58,14 @@
             const emailInput = document.getElementById('email-input');
             const loginForm = document.getElementById('loginForm');
 
-            // --- Toggle Password Logic ---
+            // pokaż hasło
             togglePassword.addEventListener('click', () => {
                 const isPassword = passwordInput.type === 'password';
                 passwordInput.type = isPassword ? 'text' : 'password';
                 togglePassword.classList.toggle('visible', isPassword);
             });
 
-            // --- 3. Secure Login Logic ---
+            // Login
             loginForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
 
@@ -76,7 +74,7 @@
 
                 console.log("Attempting secure login...");
 
-                // A. Authenticate with Supabase Auth (Checks Hash)
+                // Weryfikacja z auth
                 const { data: authData, error: authError } = await _supabase.auth.signInWithPassword({
                     email: email,
                     password: password,
@@ -87,12 +85,8 @@
                     return;
                 }
 
-                // B. Login Success! Now fetch the Public Profile
-                // We use the ID from the auth result (authData.user.id)
-                console.log("Auth success. Fetching profile for ID:", authData.user.id);
-
                 const { data: profile, error: profileError } = await _supabase
-                    .from('users') // Querying your 'public.users' table
+                    .from('users') 
                     .select('username')
                     .eq('id', authData.user.id)
                     .single();
@@ -101,10 +95,6 @@
                     console.error("Profile fetch error:", profileError);
                     alert("Zalogowano, ale nie udało się pobrać profilu.");
                 } else {
-                    // C. Success!
-                    //alert(`✅ Zalogowano pomyślnie!\nWitaj, ${profile.username}`);
-
-                    // UNCOMMENT BELOW TO REDIRECT
                     window.location.href = 'dashboard.html';
                 }
             });
@@ -114,4 +104,5 @@
 
 
 </html>
+
 
