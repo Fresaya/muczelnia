@@ -18,8 +18,7 @@ const WIDGETS = {
         'widget-teacher-results', 
         'widget-teacher-grades', 
         'widget-calendar', 
-        'widget-teacher-behavior',
-        'widget-assign-course'
+        'widget-teacher-behavior'
     ],
     
     // Administrative / Management widgets
@@ -31,7 +30,7 @@ const WIDGETS = {
         'widget-manage-teachers', 
         'widget-manage-parents'
     ],
-    system: ['widget-add-user', 'widget-add-school']
+    system: ['widget-add-user', 'widget-add-school', 'widget-assign-course']
 };
 
 // --- GLOBAL STATE ---
@@ -104,8 +103,12 @@ async function setupDashboardView(profile) {
     else if (['admin', 'manager', 'teacher', 'lecturer'].includes(role)) {
         WIDGETS.staffCommon.forEach(show);
         document.getElementById('widget-calendar').onclick = () => openCalendarModal();
-        document.getElementById('widget-assign-course').onclick = () => openAssignCourseModal();
 
+        // Special Staff Logic
+        if (role !== 'teacher') {
+            show('widget-assign-course');
+            document.getElementById('widget-assign-course').onclick = () => openAssignCourseModal();
+        }
 
         switch (role) {
             case 'admin':
