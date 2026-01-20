@@ -18,7 +18,8 @@ const WIDGETS = {
         'widget-teacher-results', 
         'widget-teacher-grades', 
         'widget-calendar', 
-        'widget-teacher-behavior'
+        'widget-teacher-behavior',
+        'widget-assign-course'
     ],
     
     // Administrative / Management widgets
@@ -30,7 +31,7 @@ const WIDGETS = {
         'widget-manage-teachers', 
         'widget-manage-parents'
     ],
-    system: ['widget-add-user', 'widget-add-school', 'widget-assign-course']
+    system: ['widget-add-user', 'widget-add-school']
 };
 
 // --- GLOBAL STATE ---
