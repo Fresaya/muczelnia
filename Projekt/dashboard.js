@@ -104,12 +104,8 @@ async function setupDashboardView(profile) {
     else if (['admin', 'manager', 'teacher', 'lecturer'].includes(role)) {
         WIDGETS.staffCommon.forEach(show);
         document.getElementById('widget-calendar').onclick = () => openCalendarModal();
+        document.getElementById('widget-assign-course').onclick = () => openAssignCourseModal();
 
-        // Special Staff Logic
-        if (role !== 'teacher') {
-            show('widget-assign-course');
-            document.getElementById('widget-assign-course').onclick = () => openAssignCourseModal();
-        }
 
         switch (role) {
             case 'admin':
