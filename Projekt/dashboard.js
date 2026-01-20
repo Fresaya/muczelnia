@@ -2,6 +2,38 @@ const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg'; 
 const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
+// --- 1. CONFIGURATION ---
+const WIDGETS = {
+    // Widgets exclusive to Students/Parents
+    studentCommon: [
+        'student-sidebar-content', 
+        'widget-student-grades', 
+        'widget-student-calendar', 
+        'widget-student-behavior'
+    ],
+    studentOnly: ['widget-student-courses', 'widget-student-schedule'],
+    
+    // Widgets common to Staff (Admin, Teacher, Manager, Lecturer)
+    staffCommon: [
+        'widget-teacher-results', 
+        'widget-teacher-grades', 
+        'widget-calendar', 
+        'widget-teacher-behavior'
+    ],
+    
+    // Administrative / Management widgets
+    adminContent: ['widget-admin-content'],
+    creation: ['widget-create-course', 'widget-create-quiz'],
+    management: [
+        'widget-manage-classes', 
+        'widget-manage-students', 
+        'widget-manage-teachers', 
+        'widget-manage-parents'
+    ],
+    system: ['widget-add-user', 'widget-add-school', 'widget-assign-course']
+};
+
+// --- GLOBAL STATE ---
 let currentUserRole = null;
 let currentUserSchoolId = null;
 let currentUserClassId = null;
@@ -11,6 +43,8 @@ let generatedMemberCode = null;
 let selectedChildrenIds = []; 
 let currentChildId = null;
 
+// --- 2. INITIALIZATION ---
+
 document.addEventListener('DOMContentLoaded', async () => {
     const { data: { session } } = await _supabase.auth.getSession();
     if (!session) { window.location.href = 'login.html'; return; }
@@ -18,115 +52,117 @@ document.addEventListener('DOMContentLoaded', async () => {
     try { await _supabase.rpc('delete_old_events'); } catch (e) { console.log("Brak funkcji RPC, pomijam czyszczenie."); }
 
     const userId = session.user.id;
-    const { data: profile } = await _supabase.from('users').select('username, role, school_id, class_id, schools(name), classes(name)').eq('id', userId).single();
+    const { data: profile } = await _supabase.from('users')
+        .select('id, username, role, school_id, class_id, schools(name), classes(name)')
+        .eq('id', userId)
+        .single();
 
     if (profile) {
         currentUserRole = profile.role;
         currentUserSchoolId = profile.school_id;
         currentUserClassId = profile.class_id;
         
-        document.getElementById('profile-name-display').textContent = profile.username;
-        // ZMIANA NAZWY ROLI
-        const roleMap = { 'student': 'UCZEŃ', 'teacher': 'NAUCZYCIEL', 'manager': 'SEKRETARIAT', 'admin': 'ADMIN', 'lecturer': 'WYKŁADOWCA', 'parent': 'RODZIC' };
-        document.getElementById('profile-role-display').textContent = (roleMap[profile.role] || profile.role).toUpperCase();
-        
-        let schoolInfo = "";
-        if (profile.schools && profile.schools.name) schoolInfo = profile.schools.name;
-        if (profile.classes && profile.classes.name) schoolInfo += `<br><span style="color:var(--accent-color); font-weight:bold;">${profile.classes.name}</span>`;
-        document.getElementById('profile-school-display').innerHTML = schoolInfo;
-        document.getElementById('welcome-message').textContent = `Witaj, ${profile.username}!`;
-
-        // --- KONFIGURACJA WIDOKU ---
-        
-        // 1. RODZIC
-        if (currentUserRole === 'parent') {
-            show('student-sidebar-content'); 
-            show('widget-student-grades');
-            show('widget-student-calendar');
-            show('widget-student-behavior');
-            
-            ['widget-assign-course', 'widget-teacher-results', 'widget-teacher-grades', 'widget-calendar', 'widget-teacher-behavior'].forEach(hide);
-            hide('widget-student-courses');
-
-            document.getElementById('widget-student-calendar').onclick = () => openCalendarModal();
-
-            const { data: relations } = await _supabase.from('parent_children')
-                .select('child_id, users:child_id(username)')
-                .eq('parent_id', userId);
-
-            if (relations && relations.length > 0) {
-                const selectorDiv = document.getElementById('parent-child-selector-container');
-                const selector = document.getElementById('parent-child-select');
-                if(selectorDiv) selectorDiv.style.display = 'block';
-                selector.innerHTML = '';
-
-                relations.forEach((rel, index) => {
-                    selector.add(new Option(rel.users.username, rel.child_id));
-                    if(index === 0) currentChildId = rel.child_id;
-                });
-                switchChildView(currentChildId);
-            } else {
-                alert("Brak przypisanych dzieci.");
-            }
-
-        } 
-        // 2. KADRA (Admin, Manager, Teacher, Lecturer)
-        else if (['admin', 'manager', 'teacher', 'lecturer'].includes(currentUserRole)) {
-            show('widget-teacher-results');
-            show('widget-teacher-grades');
-            show('widget-calendar');
-            show('widget-teacher-behavior');
-            
-            document.getElementById('widget-calendar').onclick = () => openCalendarModal();
-
-            // POPRAWKA: Nauczyciel NIE widzi "Przypisz Materiał"
-            if (['admin', 'manager', 'lecturer'].includes(currentUserRole)) {
-                show('widget-assign-course');
-                document.getElementById('widget-assign-course').onclick = () => openAssignCourseModal();
-            }
-
-            if (currentUserRole === 'admin') {
-                ['widget-admin-content', 'widget-create-course', 'widget-create-quiz', 'widget-add-user', 'widget-add-school', 'widget-manage-classes', 'widget-manage-students', 'widget-manage-teachers', 'widget-manage-parents'].forEach(show);
-                ['widget-student-courses', 'widget-student-grades', 'widget-student-calendar', 'widget-student-behavior'].forEach(hide);
-                
-                document.getElementById('widget-add-user').onclick = () => openCreateUserModal();
-                document.getElementById('widget-add-school').onclick = () => openModal('addSchoolModal');
-            }
-
-            if (currentUserRole === 'manager') {
-                show('widget-add-user');
-                show('widget-manage-classes');
-                show('widget-manage-students');
-                show('widget-manage-teachers');
-                show('widget-manage-parents');
-                document.getElementById('widget-add-user').onclick = () => openCreateUserModal();
-            }
-
-            if (currentUserRole === 'lecturer') {
-                show('widget-manage-classes'); 
-                show('widget-manage-students');
-                hide('widget-add-user'); 
-                hide('widget-add-school');
-                show('widget-admin-content');
-                show('widget-create-course');
-                show('widget-create-quiz');
-            }
-        } 
-        // 3. STUDENT
-        else {
-            show('student-sidebar-content'); 
-            currentChildId = userId;
-            switchChildView(userId);
-            
-            show('widget-student-courses');
-            show('widget-student-grades');
-            show('widget-student-calendar');
-            document.getElementById('widget-student-calendar').onclick = () => openCalendarModal();
-            show('widget-student-behavior');
-            show('widget-student-schedule');
-        }
+        // Setup UI
+        updateHeaderInfo(profile);
+        await setupDashboardView(profile);
     }
 
+    setupEventListeners();
+});
+
+// --- 3. VIEW LOGIC & SETUP ---
+
+function updateHeaderInfo(profile) {
+    document.getElementById('profile-name-display').textContent = profile.username;
+    
+    const roleMap = { 'student': 'UCZEŃ', 'teacher': 'NAUCZYCIEL', 'manager': 'SEKRETARIAT', 'admin': 'ADMIN', 'lecturer': 'WYKŁADOWCA', 'parent': 'RODZIC' };
+    document.getElementById('profile-role-display').textContent = (roleMap[profile.role] || profile.role).toUpperCase();
+    
+    let schoolInfo = "";
+    if (profile.schools && profile.schools.name) schoolInfo = profile.schools.name;
+    if (profile.classes && profile.classes.name) schoolInfo += `<br><span style="color:var(--accent-color); font-weight:bold;">${profile.classes.name}</span>`;
+    
+    document.getElementById('profile-school-display').innerHTML = schoolInfo;
+    document.getElementById('welcome-message').textContent = `Witaj, ${profile.username}!`;
+}
+
+async function setupDashboardView(profile) {
+    const role = profile.role;
+    const userId = profile.id;
+
+    // A. RESET: Hide ALL widgets first
+    const allWidgets = Object.values(WIDGETS).flat();
+    allWidgets.forEach(hide);
+
+    // B. ROLE LOGIC
+    if (role === 'parent') {
+        WIDGETS.studentCommon.forEach(show);
+        document.getElementById('widget-student-calendar').onclick = () => openCalendarModal();
+        await loadParentData(userId);
+    } 
+    else if (['admin', 'manager', 'teacher', 'lecturer'].includes(role)) {
+        WIDGETS.staffCommon.forEach(show);
+        document.getElementById('widget-calendar').onclick = () => openCalendarModal();
+
+        // Special Staff Logic
+        if (role !== 'teacher') {
+            show('widget-assign-course');
+            document.getElementById('widget-assign-course').onclick = () => openAssignCourseModal();
+        }
+
+        switch (role) {
+            case 'admin':
+                [...WIDGETS.adminContent, ...WIDGETS.creation, ...WIDGETS.management].forEach(show);
+                show('widget-add-user');
+                show('widget-add-school');
+                document.getElementById('widget-add-user').onclick = () => openCreateUserModal();
+                document.getElementById('widget-add-school').onclick = () => openModal('addSchoolModal');
+                break;
+
+            case 'manager':
+                show('widget-add-user');
+                WIDGETS.management.forEach(show);
+                document.getElementById('widget-add-user').onclick = () => openCreateUserModal();
+                break;
+
+            case 'lecturer':
+                [...WIDGETS.adminContent, ...WIDGETS.creation].forEach(show);
+                show('widget-manage-classes');
+                show('widget-manage-students');
+                break;
+        }
+    } 
+    else { // STUDENT
+        [...WIDGETS.studentCommon, ...WIDGETS.studentOnly].forEach(show);
+        currentChildId = userId;
+        switchChildView(userId);
+        document.getElementById('widget-student-calendar').onclick = () => openCalendarModal();
+    }
+}
+
+async function loadParentData(parentId) {
+    const selectorDiv = document.getElementById('parent-child-selector-container');
+    const selector = document.getElementById('parent-child-select');
+    
+    const { data: relations } = await _supabase.from('parent_children')
+        .select('child_id, users:child_id(username)')
+        .eq('parent_id', parentId);
+
+    if (relations && relations.length > 0) {
+        if(selectorDiv) selectorDiv.style.display = 'block';
+        selector.innerHTML = '';
+
+        relations.forEach((rel, index) => {
+            selector.add(new Option(rel.users.username, rel.child_id));
+            if(index === 0) currentChildId = rel.child_id;
+        });
+        switchChildView(currentChildId);
+    } else {
+        alert("Brak przypisanych dzieci.");
+    }
+}
+
+function setupEventListeners() {
     document.getElementById('avatarTrigger').addEventListener('click', (e) => { 
         e.stopPropagation(); 
         const menu = document.getElementById('profileDropdown');
@@ -148,15 +184,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             window.location.href = 'settings.html';
         });
     }
+
+    // Forms
     document.getElementById('createUserForm').addEventListener('submit', createNewUser);
     document.getElementById('addSchoolForm').addEventListener('submit', addSchool);
     document.getElementById('assignCourseForm').addEventListener('submit', assignCourseToClass);
     
+    // Create User Logic
     document.getElementById('new-role').addEventListener('change', handleRoleChange);
     document.getElementById('new-user-level-filter').addEventListener('change', filterNewUserSchools);
     document.getElementById('new-user-school').addEventListener('change', async function() { await loadClassesForSchool(this.value); generateEmail(); });
     document.getElementById('new-user-class').addEventListener('change', generateEmail);
 
+    // Assign Logic
     document.getElementById('assign-school-select').addEventListener('change', async function() {
         const sid = parseInt(this.value); 
         const cSelect = document.getElementById('assign-class-select');
@@ -183,7 +223,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             } else { pSelect.innerHTML = '<option disabled>Brak pakietów dla tego poziomu</option>'; }
         }
     });
-});
+}
+
+// --- 4. UTILITY FUNCTIONS (Helpers) ---
 
 function show(id) { const el=document.getElementById(id); if(el)el.style.display='flex'; }
 function hide(id) { const el=document.getElementById(id); if(el)el.style.display='none'; }
@@ -196,6 +238,8 @@ async function ensureSchoolsCache() {
         schoolsCache = data || [];
     }
 }
+
+// --- 5. WIDGET CONTENT LOADERS ---
 
 function switchChildView(childId) {
     currentChildId = childId;
@@ -268,6 +312,8 @@ async function loadSidebarRemarks(targetUserId) {
         list.innerHTML += `<div class="sidebar-list-item"><div class="sidebar-grade-circle" style="color:${color}; border-color:${color}; font-size:14px; width:35px; height:35px;">${txt}</div><div class="sidebar-list-content"><span style="font-size:11px; color:#888;">${dateStr}</span><br>${r.subject_name}</div></div>`;
     });
 }
+
+// --- 6. CALENDAR MODAL LOGIC ---
 
 async function openCalendarModal() {
     openModal('calendarModal');
@@ -383,6 +429,8 @@ async function deleteCalendarEvent(id) {
     await _supabase.from('calendar_events').delete().eq('id',id); 
     loadFullCalendar(true); 
 }
+
+// --- 7. USER & SCHOOL MANAGEMENT ---
 
 async function createNewUser(e) { 
     e.preventDefault(); 
@@ -554,4 +602,15 @@ async function generateEmail() {
 
 async function addSchool(e){ e.preventDefault(); const {error}=await _supabase.from('schools').insert({name:document.getElementById('school-name').value, abbreviation:document.getElementById('school-abbr').value, level:document.getElementById('school-level').value, address:document.getElementById('school-address').value}); if(error)alert(error.message); else {alert("Dodano"); closeModal('addSchoolModal'); schoolsCache=[];} }
 
+async function assignCourseToClass(e) {
+    e.preventDefault();
+    const cid = document.getElementById('assign-class-select').value;
+    const pid = document.getElementById('assign-package-select').value;
+    if(!cid || !pid) return alert("Wybierz klasę i pakiet.");
 
+    const { error } = await _supabase.from('package_classes').insert({ class_id: cid, package_id: pid });
+    if(error) alert(error.message);
+    else { alert("Przypisano materiał!"); closeModal('assignCourseModal'); }
+}
+
+function openAssignCourseModal() { openModal('assignCourseModal'); }
