@@ -74,7 +74,6 @@ async function loadStudents(schoolId) {
     const tbody = document.getElementById('students-body');
     tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Ładowanie listy...</td></tr>';
 
-    // 1. Pobierz uczniów
     const { data: students, error } = await _supabase
         .from('users')
         .select('id, username, email, class_id')
@@ -82,7 +81,6 @@ async function loadStudents(schoolId) {
         .eq('role', 'student')
         .order('username');
 
-    // 2. Pobierz klasy dla tej szkoły
     const { data: classes } = await _supabase
         .from('classes')
         .select('id, name')
@@ -94,10 +92,8 @@ async function loadStudents(schoolId) {
     allStudents = students || [];
     allClasses = classes || [];
 
-    // 3. Wypełnij Filtr Klas na górze
     populateClassFilter(allClasses);
 
-    // 4. Renderuj
     applyFilters();
 }
 
