@@ -108,7 +108,6 @@ async function setupDashboardView(profile) {
         // Special Staff Logic
         if (role !== 'teacher') {
             show('widget-assign-course');
-            document.getElementById('widget-assign-course').onclick = () => openAssignCourseModal();
         }
 
         switch (role) {
@@ -189,7 +188,6 @@ function setupEventListeners() {
     // Forms
     document.getElementById('createUserForm').addEventListener('submit', createNewUser);
     document.getElementById('addSchoolForm').addEventListener('submit', addSchool);
-    document.getElementById('assignCourseForm').addEventListener('submit', assignCourseToClass);
     
     // Create User Logic
     document.getElementById('new-role').addEventListener('change', handleRoleChange);
@@ -601,16 +599,3 @@ async function generateEmail() {
 }
 
 async function addSchool(e){ e.preventDefault(); const {error}=await _supabase.from('schools').insert({name:document.getElementById('school-name').value, abbreviation:document.getElementById('school-abbr').value, level:document.getElementById('school-level').value, address:document.getElementById('school-address').value}); if(error)alert(error.message); else {alert("Dodano"); closeModal('addSchoolModal'); schoolsCache=[];} }
-
-async function assignCourseToClass(e) {
-    e.preventDefault();
-    const cid = document.getElementById('assign-class-select').value;
-    const pid = document.getElementById('assign-package-select').value;
-    if(!cid || !pid) return alert("Wybierz klasę i pakiet.");
-
-    const { error } = await _supabase.from('package_classes').insert({ class_id: cid, package_id: pid });
-    if(error) alert(error.message);
-    else { alert("Przypisano materiał!"); closeModal('assignCourseModal'); }
-}
-
-function openAssignCourseModal() { openModal('assignCourseModal'); }
