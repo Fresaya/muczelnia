@@ -18,7 +18,8 @@ const WIDGETS = {
         'widget-teacher-results', 
         'widget-teacher-grades', 
         'widget-calendar', 
-        'widget-teacher-behavior'
+        'widget-teacher-behavior',
+        'widget-student-schedule'
     ],
     
     // Administrative / Management widgets
