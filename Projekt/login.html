@@ -62,8 +62,6 @@
                 const email = emailInput.value;
                 const password = passwordInput.value;
 
-                console.log("Attempting secure login...");
-
                 // Weryfikacja z auth
                 const { data: authData, error: authError } = await _supabase.auth.signInWithPassword({
                     email: email,
@@ -94,6 +92,7 @@
 
 
 </html>
+
 
 
 
