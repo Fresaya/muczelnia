@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>mUczelnia - Zarządzaj Nauczycielami</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
     <link rel="stylesheet" href="style.css">
     <style>
         .filter-bar { 
@@ -15,14 +16,53 @@
             gap: 15px; 
             flex-wrap: wrap; 
             margin-bottom: 20px; 
-            align-items: center; 
+            align-items: center;
+            box-shadow: var(--shadow);
         }
+
+        /* Poprawka dla inputów, żeby nie wychodziły poza obrys */
+        .filter-bar .edit-input {
+            margin: 0;
+            box-sizing: border-box;
+            height: 38px;
+        }
+
         .data-table { width: 100%; border-collapse: collapse; background: var(--panel-bg); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow); }
-        .data-table th, .data-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        .data-table th, .data-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
         .data-table th { background: rgba(0,0,0,0.02); font-weight: 600; color: var(--text-muted); }
-        .table-btn { cursor: pointer; padding: 5px 10px; border-radius: 5px; display: inline-block; margin-right: 5px; font-size: 14px; }
-        .btn-pass { background: #FF9800; color: white; }
-        .btn-del { background: #F44336; color: white; }
+
+        /* --- NOWE STYLE PRZYCISKÓW (IKONY) --- */
+        .table-btn { 
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            margin-right: 5px; 
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+        
+        .table-btn .material-symbols-rounded {
+            font-size: 20px;
+            pointer-events: none;
+        }
+
+        .table-btn:hover { transform: scale(1.1); }
+
+        /* Kolory przycisków */
+        .btn-pass { color: #FF9800; background: rgba(255, 152, 0, 0.1); }
+        .btn-pass:hover { background: rgba(255, 152, 0, 0.2); }
+
+        .btn-del { color: #F44336; background: rgba(244, 67, 54, 0.1); }
+        .btn-del:hover { background: rgba(244, 67, 54, 0.2); }
+        
+        @media (prefers-color-scheme: dark) {
+            .btn-pass { background: rgba(255, 152, 0, 0.15); }
+            .btn-del { background: rgba(244, 67, 54, 0.15); }
+        }
     </style>
 </head>
 <body>
@@ -167,13 +207,19 @@
             filtered.forEach(t => {
                 const schoolName = t.schools ? t.schools.name : 'Brak';
                 const tr = document.createElement('tr');
+                
+                // UPDATE: Zastąpiono emotki ikonami Google wewnątrz <span>
                 tr.innerHTML = `
                     <td style="font-weight:bold;">${t.username || 'Brak nazwy'}</td>
                     <td>${t.email}</td>
                     <td>${schoolName}</td>
                     <td>
-                        <div class="table-btn btn-pass" title="Zmień hasło" onclick="resetPass('${t.id}', '${t.username}')">🔑</div>
-                        <div class="table-btn btn-del" title="Usuń konto" onclick="deleteUser('${t.id}')">❌</div>
+                        <div class="table-btn btn-pass" title="Zmień hasło" onclick="resetPass('${t.id}', '${t.username}')">
+                            <span class="material-symbols-rounded">key</span>
+                        </div>
+                        <div class="table-btn btn-del" title="Usuń konto" onclick="deleteUser('${t.id}')">
+                            <span class="material-symbols-rounded">delete</span>
+                        </div>
                     </td>
                 `;
                 tbody.appendChild(tr);
