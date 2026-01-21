@@ -131,15 +131,17 @@ function renderClassesGrid(classesToRender) {
             if (e.key === 'Enter') { await updateClassName(c.id, nameInput.value); nameInput.blur(); }
         });
 
-        const saveBtn = document.createElement('div');
+        // UPDATE: Changed div to button and added Icon Span
+        const saveBtn = document.createElement('button');
         saveBtn.className = 'btn-icon-small btn-save-name';
-        saveBtn.innerHTML = '💾';
+        saveBtn.innerHTML = '<span class="material-symbols-rounded">check</span>';
         saveBtn.title = "Zapisz nazwę";
         saveBtn.onclick = () => updateClassName(c.id, nameInput.value);
 
-        const delBtn = document.createElement('div');
+        // UPDATE: Changed div to button and added Icon Span
+        const delBtn = document.createElement('button');
         delBtn.className = 'btn-icon-small btn-delete-class';
-        delBtn.innerHTML = '🗑️';
+        delBtn.innerHTML = '<span class="material-symbols-rounded">delete</span>';
         delBtn.title = "Usuń klasę";
         delBtn.onclick = () => deleteClass(c.id);
 
@@ -154,7 +156,14 @@ function renderClassesGrid(classesToRender) {
                 if (pc.packages) {
                     const chip = document.createElement('div');
                     chip.className = 'pkg-chip';
-                    chip.innerHTML = `📦 ${pc.packages.title} <span class="pkg-remove" onclick="unlinkPackage(${pc.id}, this)">×</span>`;
+                    // UPDATE: Added 'inventory_2' icon for package and 'close' for remove
+                    chip.innerHTML = `
+                        <span class="material-symbols-rounded" style="font-size:16px;">inventory_2</span>
+                        ${pc.packages.title} 
+                        <span class="pkg-remove" onclick="unlinkPackage(${pc.id}, this)">
+                            <span class="material-symbols-rounded">close</span>
+                        </span>
+                    `;
                     pkgArea.appendChild(chip);
                 }
             });
@@ -181,7 +190,8 @@ function renderClassesGrid(classesToRender) {
 
         const addBtn = document.createElement('button');
         addBtn.className = 'btn-add-pkg';
-        addBtn.innerHTML = '+';
+        // UPDATE: Added 'add' icon
+        addBtn.innerHTML = '<span class="material-symbols-rounded">add</span>';
         addBtn.onclick = async () => {
             if (!pkgSelect.value) return;
             await linkPackage(c.id, pkgSelect.value);
