@@ -162,15 +162,23 @@ function renderTable(studentsList, classesList) {
             classOptions += `<option value="${c.id}" ${selected}>${c.name}</option>`;
         });
 
-        // Przyciski akcji
+        // Przyciski akcji - ZMIANA NA IKONY GOOGLE
+        // Ikona save: 'save'
         let actionsHtml = `
-            <div class="table-btn btn-save" title="Zapisz przypisanie klasy" onclick="saveClass('${s.id}', this)">💾</div>
+            <div class="table-btn btn-save" title="Zapisz przypisanie klasy" onclick="saveClass('${s.id}', this)">
+                <span class="material-symbols-rounded">save</span>
+            </div>
         `;
 
         if (currentRole !== 'lecturer') {
+            // Ikona hasła: 'key' lub 'lock_reset', Ikona usuwania: 'delete'
             actionsHtml += `
-                <div class="table-btn btn-pass" title="Ustaw nowe hasło" onclick="resetPass('${s.id}', '${s.username}')">🔑</div>
-                <div class="table-btn btn-del" title="Usuń konto" onclick="deleteUser('${s.id}', this)">❌</div>
+                <div class="table-btn btn-pass" title="Ustaw nowe hasło" onclick="resetPass('${s.id}', '${s.username}')">
+                    <span class="material-symbols-rounded">key</span>
+                </div>
+                <div class="table-btn btn-del" title="Usuń konto" onclick="deleteUser('${s.id}', this)">
+                    <span class="material-symbols-rounded">delete</span>
+                </div>
             `;
         }
 
@@ -226,7 +234,7 @@ async function resetPass(userId, username) {
         console.error(error);
         alert("Błąd: " + error.message);
     } else {
-        alert(`✅ Hasło zmienione! Przekaż uczniowi: ${newPassword}`);
+        alert(` Hasło zmienione! Przekaż uczniowi: ${newPassword}`);
     }
 }
 
