@@ -3,74 +3,167 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>mUczelnia - Zarządzaj Klasami</title>
+    <title>mUczelnia - Zarządzanie Klasami</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
     <style>
-        /* NAPRAWA UKŁADU PASKA NARZĘDZI */
-        .top-controls {
-            display: flex;
-            align-items: center;
-            gap: 15px; /* Odstęp między szukajką a przyciskiem */
+        /* --- GÓRNY PASEK NARZĘDZI --- */
+        .tools-bar {
             background: var(--panel-bg);
-            padding: 15px;
+            padding: 20px;
             border-radius: 12px;
             border: 1px solid var(--border-color);
-            margin-bottom: 20px;
-            flex-wrap: wrap; /* Zabezpieczenie na małe ekrany */
-        }
-
-        /* Pole wyszukiwania zajmuje dostępną przestrzeń */
-        #class-search {
-            flex: 1; 
-            margin: 0;
-            height: 40px; /* Ustalona wysokość */
-            min-width: 200px;
-        }
-
-        /* Kompaktowy przycisk (zamiast wielkiego kloca) */
-        .btn-compact {
-            width: auto !important; /* Wyłączamy rozciąganie */
-            height: 40px; /* Dopasowanie do inputa */
-            padding: 0 20px;
+            margin-bottom: 25px;
             display: flex;
-            align-items: center;
-            justify-content: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: flex-end;
+            box-shadow: var(--shadow);
+        }
+
+        .tool-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .tool-group label {
+            font-size: 11px;
+            font-weight: bold;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        /* --- SIATKA KLAS (GRID) --- */
+        .classes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        /* --- KAFELEK KLASY --- */
+        .class-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 15px;
+            position: relative;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .class-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            border-color: var(--accent-color);
+        }
+
+        /* Nagłówek karty (Nazwa + Usuń) */
+        .card-header {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .class-name-input {
+            flex: 1;
+            font-size: 16px;
+            font-weight: bold;
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--text-main);
+            padding: 5px;
+            border-radius: 4px;
+        }
+        .class-name-input:focus {
+            border-color: var(--accent-color);
+            background: var(--bg-color);
+            outline: none;
+        }
+
+        .btn-icon-small {
+            width: 30px; height: 30px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 1px solid transparent;
             font-size: 14px;
-            white-space: nowrap;
-            background-color: #009688; /* Kolor sekcji */
-            color: white;
-            border: none;
-            border-radius: 8px;
+            transition: 0.2s;
+        }
+        .btn-save-name { color: #4CAF50; }
+        .btn-save-name:hover { background: rgba(76, 175, 80, 0.1); }
+        .btn-delete-class { color: #F44336; }
+        .btn-delete-class:hover { background: rgba(244, 67, 54, 0.1); }
+
+        /* Obszar Pakietów */
+        .packages-area {
+            flex: 1;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-content: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .pkg-chip {
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            background: rgba(33, 150, 243, 0.1);
+            color: #1976D2;
+            border: 1px solid rgba(33, 150, 243, 0.2);
+            display: inline-flex;
+            align-items: center;
+        }
+        .pkg-remove {
+            margin-left: 5px;
             cursor: pointer;
             font-weight: bold;
+            opacity: 0.6;
         }
-        .btn-compact:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(0, 150, 136, 0.3);
+        .pkg-remove:hover { opacity: 1; color: red; }
+
+        /* Stopka karty (Dodawanie pakietu) */
+        .card-footer {
+            background: var(--hover-bg);
+            margin: -15px -15px -15px -15px;
+            padding: 10px 15px;
+            border-radius: 0 0 12px 12px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 5px;
+        }
+        
+        .add-pkg-select {
+            flex: 1;
+            font-size: 12px;
+            padding: 5px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background: var(--panel-bg);
+            color: var(--text-main);
         }
 
-        /* Styl tabeli */
-        .data-table { width: 100%; border-collapse: collapse; background: var(--panel-bg); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow); }
-        .data-table th, .data-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); }
-        .data-table th { background: rgba(0,0,0,0.02); font-weight: 600; color: var(--text-muted); }
-        .table-btn { cursor: pointer; padding: 5px; border-radius: 5px; display: inline-block; margin-right: 5px; }
-
-        /* Poprawa przycisku w modalu */
-        .modal-btn-normal {
-            width: 100%;
-            padding: 10px; /* Mniejszy padding */
-            font-size: 16px;
-            background: #009688;
+        .btn-add-pkg {
+            background: var(--accent-color);
             color: white;
             border: none;
-            border-radius: 8px;
+            border-radius: 4px;
+            width: 30px;
             cursor: pointer;
-            margin-top: 10px;
+            font-size: 16px;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .pkg-chip { background: rgba(33, 150, 243, 0.2); color: #90CAF9; border-color: rgba(33, 150, 243, 0.4); }
+            .pkg-remove { color: #90CAF9; }
         }
     </style>
 </head>
 <body>
+
     <div class="layout-wrapper">
         <aside class="sidebar-left">
             <div class="top-section">
@@ -85,53 +178,42 @@
         <main class="main-content">
             <div class="welcome-header">
                 <div>
-                    <a href="dashboard.html" style="text-decoration:none; color:var(--text-muted);">← Wróć</a>
-                    <h1>Zarządzaj Klasami</h1>
+                    <a href="dashboard.html" style="text-decoration:none; color:var(--text-muted); font-size:14px;">← Wróć do pulpitu</a>
+                    <h1>Zarządzanie Klasami</h1>
+                    <p>Dodawaj grupy i przypisuj do nich materiały edukacyjne.</p>
                 </div>
             </div>
 
-            <div class="top-controls">
-                <input type="text" id="class-search" class="edit-input" placeholder="Szukaj klasy...">
-                <button class="btn-compact" onclick="openModal('addClassModal')">
-                    + Dodaj Nową Klasę
-                </button>
+            <div class="tools-bar">
+                <div class="tool-group" style="flex: 1; min-width: 200px;">
+                    <label>Wybierz Szkołę</label>
+                    <select id="school-select" class="edit-input" style="margin:0;">
+                        <option value="" disabled selected>Ładowanie...</option>
+                    </select>
+                </div>
+
+                <div class="tool-group" style="flex: 1; min-width: 150px;">
+                    <label>Filtruj Klasy</label>
+                    <input type="text" id="class-search" class="edit-input" style="margin:0;" placeholder="Szukaj nazwy...">
+                </div>
+
+                <div class="tool-group" style="flex: 1.5; border-left: 1px solid var(--border-color); padding-left: 20px;">
+                    <label>Dodaj Nową Klasę</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="new-class-name" class="edit-input" style="margin:0;" placeholder="np. 1A - Informatyka">
+                        <button class="login-button" style="width: auto; margin:0;" onclick="createNewClass()">+ Utwórz</button>
+                    </div>
+                </div>
             </div>
 
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Nazwa Klasy</th>
-                        <th>Szkoła</th>
-                        <th>Liczba Uczniów</th>
-                        <th>Akcje</th>
-                    </tr>
-                </thead>
-                <tbody id="classes-body">
-                    <tr><td colspan="4" style="text-align:center;">Ładowanie...</td></tr>
-                </tbody>
-            </table>
+            <div id="classes-grid" class="classes-grid">
+                <p style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 40px;">
+                    Wybierz szkołę, aby zobaczyć klasy.
+                </p>
+            </div>
+
         </main>
     </div>
-
-    <div class="modal-overlay" id="addClassModal">
-        <div class="modal-window">
-            <div class="modal-header">
-                <h3 class="modal-title">Dodaj Klasę</h3>
-                <span class="close-modal" onclick="closeModal('addClassModal')">&times;</span>
-            </div>
-            <form id="addClassForm" class="modal-form">
-                <label>Nazwa Klasy</label>
-                <input type="text" id="new-class-name" class="edit-input" placeholder="np. 1A" required>
-                
-                <label>Szkoła</label>
-                <select id="new-class-school" class="edit-input" required>
-                    <option value="" disabled selected>Ładowanie...</option>
-                </select>
-
-                <button type="submit" class="modal-btn-normal">Utwórz Klasę</button>
-            </form>
-        </div>
-    </div
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="manage_classes.js"></script>
