@@ -72,7 +72,7 @@ async function loadPackagesForSchoolLevel(schoolId) {
 
     const { data: pkgs } = await _supabase.from('packages')
         .select('id, title')
-        .eq('level', level) // FILTROWANIE PO POZIOMIE!
+        .eq('level', level)
         .order('title');
     
     availablePackages = pkgs || [];
@@ -82,7 +82,6 @@ async function loadClasses(schoolId) {
     const grid = document.getElementById('classes-grid');
     grid.innerHTML = '<p style="grid-column:1/-1; text-align:center;">Ładowanie klas...</p>';
 
-    // Pobieramy klasę WRAZ z jej pakietami
     const { data: classes, error } = await _supabase
         .from('classes')
         .select(`
@@ -179,7 +178,6 @@ function renderClassesGrid(classesToRender) {
         pkgSelect.className = 'add-pkg-select';
         pkgSelect.innerHTML = '<option value="">+ Przypisz pakiet...</option>';
         
-        // Filtrujemy: Pokaż tylko te pakiety, których klasa JESZCZE NIE MA
         const assignedIds = c.package_classes.map(pc => pc.packages ? pc.packages.id : -1);
         
         availablePackages.forEach(p => {
