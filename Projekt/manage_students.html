@@ -36,6 +36,15 @@
             text-transform: uppercase;
         }
 
+        /* --- FIX: INPUTY W NAGŁÓWKU (NAPRAWA WYSTAWANIA) --- */
+        .tools-header .edit-input {
+            width: 100%;             /* Zajmij 100% rodzica */
+            box-sizing: border-box;  /* Wlicz padding w szerokość elementu (TO NAPRAWIA PROBLEM) */
+            margin: 0;               /* Usuń domyślne marginesy */
+            height: 38px;            /* Stała wysokość dla równości */
+            min-width: 0;            /* Zapobiega wypychaniu flexboxa */
+        }
+
         /* Tabela Uczniów */
         .students-container {
             background: var(--panel-bg);
@@ -78,6 +87,7 @@
             color: var(--text-main);
             width: 100%;
             max-width: 200px;
+            box-sizing: border-box; /* Tutaj też warto dodać */
         }
 
         /* Przyciski akcji */
@@ -92,18 +102,18 @@
             justify-content: center;
             width: 36px;
             height: 36px;
-            border-radius: 50%; /* Okrągłe przyciski */
+            border-radius: 50%;
             border: 1px solid var(--border-color);
             background: var(--panel-bg);
             cursor: pointer;
             transition: all 0.2s;
             color: var(--text-muted);
+            flex-shrink: 0; /* Zapobiega zgniataniu przycisków */
         }
         
-        /* Styl dla samej ikony wewnątrz przycisku */
         .table-btn .material-symbols-rounded {
             font-size: 20px;
-            pointer-events: none; /* Kliknięcie w ikonę przenosi event na przycisk */
+            pointer-events: none;
         }
 
         .table-btn:hover { transform: scale(1.1); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
@@ -144,7 +154,7 @@
             <div class="tools-header">
                 <div class="tool-group">
                     <label>1. Poziom Szkoły</label>
-                    <select id="filter-level" class="edit-input" style="margin:0;">
+                    <select id="filter-level" class="edit-input">
                         <option value="" disabled selected>-- Wybierz --</option>
                         <option value="1">Szkoła Podstawowa</option>
                         <option value="2">Szkoła Średnia</option>
@@ -155,21 +165,21 @@
                 
                 <div class="tool-group" style="flex: 1.5;">
                     <label>2. Szkoła</label>
-                    <select id="filter-school" class="edit-input" style="margin:0;" disabled>
+                    <select id="filter-school" class="edit-input" disabled>
                         <option value="" disabled selected>Najpierw wybierz poziom...</option>
                     </select>
                 </div>
 
                 <div class="tool-group">
                     <label>3. Filtruj Klasę</label>
-                    <select id="filter-class" class="edit-input" style="margin:0;" disabled>
+                    <select id="filter-class" class="edit-input" disabled>
                         <option value="all" selected>Wszystkie Klasy</option>
                     </select>
                 </div>
 
                 <div class="tool-group" style="flex: 1.5;">
                     <label>Szukaj Ucznia</label>
-                    <input type="text" id="search-student" class="edit-input" style="margin:0;" placeholder="Imię, nazwisko...">
+                    <input type="text" id="search-student" class="edit-input" placeholder="Imię, nazwisko...">
                 </div>
             </div>
 
