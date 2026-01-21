@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>mUczelnia - Zarządzanie Uczniami</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
     <link rel="stylesheet" href="style.css">
     <style>
         /* --- STYLE SPECJALNE DLA TEJ STRONY --- */
@@ -91,18 +92,25 @@
             justify-content: center;
             width: 36px;
             height: 36px;
-            border-radius: 50%;
+            border-radius: 50%; /* Okrągłe przyciski */
             border: 1px solid var(--border-color);
             background: var(--panel-bg);
             cursor: pointer;
             transition: all 0.2s;
-            font-size: 16px;
+            color: var(--text-muted);
         }
+        
+        /* Styl dla samej ikony wewnątrz przycisku */
+        .table-btn .material-symbols-rounded {
+            font-size: 20px;
+            pointer-events: none; /* Kliknięcie w ikonę przenosi event na przycisk */
+        }
+
         .table-btn:hover { transform: scale(1.1); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         
-        .btn-save { color: #4CAF50; border-color: #4CAF50; background: rgba(76, 175, 80, 0.05); }
-        .btn-pass { color: #FF9800; border-color: #FF9800; background: rgba(255, 152, 0, 0.05); }
-        .btn-del { color: #F44336; border-color: #F44336; background: rgba(244, 67, 54, 0.05); }
+        .btn-save:hover { color: #4CAF50; border-color: #4CAF50; background: rgba(76, 175, 80, 0.1); }
+        .btn-pass:hover { color: #FF9800; border-color: #FF9800; background: rgba(255, 152, 0, 0.1); }
+        .btn-del:hover { color: #F44336; border-color: #F44336; background: rgba(244, 67, 54, 0.1); }
 
         /* Dark mode tweaks */
         @media (prefers-color-scheme: dark) {
