@@ -34,7 +34,24 @@
         .course-layout { display: flex; height: calc(100vh - 70px); width: 100%; overflow: hidden; margin-top: 0; }
         .course-sidebar { width: 260px; min-width: 260px; background: var(--panel-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; height: 100%; z-index: 10; }
         .lesson-list { flex: 1; overflow-y: auto; padding: 0; margin: 0; list-style: none; }
-        .add-lesson-btn { padding: 20px; text-align: center; background: var(--hover-bg); cursor: pointer; font-weight: bold; color: var(--accent-color); border-top: 1px solid var(--border-color); flex-shrink: 0; }
+        .add-lesson-btn {
+            margin: 20px;
+            padding: 15px;
+            text-align: center;
+            border: 2px dashed #9C27B0; /* Fioletowy kolor dla Quizu */
+            border-radius: 12px;
+            background: var(--panel-bg);
+            color: #9C27B0;
+            font-weight: bold;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+
+        .add-lesson-btn:hover {
+            background: rgba(156, 39, 176, 0.05);
+            transform: scale(1.02);
+        }
         .course-content { flex: 1; background-color: var(--bg-color); overflow-y: auto; padding: 40px; display: flex; justify-content: center; align-items: flex-start; }
         .lesson-card { background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 40px; width: 100%; max-width: 850px; box-shadow: var(--shadow); margin-bottom: 50px; }
 
