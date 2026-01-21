@@ -522,14 +522,13 @@ async function openCreateUserModal() {
     document.getElementById('new-role').value = 'student';
     document.getElementById('new-email').value=""; 
 
-    // UKRYWANIE OPCJI ADMINA DLA MANAGERA
     const roleSelect = document.getElementById('new-role');
     if (!roleSelect.querySelector('option[value="admin"]')) {
          let opt = document.createElement('option');
          opt.value = 'admin'; opt.innerText = 'Administrator';
          roleSelect.appendChild(opt);
     }
-    if (currentUserRole === 'manager') {
+    if (currentUserRole != 'admin') {
         const adminOpt = roleSelect.querySelector('option[value="admin"]');
         if (adminOpt) adminOpt.remove();
     }
