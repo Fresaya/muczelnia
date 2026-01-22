@@ -28,8 +28,41 @@
         
         .form-group label { display: block; margin-bottom: 8px; font-weight: bold; color: var(--text-muted); font-size: 13px; text-transform: uppercase; }
         
-        .packages-section-title { font-size: 16px; font-weight: bold; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        /* Fix dla inputów */
+        .form-group .edit-input {
+            width: 100%;
+            box-sizing: border-box; /* Ważne, żeby nie rozpychało */
+            margin: 0;
+        }
+
+        .packages-section-title { 
+            font-size: 16px; font-weight: bold; margin-bottom: 15px; 
+            display: flex; justify-content: space-between; align-items: center; 
+        }
         
+        /* Styl dla wyszukiwarki z ikoną */
+        .search-wrapper {
+            position: relative;
+            width: 250px;
+        }
+        .search-wrapper input {
+            width: 100%;
+            padding-left: 35px; /* Miejsce na ikonę */
+            box-sizing: border-box;
+            font-size: 13px;
+            height: 36px;
+            margin: 0;
+        }
+        .search-wrapper .material-symbols-outlined {
+            position: absolute;
+            left: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 18px;
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
         .package-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -68,21 +101,19 @@
             background-color: rgba(76, 175, 80, 0.05);
         }
         
+        /* Ikona "check" zamiast znaku "✓" */
         .package-card.selected::after {
-            content: "✓";
+            content: "check_circle"; /* Nazwa ikony Google */
+            font-family: 'Material Symbols Outlined';
             position: absolute;
             top: 10px;
             right: 10px;
-            background: #4CAF50;
-            color: white;
-            width: 24px;
-            height: 24px;
+            color: #4CAF50;
+            font-size: 24px;
+            background: var(--panel-bg); /* Tło pod ikoną dla czytelności */
             border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 14px;
+            width: 24px; height: 24px;
+            display: flex; align-items: center; justify-content: center;
         }
 
         .pkg-title { font-weight: bold; font-size: 15px; margin-bottom: 5px; color: var(--text-main); line-height: 1.3; }
@@ -154,7 +185,10 @@
                     <div class="form-group">
                         <div class="packages-section-title">
                             <span>Wybierz Pakiety</span>
-                            <input type="text" id="package-filter" class="edit-input" placeholder="🔍 Filtruj pakiety..." style="width: 250px; margin: 0; font-size: 13px; padding: 8px;" disabled>
+                            <div class="search-wrapper">
+                                <span class="material-symbols-outlined">search</span>
+                                <input type="text" id="package-filter" class="edit-input" placeholder="Filtruj pakiety..." disabled>
+                            </div>
                         </div>
                         
                         <div id="package-grid" class="package-grid">
@@ -164,11 +198,13 @@
 
                     <div id="selection-bar" class="selection-summary">
                         <span style="font-weight: bold; font-size: 14px;">Zaznaczono: <span id="selection-count">0</span></span>
-                        <button type="button" class="login-button" style="width:auto; padding: 8px 15px; font-size: 12px; background: #666;" onclick="clearAllSelections()">Wyczyść</button>
+                        <button type="button" class="login-button" style="width:auto; padding: 8px 15px; font-size: 12px; background: #666; display:flex; align-items:center; gap:5px;" onclick="clearAllSelections()">
+                            <span class="material-symbols-outlined" style="font-size:16px;">clear_all</span> Wyczyść
+                        </button>
                     </div>
 
-                    <button type="submit" class="login-button full-width-btn" style="background: #9C27B0; margin-top: 20px;">
-                        Zapisz Przypisania
+                    <button type="submit" class="login-button full-width-btn" style="background: #9C27B0; margin-top: 20px; display:flex; justify-content:center; align-items:center; gap:10px;">
+                        <span class="material-symbols-outlined">save</span> Zapisz Przypisania
                     </button>
                 </form>
             </div>
@@ -183,7 +219,7 @@
 
         let currentUser = null;
         let allPackages = []; 
-        let selectedPackageIds = new Set(); // Przechowujemy zaznaczone ID
+        let selectedPackageIds = new Set(); 
 
         document.addEventListener('DOMContentLoaded', async () => {
             const { data: { session } } = await _supabase.auth.getSession();
@@ -274,14 +310,13 @@
             const grid = document.getElementById('package-grid');
             grid.innerHTML = '';
 
-            if (list.length === 0) return; // Pusty stan obsłużony wyżej lub przez filtr
+            if (list.length === 0) return; 
 
             list.forEach(pkg => {
                 const card = document.createElement('div');
                 card.className = 'package-card';
                 card.dataset.id = pkg.id; 
                 
-                // Przywróć zaznaczenie, jeśli było
                 if(selectedPackageIds.has(pkg.id)) card.classList.add('selected');
 
                 card.onclick = () => toggleSelection(pkg.id, card);
@@ -342,7 +377,7 @@
             if (!classId) return alert("Wybierz klasę!");
             if (packageIds.length === 0) return alert("Zaznacz przynajmniej jeden pakiet!");
 
-            // 1. Sprawdź, co już jest przypisane (żeby nie było błędów)
+            // 1. Sprawdź, co już jest przypisane
             const { data: existing } = await _supabase.from('package_classes')
                 .select('package_id')
                 .eq('class_id', classId)
@@ -368,7 +403,7 @@
             if (error) {
                 alert("Błąd: " + error.message);
             } else {
-                let msg = `✅ Przypisano pomyślnie ${newIds.length} pakiet(ów)!`;
+                let msg = `Przypisano pomyślnie ${newIds.length} pakiet(ów)!`;
                 if (existingIds.length > 0) {
                     msg += `\n(Pominięto ${existingIds.length}, które już były przypisane).`;
                 }
