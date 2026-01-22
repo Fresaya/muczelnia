@@ -445,7 +445,7 @@
         async function saveCourseToDB(isNew) {
             const btn = isNew ? document.getElementById('finalSaveBtn') : document.getElementById('preSaveBtn');
             const originalText = btn.innerHTML;
-            btn.disabled = true; btn.innerHTML = "⏳ Zapisywanie...";
+            btn.disabled = true; btn.innerHTML = "Zapisywanie...";
 
             try {
                 let courseId = editId;
@@ -453,10 +453,9 @@
                     let packageId = null;
                     const pkgOpt = document.querySelector('input[name="pkgOption"]:checked').value;
                     if (pkgOpt === 'new') {
-                        // NOWE: Zapisujemy też opis
                         const { data: pkg } = await _supabase.from('packages').insert({ 
                             title: document.getElementById('new-pkg-name').value, 
-                            description: document.getElementById('new-pkg-desc').value, // <-- OPIS
+                            description: document.getElementById('new-pkg-desc').value,
                             level: document.getElementById('new-pkg-level').value 
                         }).select().single();
                         packageId = pkg.id;
@@ -488,7 +487,7 @@
                         if (comp) await _supabase.from('content_text_blocks').update({ content: l.content }).eq('id', comp.content_text_block_id);
                     }
                 }
-                alert("✅ Zapisano pomyślnie!");
+                alert("Zapisano pomyślnie!");
                 window.location.href = 'admin_content.html';
             } catch (err) { console.error(err); alert("Błąd: " + err.message); } 
             finally { btn.disabled = false; btn.innerHTML = originalText; }
