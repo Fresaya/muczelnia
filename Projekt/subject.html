@@ -94,11 +94,49 @@
             if (!session) { window.location.href = 'login.html'; return; }
             if (!pkgId) { window.location.href = 'courses_list.html'; return; }
 
-            // 1. Pobierz pakiet
+            // --- 1. WERYFIKACJA DOSTĘPU (BEZPIECZEŃSTWO) ---
+            
+            // Pobierz dane użytkownika (rola i klasa)
+            const { data: userProfile } = await _supabase
+                .from('users')
+                .select('role, class_id')
+                .eq('id', session.user.id)
+                .single();
+
+            // Jeśli to uczeń lub rodzic, sprawdzamy czy ma dostęp do tego pakietu
+            if (['student', 'parent'].includes(userProfile.role)) {
+                
+                // Jeśli uczeń nie ma klasy -> brak dostępu
+                if (!userProfile.class_id) {
+                    alert("Nie jesteś przypisany do żadnej klasy.");
+                    window.location.href = 'courses_list.html';
+                    return;
+                }
+
+                // Sprawdź w tabeli łączącej (package_classes), czy klasa ucznia ma ten pakiet
+                const { data: accessCheck } = await _supabase
+                    .from('package_classes')
+                    .select('id')
+                    .eq('package_id', pkgId)
+                    .eq('class_id', userProfile.class_id)
+                    .maybeSingle(); // Używamy maybeSingle, żeby nie rzucał błędem przy braku wyników
+
+                if (!accessCheck) {
+                    alert("⛔ Brak dostępu! Ten przedmiot nie jest przypisany do Twojej klasy.");
+                    window.location.href = 'courses_list.html';
+                    return;
+                }
+            }
+            // (Nauczyciele i Admini przechodzą bez sprawdzania klasy)
+
+            // --- KONIEC WERYFIKACJI ---
+
+
+            // 2. Pobierz tytuł pakietu
             const { data: pkg } = await _supabase.from('packages').select('title').eq('id', pkgId).single();
             if (pkg) document.getElementById('subject-title').textContent = pkg.title;
 
-            // 2. Pobierz kursy/quizy
+            // 3. Pobierz kursy/quizy wewnątrz pakietu
             const { data: items } = await _supabase
                 .from('courses')
                 .select('id, title, description, type, attempt_limit')
@@ -110,7 +148,7 @@
                 return;
             }
 
-            // 3. Pobierz historię podejść użytkownika do tych quizów
+            // 4. Pobierz historię podejść (żeby oznaczyć ukończone)
             const itemIds = items.map(i => i.id);
             const { data: attempts } = await _supabase
                 .from('quiz_attempts')
@@ -154,7 +192,6 @@
                             <h4>${item.title}</h4>
                             <p>Ukończono (${stats.count}/${limit} podejść)</p>
                         `;
-                        // Brak onclick -> nieklikalne
                     } else {
                         // DOSTĘPNY
                         card.onclick = () => window.location.href = `course.html?id=${item.id}`;
