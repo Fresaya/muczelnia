@@ -4,12 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>mUczelnia - Baza Treści</title>
-    <link rel="stylesheet" href="style.css"> <style>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <link rel="stylesheet" href="style.css"> 
+    <style>
         /* --- STYLE DEDYKOWANE DLA TEJ STRONY --- */
+        
+        /* Zakładki */
         .content-tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; }
-        .tab-btn { background: none; border: none; font-size: 16px; font-weight: 600; color: var(--text-muted); cursor: pointer; padding: 10px 20px; border-radius: 8px; transition: 0.2s; }
+        .tab-btn { 
+            background: none; border: none; font-size: 16px; font-weight: 600; color: var(--text-muted); 
+            cursor: pointer; padding: 10px 20px; border-radius: 8px; transition: 0.2s;
+            display: flex; align-items: center; gap: 8px; /* Wyrównanie ikony */
+        }
         .tab-btn:hover { background: var(--hover-bg); color: var(--text-main); }
         .tab-btn.active { background: rgba(33, 150, 243, 0.1); color: #2196F3; }
+        .tab-btn .material-symbols-rounded { font-size: 20px; }
 
         /* GRID PAKIETÓW */
         .packages-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px; }
@@ -17,14 +26,27 @@
         .pkg-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
         .pkg-title { font-weight: bold; font-size: 18px; margin: 0; }
         .pkg-desc { font-size: 13px; color: var(--text-muted); margin: 5px 0 0 0; }
+        
         .pkg-content-list { list-style: none; padding: 0; margin: 0; flex: 1; }
         .pkg-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px dashed var(--border-color); font-size: 14px; }
         .pkg-item:last-child { border-bottom: none; }
         
         /* Akcje wewnątrz pakietu */
         .pkg-actions { margin-top: 15px; padding-top: 10px; border-top: 1px solid var(--border-color); display: flex; gap: 10px; justify-content: flex-end; }
-        .mini-btn { font-size: 12px; padding: 4px 8px; border-radius: 4px; cursor: pointer; border: 1px solid var(--border-color); background: var(--bg-color); }
-        .btn-add-loose { color: #4CAF50; border-color: #4CAF50; background: rgba(76, 175, 80, 0.1); }
+        
+        /* Ustandaryzowane mini przyciski */
+        .mini-btn { 
+            font-size: 12px; padding: 4px 8px; border-radius: 6px; cursor: pointer; 
+            border: 1px solid var(--border-color); background: var(--bg-color);
+            display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+            transition: all 0.2s;
+            height: 32px; /* Stała wysokość */
+        }
+        .mini-btn:hover { transform: translateY(-1px); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .mini-btn .material-symbols-rounded { font-size: 18px; }
+
+        .btn-add-loose { color: #4CAF50; border-color: #4CAF50; background: rgba(76, 175, 80, 0.1); font-weight: 600; }
+        .btn-add-loose:hover { background: rgba(76, 175, 80, 0.2); }
 
         /* LISTA LUŹNYCH ELEMENTÓW */
         .loose-list { display: flex; flex-direction: column; gap: 10px; }
@@ -35,7 +57,7 @@
         .badge-course { background: rgba(33, 150, 243, 0.1); color: #2196F3; }
         .badge-quiz { background: rgba(156, 39, 176, 0.1); color: #9C27B0; }
 
-        /* --- STYL WYSZUKIWARKI ---  */
+        /* --- STYL WYSZUKIWARKI (Zaktualizowany pod ikony) ---  */
         .search-bar-container {
             margin-bottom: 20px;
             display: flex;
@@ -50,24 +72,34 @@
         
         .search-icon-input input {
             width: 100%;
-            padding: 10px 10px 10px 35px; /* Miejsce na ikonę */
+            padding: 10px 10px 10px 40px; /* Miejsce na ikonę */
             border: 1px solid var(--border-color);
             border-radius: 8px;
             background: var(--bg-color);
             color: var(--text-main);
             font-size: 14px;
+            box-sizing: border-box; /* Fix spilling */
         }
         
-        .search-icon-input::before {
-            content: '🔍';
+        .search-icon-input .material-symbols-rounded {
             position: absolute;
             left: 10px;
             top: 50%;
             transform: translateY(-50%);
-            font-size: 14px;
-            opacity: 0.5;
+            font-size: 20px;
+            color: var(--text-muted);
             pointer-events: none;
         }
+
+        /* Przyciski główne z ikonami */
+        .login-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .login-button .material-symbols-rounded { font-size: 20px; }
+
     </style>
 </head>
 <body>
@@ -84,51 +116,64 @@
         </aside>
 
         <main class="main-content">
-<div class="welcome-header">
+            <div class="welcome-header">
                 <div>
                     <a href="dashboard.html" style="text-decoration:none; color:var(--text-muted); font-size:14px;">← Wróć do pulpitu</a>
                     <h1>Baza Treści</h1>
                     <p>Zarządzaj pakietami, kursami i quizami.</p>
                 </div>
                 <div style="display:flex; gap:10px; flex-wrap: wrap;">
-                    <button class="login-button" style="width:auto; background:#2196F3;" onclick="openCreatePackageModal()">+ Nowy Pakiet</button>
+                    <button class="login-button" style="width:auto; background:#2196F3;" onclick="openCreatePackageModal()">
+                        <span class="material-symbols-rounded">add_box</span> Nowy Pakiet
+                    </button>
                     
-                    <button class="login-button" style="width:auto; background:var(--accent-color);" onclick="window.location.href='create_course.html'">+ Nowy Kurs</button>
-                    <button class="login-button" style="width:auto; background:#9C27B0;" onclick="window.location.href='create_quiz.html'">+ Nowy Quiz</button>
+                    <button class="login-button" style="width:auto; background:var(--accent-color);" onclick="window.location.href='create_course.html'">
+                        <span class="material-symbols-rounded">post_add</span> Nowy Kurs
+                    </button>
+                    <button class="login-button" style="width:auto; background:#9C27B0;" onclick="window.location.href='create_quiz.html'">
+                        <span class="material-symbols-rounded">assignment</span> Nowy Quiz
+                    </button>
                 </div>
-    <div class="modal-overlay" id="createPackageModal">
-        <div class="modal-window">
-            <h3>Utwórz Nowy Pakiet</h3>
-            
-            <label style="font-size:12px; font-weight:bold; color:#555;">Nazwa Pakietu</label>
-            <input type="text" id="new-standalone-pkg-title" class="edit-input" placeholder="np. Fizyka - Dział 1">
-            
-            <label style="font-size:12px; font-weight:bold; color:#555;">Opis (Opcjonalnie)</label>
-            <textarea id="new-standalone-pkg-desc" class="edit-input" placeholder="Krótki opis zawartości..."></textarea>
-            
-            <label style="font-size:12px; font-weight:bold; color:#555;">Poziom Nauczania</label>
-            <select id="new-standalone-pkg-level" class="edit-input">
-                <option value="1">Szkoła Podstawowa</option>
-                <option value="2">Szkoła Średnia</option>
-                <option value="3">Szkoła Wyższa</option>
-            </select>
+            </div>
 
-            <div style="text-align:right; margin-top:15px;">
-                <button class="login-button" style="background:#ccc; width:auto; color:#333;" onclick="closeModal('createPackageModal')">Anuluj</button>
-                <button class="login-button" style="width:auto;" onclick="createStandalonePackage()">Utwórz</button>
+            <div class="modal-overlay" id="createPackageModal">
+                <div class="modal-window">
+                    <h3>Utwórz Nowy Pakiet</h3>
+                    
+                    <label style="font-size:12px; font-weight:bold; color:#555;">Nazwa Pakietu</label>
+                    <input type="text" id="new-standalone-pkg-title" class="edit-input" placeholder="np. Fizyka - Dział 1">
+                    
+                    <label style="font-size:12px; font-weight:bold; color:#555;">Opis (Opcjonalnie)</label>
+                    <textarea id="new-standalone-pkg-desc" class="edit-input" placeholder="Krótki opis zawartości..."></textarea>
+                    
+                    <label style="font-size:12px; font-weight:bold; color:#555;">Poziom Nauczania</label>
+                    <select id="new-standalone-pkg-level" class="edit-input">
+                        <option value="1">Szkoła Podstawowa</option>
+                        <option value="2">Szkoła Średnia</option>
+                        <option value="3">Szkoła Wyższa</option>
+                    </select>
+
+                    <div style="text-align:right; margin-top:15px;">
+                        <button class="login-button" style="background:#ccc; width:auto; color:#333;" onclick="closeModal('createPackageModal')">Anuluj</button>
+                        <button class="login-button" style="width:auto;" onclick="createStandalonePackage()">Utwórz</button>
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
-            </div>
+
             <div class="search-bar-container">
                 <div class="search-icon-input">
+                    <span class="material-symbols-rounded">search</span>
                     <input type="text" id="global-search" placeholder="Szukaj pakietu, kursu lub quizu..." oninput="filterContent()">
                 </div>
             </div>
 
             <div class="content-tabs">
-                <button class="tab-btn active" onclick="switchTab('packages')">📦 Pakiety</button>
-                <button class="tab-btn" onclick="switchTab('loose')">📄 Luźne Elementy (<span id="loose-count">0</span>)</button>
+                <button class="tab-btn active" onclick="switchTab('packages')">
+                    <span class="material-symbols-rounded">inventory_2</span> Pakiety
+                </button>
+                <button class="tab-btn" onclick="switchTab('loose')">
+                    <span class="material-symbols-rounded">description</span> Luźne Elementy (<span id="loose-count">0</span>)
+                </button>
             </div>
 
             <div id="view-packages" class="view-section">
@@ -228,14 +273,13 @@
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             event.target.classList.add('active');
         }
-// 1. Dodaj tę funkcję (wywoływaną przy wpisywaniu)
+
         function filterContent() {
-            // Po prostu przerysowujemy widok - funkcje renderujące same pobiorą wartość z inputa
             renderPackages();
             renderLoose();
         }
 
-        // 2. Zaktualizowana funkcja renderPackages (z filtrowaniem)
+        // 2. Zaktualizowana funkcja renderPackages (z Ikonami)
         function renderPackages() {
             const container = document.getElementById('packages-container');
             container.innerHTML = '';
@@ -250,7 +294,7 @@
             });
 
             if (filtered.length === 0) {
-                container.innerHTML = '<p>Nie znaleziono pakietów.</p>';
+                container.innerHTML = '<p style="text-align:center; color:#888;">Nie znaleziono pakietów.</p>';
                 return;
             }
 
@@ -261,31 +305,33 @@
                 let coursesHtml = '<ul class="pkg-content-list">';
                 if (p.courses && p.courses.length > 0) {
                     p.courses.forEach(c => {
-                        const icon = c.type === 'quiz' ? '📝' : '📘';
+                        // Zastąpiono emotki ikonami
+                        const iconName = c.type === 'quiz' ? 'quiz' : 'menu_book';
                         const editUrl = c.type === 'quiz' ? 'create_quiz.html' : 'create_course.html';
                         
                         coursesHtml += `
                             <li class="pkg-item">
-                                <span style="display:flex; align-items:center; gap:5px; overflow:hidden; text-overflow:ellipsis;">
-                                    ${icon} ${c.title}
+                                <span style="display:flex; align-items:center; gap:8px; overflow:hidden; text-overflow:ellipsis;">
+                                    <span class="material-symbols-rounded" style="font-size:18px; color:var(--text-muted);">${iconName}</span> 
+                                    ${c.title}
                                 </span>
                                 <div style="display:flex; gap:5px; align-items:center;">
                                     <button class="mini-btn" style="color:#2196F3; border-color:var(--border-color);" 
                                             onclick="window.location.href='course.html?id=${c.id}&origin=admin'" 
                                             title="Wejdź / Zobacz jako uczeń">
-                                        👁️
+                                        <span class="material-symbols-rounded">visibility</span>
                                     </button>
 
                                     <button class="mini-btn" style="color:var(--accent-color); border-color:var(--border-color);" 
                                             onclick="window.location.href='${editUrl}?id=${c.id}'" 
                                             title="Edytuj zawartość">
-                                        ✏️
+                                        <span class="material-symbols-rounded">edit</span>
                                     </button>
                                     
                                     <button class="mini-btn" style="color:red; border-color:red;" 
                                             onclick="detachCourse('${c.id}')" 
                                             title="Wyrzuć do luźnych">
-                                        ×
+                                        <span class="material-symbols-rounded">close</span>
                                     </button>
                                 </div>
                             </li>`;
@@ -301,18 +347,22 @@
                             <h3 class="pkg-title">${p.title}</h3>
                             <p class="pkg-desc">${p.description || 'Brak opisu'}</p>
                         </div>
-                        <span class="mini-btn" style="color:red; border-color:red;" onclick="deletePackage('${p.id}')">Usuń</span>
+                        <button class="mini-btn" style="color:red; border-color:red;" onclick="deletePackage('${p.id}')">
+                            <span class="material-symbols-rounded">delete</span> Usuń
+                        </button>
                     </div>
                     ${coursesHtml}
                     <div class="pkg-actions">
-                        <button class="mini-btn btn-add-loose" onclick="openImportModal('${p.id}', '${p.title}')">+ Dodaj z luźnych</button>
+                        <button class="mini-btn btn-add-loose" onclick="openImportModal('${p.id}', '${p.title}')">
+                            <span class="material-symbols-rounded">add</span> Dodaj z luźnych
+                        </button>
                     </div>
                 `;
                 container.appendChild(card);
             });
         }
 
-        // 3. Zaktualizowana funkcja renderLoose (z filtrowaniem)
+        // 3. Zaktualizowana funkcja renderLoose (z Ikonami)
         function renderLoose() {
             const container = document.getElementById('loose-container');
             container.innerHTML = '';
@@ -326,11 +376,7 @@
             });
 
             if (filtered.length === 0) {
-                if (looseData.length === 0) {
-                    container.innerHTML = '<p style="text-align:center; padding:20px; color:#888;">Brak luźnych elementów.</p>';
-                } else {
-                    container.innerHTML = '<p style="text-align:center; padding:20px; color:#888;">Brak wyników wyszukiwania.</p>';
-                }
+                container.innerHTML = '<p style="text-align:center; padding:20px; color:#888;">Brak elementów.</p>';
                 return;
             }
 
@@ -349,23 +395,31 @@
                         <p>${l.description || 'Bez opisu'}</p>
                     </div>
                     <div style="display:flex; gap:10px; align-items: center;">
-                        <button class="login-button" style="width:auto; padding:5px 15px; font-size:12px; background:#2196F3;" 
-                                onclick="window.location.href='course.html?id=${l.id}&origin=admin'" title="Zobacz">👁️</button>
+                        <button class="mini-btn" style="color:#2196F3;" 
+                                onclick="window.location.href='course.html?id=${l.id}&origin=admin'" title="Zobacz">
+                            <span class="material-symbols-rounded">visibility</span>
+                        </button>
 
-                        <button class="login-button" style="width:auto; padding:5px 15px; font-size:12px;" 
-                                onclick="window.location.href='${l.type === 'quiz' ? 'create_quiz.html' : 'create_course.html'}?id=${l.id}'">Edytuj</button>
+                        <button class="mini-btn" style="color:var(--text-main);" 
+                                onclick="window.location.href='${l.type === 'quiz' ? 'create_quiz.html' : 'create_course.html'}?id=${l.id}'" title="Edytuj">
+                            <span class="material-symbols-rounded">edit</span>
+                        </button>
                         
-                        <button class="login-button" style="width:auto; padding:5px 15px; font-size:12px; background:var(--accent-color);" 
-                                onclick="openAssignModal('${l.id}', '${l.title}')">📦 Dołącz</button>
+                        <button class="mini-btn" style="color:white; background:var(--accent-color); border-color:var(--accent-color); font-weight:bold;" 
+                                onclick="openAssignModal('${l.id}', '${l.title}')">
+                            <span class="material-symbols-rounded">input</span> Dołącz
+                        </button>
                         
-                        <button class="mini-btn" style="color:white; background:#F44336; border-color:#F44336; height: 30px; font-weight:bold;" 
-                                onclick="deleteLooseItem('${l.id}')">Usuń</button>
+                        <button class="mini-btn" style="color:white; background:#F44336; border-color:#F44336;" 
+                                onclick="deleteLooseItem('${l.id}')">
+                            <span class="material-symbols-rounded">delete</span>
+                        </button>
                     </div>
                 `;
                 container.appendChild(div);
             });
         }
-        // --- DODAJ TĘ FUNKCJĘ GDZIEŚ W SKRYPCIE ---
+
         async function deleteLooseItem(id) {
             if(!confirm("UWAGA: Czy na pewno usunąć ten element bezpowrotnie?")) return;
             
@@ -373,12 +427,10 @@
             
             if(error) alert("Błąd: " + error.message);
             else {
-                // Odśwież widok
                 loadContent();
             }
         }
 
-        // --- SCENARIUSZ 1: Z poziomu luźnych (Assign to Package) ---
         function openAssignModal(courseId, title) {
             selectedItemId = courseId;
             document.getElementById('assign-item-name').innerText = title;
@@ -400,11 +452,10 @@
             if(error) alert(error.message);
             else {
                 document.getElementById('assignModal').classList.remove('active');
-                loadContent(); // Odśwież widok
+                loadContent(); 
             }
         }
 
-        // --- SCENARIUSZ 2: Z poziomu pakietu (Import Loose) ---
         function openImportModal(pkgId, pkgTitle) {
             selectedPackageId = pkgId;
             document.getElementById('import-pkg-name').innerText = pkgTitle;
@@ -435,7 +486,6 @@
             }
         }
 
-        // --- ODPINANIE (Wyrzucenie do luźnych) ---
         async function detachCourse(courseId) {
             if(!confirm("Czy na pewno odpiąć ten element od pakietu? Trafi on do sekcji 'Luźne'.")) return;
             const { error } = await _supabase.from('courses').update({ package_id: null }).eq('id', courseId);
@@ -443,19 +493,14 @@
             else loadContent();
         }
 
-        // --- USUWANIE PAKIETU ---
         async function deletePackage(pkgId) {
             if(!confirm("Usunąć pakiet? Kursy wewnątrz NIE zostaną usunięte, tylko przeniesione do 'Luźnych'.")) return;
-            
-            // Dzięki CASCADE/SET NULL w bazie, kursy same się "odepną" (set null)
             const { error } = await _supabase.from('packages').delete().eq('id', pkgId);
             if(error) alert(error.message);
             else loadContent();
         }
-        // --- TWORZENIE SAMEGO PAKIETU ---
 
         function openCreatePackageModal() {
-            // Wyczyść pola przed otwarciem
             document.getElementById('new-standalone-pkg-title').value = '';
             document.getElementById('new-standalone-pkg-desc').value = '';
             document.getElementById('new-standalone-pkg-level').value = '1';
@@ -481,9 +526,8 @@
             } else {
                 alert("Pakiet utworzony!");
                 closeModal('createPackageModal');
-                loadContent(); // Odśwież listę, żeby zobaczyć nowy pakiet
+                loadContent(); 
                 
-                // Opcjonalnie: Przełącz na zakładkę pakietów, jeśli jesteś na luźnych
                 switchTab('packages');
                 const btnPkg = document.querySelector("button[onclick=\"switchTab('packages')\"]");
                 if(btnPkg) btnPkg.click();
