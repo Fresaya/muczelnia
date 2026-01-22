@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>mUczelnia - Kurs</title>
     <link rel="stylesheet" href="style.css">
-    <style>
+   <style>
         /* Style dla Quizu */
         .quiz-option {
             background-color: var(--panel-bg);
@@ -32,7 +32,8 @@
             height: 100%; background: var(--accent-color); width: 100%; transition: width 1s linear;
         }
         .timer-text {
-            text-align: right; font-size: 14px; color: #888; margin-bottom: 5px; font-weight: bold;
+            /* FIX: Użycie zmiennej zamiast sztywnego koloru #888 */
+            text-align: right; font-size: 14px; color: var(--text-muted); margin-bottom: 5px; font-weight: bold;
         }
 
         /* Raport końcowy - poprawiony wygląd */
@@ -53,6 +54,14 @@
             width: 100px; height: 100px; border-radius: 50%; background: var(--bg-color); 
             display: flex; align-items: center; justify-content: center; 
             font-size: 28px; font-weight: bold; margin: 0 auto 20px; border: 4px solid #ccc; 
+        }
+
+        /* FIX: Główny tekst lekcji korzysta teraz ze zmiennej */
+        .lesson-text { 
+            font-size: 18px; 
+            line-height: 1.6; 
+            color: var(--text-main); /* Było #444 */
+            margin: 20px 0; 
         }
         
         @media (prefers-color-scheme: dark) {
