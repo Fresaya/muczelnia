@@ -260,14 +260,13 @@
             const q = questions.find(x => x.id === activeQId);
             q.isMultiple = isMulti;
             
-            // Jeśli przełączono na JEDNOKROTNY wybór, a zaznaczonych jest kilka - zostawiamy tylko pierwszą
             if (!isMulti) {
                 let foundCorrect = false;
                 q.answers.forEach(a => {
                     if (a.isCorrect && !foundCorrect) {
-                        foundCorrect = true; // Zostawiamy tę
+                        foundCorrect = true;
                     } else {
-                        a.isCorrect = false; // Odznaczamy resztę
+                        a.isCorrect = false;
                     }
                 });
             }
