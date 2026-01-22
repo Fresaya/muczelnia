@@ -108,7 +108,7 @@
         let quizResults = []; 
         let currentSelection = null;
         let timerInterval = null;
-        let returnLink = "courses_list.html"; // Domyślny link powrotu
+        let returnLink = "courses_list.html";
 
         function toggleSidebar() {
             document.getElementById('course-sidebar').classList.toggle('active');
@@ -121,12 +121,51 @@
             userId = session.user.id;
             if (!courseId) { window.location.href = 'dashboard.html'; return; }
 
-            // 1. Pobierz dane kursu
+            // 1. Pobierz dane kursu (musimy znać package_id, żeby sprawdzić uprawnienia)
             const { data: course } = await _supabase.from('courses')
                 .select('title, type, package_id, time_limit, attempt_limit, randomize_answers')
                 .eq('id', courseId).single();
             
             if (course) {
+                // --- WERYFIKACJA DOSTĘPU (SECURITY CHECK) ---
+                const { data: userProfile } = await _supabase
+                    .from('users')
+                    .select('role, class_id')
+                    .eq('id', userId)
+                    .single();
+
+                // Sprawdzamy uprawnienia tylko dla uczniów i rodziców
+                if (['student', 'parent'].includes(userProfile.role)) {
+                    if (!userProfile.class_id) {
+                        alert("Brak przypisanej klasy. Nie masz dostępu do treści.");
+                        window.location.href = 'courses_list.html';
+                        return;
+                    }
+
+                    // Jeśli kurs należy do pakietu, sprawdzamy czy klasa ma ten pakiet
+                    if (course.package_id) {
+                        const { data: access } = await _supabase
+                            .from('package_classes')
+                            .select('id')
+                            .eq('package_id', course.package_id)
+                            .eq('class_id', userProfile.class_id)
+                            .maybeSingle();
+
+                        if (!access) {
+                            alert("⛔ Brak dostępu! Ten kurs należy do przedmiotu, którego Twoja klasa nie posiada.");
+                            window.location.href = 'courses_list.html';
+                            return;
+                        }
+                    } else {
+                        // Opcjonalnie: Jeśli kurs jest "luźny" (bez pakietu), też można go zablokować
+                        // Zakładamy, że uczniowie widzą tylko to, co jest w pakietach.
+                        alert("⛔ Brak dostępu do nieprzypisanego materiału.");
+                        window.location.href = 'courses_list.html';
+                        return;
+                    }
+                }
+                // --- KONIEC WERYFIKACJI ---
+
                 document.getElementById('course-title').innerText = course.title;
                 isQuizMode = (course.type === 'quiz');
                 
@@ -134,28 +173,23 @@
                 quizSettings.attempt_limit = course.attempt_limit || 0;
                 quizSettings.randomize = course.randomize_answers;
 
-                // Ustaw bazowy returnLink (potrzebny dla ekranu limitu podejść)
                 if (course.package_id) returnLink = `subject.html?id=${course.package_id}`;
                 else returnLink = "courses_list.html";
                 
-                // --- NOWA LOGIKA PRZYCISKU POWROTU (Smart Back Button) ---
+                // Obsługa przycisku "Wróć"
                 const params = new URLSearchParams(window.location.search);
                 const origin = params.get('origin');
                 const backBtn = document.getElementById('back-btn');
 
                 if (backBtn) {
-                    // Domyślny tekst
                     backBtn.innerHTML = course.package_id ? "← Wróć do przedmiotu" : "← Wróć";
                     
                     if (origin === 'admin') {
-                        // Jeśli admin wszedł z Bazy Treści -> wraca do Bazy Treści
                         backBtn.href = 'admin_content.html';
                         backBtn.innerHTML = "← Wróć do Bazy Treści";
-                        backBtn.onclick = null; // Usuwamy eventy, żeby zadziałał href
+                        backBtn.onclick = null;
                     } else {
-                        // Jeśli uczeń -> używamy historii przeglądarki, żeby wrócił tam skąd przyszedł
-                        // (np. z listy przedmiotów ALBO z konkretnego przedmiotu)
-                        backBtn.href = returnLink; // Fallback
+                        backBtn.href = returnLink;
                         backBtn.onclick = (e) => {
                             e.preventDefault();
                             if (window.history.length > 1) {
@@ -171,10 +205,13 @@
                     document.getElementById('mobile-menu-label').innerText = "Pytania";
                     document.getElementById('placeholder-title').innerText = "Witaj w Quizie";
                     
-                    // Sprawdź limit
                     const allowed = await checkAttempts();
                     if(!allowed) return; 
                 }
+            } else {
+                alert("Nie znaleziono kursu.");
+                window.location.href = 'courses_list.html';
+                return;
             }
 
             await loadLessons();
@@ -368,7 +405,6 @@
 
             let color = percentage >= 50 ? "#4CAF50" : "#F44336";
             
-            // Renderuj ładniejszy raport, bez ukrywania sidebara
             let html = `
                 <div class="summary-wrapper">
                     <h1>Koniec Quizu</h1>
