@@ -95,39 +95,35 @@
             if (!pkgId) { window.location.href = 'courses_list.html'; return; }
 
             // --- 1. WERYFIKACJA DOSTĘPU (BEZPIECZEŃSTWO) ---
-            
-            // Pobierz dane użytkownika (rola i klasa)
+
             const { data: userProfile } = await _supabase
                 .from('users')
                 .select('role, class_id')
                 .eq('id', session.user.id)
                 .single();
 
-            // Jeśli to uczeń lub rodzic, sprawdzamy czy ma dostęp do tego pakietu
             if (['student', 'parent'].includes(userProfile.role)) {
-                
-                // Jeśli uczeń nie ma klasy -> brak dostępu
+
                 if (!userProfile.class_id) {
                     alert("Nie jesteś przypisany do żadnej klasy.");
                     window.location.href = 'courses_list.html';
                     return;
                 }
 
-                // Sprawdź w tabeli łączącej (package_classes), czy klasa ucznia ma ten pakiet
                 const { data: accessCheck } = await _supabase
                     .from('package_classes')
                     .select('id')
                     .eq('package_id', pkgId)
                     .eq('class_id', userProfile.class_id)
-                    .maybeSingle(); // Używamy maybeSingle, żeby nie rzucał błędem przy braku wyników
+                    .maybeSingle();
 
                 if (!accessCheck) {
-                    alert("⛔ Brak dostępu! Ten przedmiot nie jest przypisany do Twojej klasy.");
+                    alert("Brak dostępu! Ten przedmiot nie jest przypisany do Twojej klasy.");
                     window.location.href = 'courses_list.html';
                     return;
                 }
             }
-            // (Nauczyciele i Admini przechodzą bez sprawdzania klasy)
+
 
             // --- KONIEC WERYFIKACJI ---
 
