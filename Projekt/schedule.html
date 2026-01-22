@@ -235,8 +235,65 @@
                 list.innerHTML += `<div class="sidebar-list-item"><div class="sidebar-list-date">${d.getDate()}.${d.getMonth()+1}</div><div class="sidebar-list-content">${subj}${e.title}</div></div>`;
             });
         }
-        async function loadSidebarGrades(uid){ /* ... (tu kod analogiczny jak w dashboard) ... */ }
-        async function loadSidebarRemarks(uid){ /* ... (tu kod analogiczny jak w dashboard) ... */ }
+        async function loadSidebarGrades(targetUserId) {
+            const list = document.getElementById('sidebar-grades-list');
+            // Data sprzed 7 dni
+            const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+            
+            const { data: grades } = await _supabase.from('grades')
+                .select('grade, packages(title)')
+                .eq('user_id', targetUserId)
+                .gte('created_at', weekAgo)
+                .order('created_at', { ascending: false })
+                .limit(5);
+
+            list.innerHTML = '';
+            if(!grades || grades.length === 0) { 
+                list.innerHTML = '<p class="empty-sidebar">Brak nowych ocen.</p>'; 
+                return; 
+            }
+
+            grades.forEach(g => {
+                const pkgTitle = g.packages ? g.packages.title : 'Inne';
+                list.innerHTML += `
+                    <div class="sidebar-list-item">
+                        <div class="sidebar-grade-circle">${g.grade}</div>
+                        <div class="sidebar-list-content">${pkgTitle}</div>
+                    </div>`;
+            });
+        }
+
+        async function loadSidebarRemarks(targetUserId) {
+            const list = document.getElementById('sidebar-remarks-list');
+            
+            const { data: remarks } = await _supabase.from('remarks')
+                .select('category, subject_name, created_at, points')
+                .eq('student_id', targetUserId)
+                .order('created_at', { ascending: false })
+                .limit(3);
+
+            list.innerHTML = '';
+            if (!remarks || remarks.length === 0) { 
+                list.innerHTML = '<p class="empty-sidebar">Brak uwag.</p>'; 
+                return; 
+            }
+
+            remarks.forEach(r => {
+                const d = new Date(r.created_at);
+                const dateStr = `${d.getDate()}.${d.getMonth() + 1}`;
+                let pts = r.points || 0;
+                let txt = pts > 0 ? "+" + pts : pts; 
+                let color = pts > 0 ? '#4CAF50' : (pts < 0 ? '#F44336' : '#757575'); 
+
+                list.innerHTML += `
+                    <div class="sidebar-list-item">
+                        <div class="sidebar-grade-circle" style="color:${color}; border-color:${color}; font-size:14px; width:35px; height:35px;">${txt}</div>
+                        <div class="sidebar-list-content">
+                            <span style="font-size:11px; color:#888;">${dateStr}</span><br>${r.subject_name}
+                        </div>
+                    </div>`;
+            });
+        }
 
         // --- PLAN ZAJĘĆ ---
         function setupStudentView() {
