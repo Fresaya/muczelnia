@@ -375,22 +375,19 @@
             if (!classId) return alert("Wybierz klasę!");
             if (packageIds.length === 0) return alert("Zaznacz przynajmniej jeden pakiet!");
 
-            // 1. Sprawdź, co już jest przypisane
             const { data: existing } = await _supabase.from('package_classes')
                 .select('package_id')
                 .eq('class_id', classId)
                 .in('package_id', packageIds);
 
             const existingIds = existing ? existing.map(x => x.package_id) : [];
-            
-            // 2. Filtruj tylko nowe
+
             const newIds = packageIds.filter(id => !existingIds.includes(id));
 
             if (newIds.length === 0) {
                 return alert("Wszystkie wybrane pakiety są już przypisane do tej klasy.");
             }
 
-            // 3. Przygotuj dane do insertu
             const toInsert = newIds.map(pid => ({
                 class_id: classId,
                 package_id: pid
