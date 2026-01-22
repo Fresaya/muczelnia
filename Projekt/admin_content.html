@@ -48,7 +48,7 @@
         .btn-add-loose { color: #4CAF50; border-color: #4CAF50; background: rgba(76, 175, 80, 0.1); font-weight: 600; }
         .btn-add-loose:hover { background: rgba(76, 175, 80, 0.2); }
 
-        /* LISTA LUŹNYCH ELEMENTÓW */
+        /* LISTA ELEMENTÓW */
         .loose-list { display: flex; flex-direction: column; gap: 10px; }
         .loose-item { background: var(--panel-bg); border: 1px solid var(--border-color); padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
         .loose-info h4 { margin: 0; font-size: 16px; }
@@ -57,7 +57,7 @@
         .badge-course { background: rgba(33, 150, 243, 0.1); color: #2196F3; }
         .badge-quiz { background: rgba(156, 39, 176, 0.1); color: #9C27B0; }
 
-        /* --- STYL WYSZUKIWARKI (Zaktualizowany pod ikony) ---  */
+        /* --- STYL WYSZUKIWARKI ---  */
         .search-bar-container {
             margin-bottom: 20px;
             display: flex;
@@ -78,7 +78,7 @@
             background: var(--bg-color);
             color: var(--text-main);
             font-size: 14px;
-            box-sizing: border-box; /* Fix spilling */
+            box-sizing: border-box;
         }
         
         .search-icon-input .material-symbols-rounded {
@@ -172,7 +172,7 @@
                     <span class="material-symbols-rounded">inventory_2</span> Pakiety
                 </button>
                 <button class="tab-btn" onclick="switchTab('loose')">
-                    <span class="material-symbols-rounded">description</span> Luźne Elementy (<span id="loose-count">0</span>)
+                    <span class="material-symbols-rounded">description</span> Nieprzypisane Elementy (<span id="loose-count">0</span>)
                 </button>
             </div>
 
@@ -251,7 +251,7 @@
                 .order('created_at', { ascending: false });
             packagesData = pkgs || [];
 
-            // 2. Pobierz Luźne (gdzie package_id is null)
+            // 2. Pobierz Nieprzypisane (gdzie package_id is null)
             const { data: loose } = await _supabase
                 .from('courses')
                 .select('*')
@@ -279,7 +279,7 @@
             renderLoose();
         }
 
-        // 2. Zaktualizowana funkcja renderPackages (z Ikonami)
+        // 2. Zaktualizowana funkcja renderPackages (z Ikonami i tekstami "Nieprzypisane")
         function renderPackages() {
             const container = document.getElementById('packages-container');
             container.innerHTML = '';
@@ -305,7 +305,6 @@
                 let coursesHtml = '<ul class="pkg-content-list">';
                 if (p.courses && p.courses.length > 0) {
                     p.courses.forEach(c => {
-                        // Zastąpiono emotki ikonami
                         const iconName = c.type === 'quiz' ? 'quiz' : 'menu_book';
                         const editUrl = c.type === 'quiz' ? 'create_quiz.html' : 'create_course.html';
                         
@@ -330,7 +329,7 @@
                                     
                                     <button class="mini-btn" style="color:red; border-color:red;" 
                                             onclick="detachCourse('${c.id}')" 
-                                            title="Wyrzuć do luźnych">
+                                            title="Wyrzuć do nieprzypisanych">
                                         <span class="material-symbols-rounded">close</span>
                                     </button>
                                 </div>
@@ -354,7 +353,7 @@
                     ${coursesHtml}
                     <div class="pkg-actions">
                         <button class="mini-btn btn-add-loose" onclick="openImportModal('${p.id}', '${p.title}')">
-                            <span class="material-symbols-rounded">add</span> Dodaj z luźnych
+                            <span class="material-symbols-rounded">add</span> Dodaj z nieprzypisanych
                         </button>
                     </div>
                 `;
@@ -362,7 +361,7 @@
             });
         }
 
-        // 3. Zaktualizowana funkcja renderLoose (z Ikonami)
+        // 3. Zaktualizowana funkcja renderLoose (z Ikonami i tekstami "Nieprzypisane")
         function renderLoose() {
             const container = document.getElementById('loose-container');
             container.innerHTML = '';
@@ -376,7 +375,11 @@
             });
 
             if (filtered.length === 0) {
-                container.innerHTML = '<p style="text-align:center; padding:20px; color:#888;">Brak elementów.</p>';
+                if (looseData.length === 0) {
+                    container.innerHTML = '<p style="text-align:center; padding:20px; color:#888;">Brak nieprzypisanych elementów.</p>';
+                } else {
+                    container.innerHTML = '<p style="text-align:center; padding:20px; color:#888;">Brak wyników wyszukiwania.</p>';
+                }
                 return;
             }
 
@@ -463,7 +466,7 @@
             sel.innerHTML = '';
 
             if (looseData.length === 0) {
-                sel.innerHTML = '<option disabled>Brak luźnych elementów do dodania</option>';
+                sel.innerHTML = '<option disabled>Brak nieprzypisanych elementów do dodania</option>';
             } else {
                 sel.innerHTML = '<option value="" disabled selected>-- Wybierz element --</option>';
                 looseData.forEach(l => {
@@ -487,14 +490,14 @@
         }
 
         async function detachCourse(courseId) {
-            if(!confirm("Czy na pewno odpiąć ten element od pakietu? Trafi on do sekcji 'Luźne'.")) return;
+            if(!confirm("Czy na pewno odpiąć ten element od pakietu? Trafi on do sekcji 'Nieprzypisane'.")) return;
             const { error } = await _supabase.from('courses').update({ package_id: null }).eq('id', courseId);
             if(error) alert(error.message);
             else loadContent();
         }
 
         async function deletePackage(pkgId) {
-            if(!confirm("Usunąć pakiet? Kursy wewnątrz NIE zostaną usunięte, tylko przeniesione do 'Luźnych'.")) return;
+            if(!confirm("Usunąć pakiet? Kursy wewnątrz NIE zostaną usunięte, tylko przeniesione do 'Nieprzypisanych'.")) return;
             const { error } = await _supabase.from('packages').delete().eq('id', pkgId);
             if(error) alert(error.message);
             else loadContent();
