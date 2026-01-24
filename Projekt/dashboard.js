@@ -194,34 +194,6 @@ function setupEventListeners() {
     document.getElementById('new-user-level-filter').addEventListener('change', filterNewUserSchools);
     document.getElementById('new-user-school').addEventListener('change', async function() { await loadClassesForSchool(this.value); generateEmail(); });
     document.getElementById('new-user-class').addEventListener('change', generateEmail);
-
-    // Assign Logic
-    document.getElementById('assign-school-select').addEventListener('change', async function() {
-        const sid = parseInt(this.value); 
-        const cSelect = document.getElementById('assign-class-select');
-        const pSelect = document.getElementById('assign-package-select');
-        
-        cSelect.disabled = true; cSelect.innerHTML = '<option>Ładowanie...</option>';
-        pSelect.disabled = true; pSelect.innerHTML = '<option>Ładowanie...</option>';
-
-        const { data: school } = await _supabase.from('schools').select('level').eq('id', sid).single();
-        const { data: classes } = await _supabase.from('classes').select('id, name').eq('school_id', sid).order('name');
-        
-        cSelect.innerHTML = '<option value="" disabled selected>-- Wybierz Klasę --</option>';
-        if (classes && classes.length > 0) { 
-            classes.forEach(c => cSelect.add(new Option(c.name, c.id))); 
-            cSelect.disabled = false; 
-        } else { cSelect.innerHTML = '<option value="" disabled selected>Brak klas</option>'; }
-
-        if(school) {
-            const { data: pkgs } = await _supabase.from('packages').select('id, title').eq('level', school.level);
-            pSelect.innerHTML = '<option value="" disabled selected>-- Wybierz Pakiet --</option>';
-            if(pkgs && pkgs.length > 0) {
-                pkgs.forEach(p => pSelect.add(new Option(p.title, p.id)));
-                pSelect.disabled = false;
-            } else { pSelect.innerHTML = '<option disabled>Brak pakietów dla tego poziomu</option>'; }
-        }
-    });
 }
 
 // --- 4. UTILITY FUNCTIONS (Helpers) ---
