@@ -9,9 +9,10 @@ const WIDGETS = {
         'student-sidebar-content', 
         'widget-student-grades', 
         'widget-student-calendar', 
-        'widget-student-behavior'
+        'widget-student-behavior',
+        'widget-student-schedule'
     ],
-    studentOnly: ['widget-student-courses', 'widget-student-schedule'],
+    studentOnly: ['widget-student-courses'],
     
     // Widgets common to Staff (Admin, Teacher, Manager, Lecturer)
     staffCommon: [
