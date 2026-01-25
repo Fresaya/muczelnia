@@ -69,6 +69,16 @@
                             </select>
                         </div>
                     </div>
+
+                    <div id="parent-controls" style="display:none; margin-top: 10px;">
+                        <div class="class-selector-container">
+                            <label for="childSelect">Wybierz dziecko:</label>
+                            <select id="childSelect" class="class-select" onchange="changeChild()">
+                                <option value="" disabled selected>Ładowanie...</option>
+                            </select>
+                        </div>
+                    </div>
+
                     <p id="schedule-info-text">Ładowanie planu...</p>
                 </div>
             </div>
@@ -195,7 +205,13 @@
 
             if (isStaff) {
                 await setupStaffView();
+            } else if (currentUser.role === 'parent') {
+                // NOWA LOGIKA DLA RODZICA
+                await setupParentView();
+                document.getElementById('student-sidebar-content').style.display = 'flex';
+                // Sidebar ładuje się po wybraniu dziecka w changeChild()
             } else {
+                // UCZEŃ
                 setupStudentView();
                 document.getElementById('student-sidebar-content').style.display = 'flex';
                 loadSidebarCalendar(currentUser.id);
@@ -222,11 +238,25 @@
             document.getElementById('changePassBtn').addEventListener('click', () => { window.location.href = 'settings.html'; });
         }
 
+        // --- SIDEBAR CONTENT ---
         async function loadSidebarCalendar(targetUserId) {
             const list = document.getElementById('sidebar-calendar-list');
-            if(!currentUser.class_id) { list.innerHTML = '<p class="empty-sidebar">Brak klasy.</p>'; return; }
+            // Jeśli to rodzic, targetUserId to ID dziecka. Pobieramy klasę DZIECKA.
+            const { data: targetUser } = await _supabase.from('users').select('class_id').eq('id', targetUserId).single();
+            
+            if(!targetUser || !targetUser.class_id) { 
+                list.innerHTML = '<p class="empty-sidebar">Brak przypisanej klasy.</p>'; 
+                return; 
+            }
+
             const today = new Date().toISOString().split('T')[0];
-            const { data } = await _supabase.from('calendar_events').select('title, event_date, subject_name').eq('class_id', currentUser.class_id).gte('event_date', today).order('event_date', { ascending: true }).limit(3);
+            const { data } = await _supabase.from('calendar_events')
+                .select('title, event_date, subject_name')
+                .eq('class_id', targetUser.class_id)
+                .gte('event_date', today)
+                .order('event_date', { ascending: true })
+                .limit(3);
+                
             list.innerHTML = '';
             if(!data || data.length === 0) { list.innerHTML = '<p class="empty-sidebar">Brak wydarzeń.</p>'; return; }
             data.forEach(e => {
@@ -235,9 +265,9 @@
                 list.innerHTML += `<div class="sidebar-list-item"><div class="sidebar-list-date">${d.getDate()}.${d.getMonth()+1}</div><div class="sidebar-list-content">${subj}${e.title}</div></div>`;
             });
         }
+
         async function loadSidebarGrades(targetUserId) {
             const list = document.getElementById('sidebar-grades-list');
-            // Data sprzed 7 dni
             const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
             
             const { data: grades } = await _supabase.from('grades')
@@ -295,7 +325,7 @@
             });
         }
 
-        // --- PLAN ZAJĘĆ ---
+        // --- WIDOK DLA UCZNIA ---
         function setupStudentView() {
             if (currentUser.class_id) {
                 currentViewClassId = currentUser.class_id;
@@ -306,6 +336,60 @@
             }
         }
 
+        // --- WIDOK DLA RODZICA ---
+        async function setupParentView() {
+            document.getElementById('parent-controls').style.display = 'block';
+            document.getElementById('schedule-info-text').innerText = "Plan zajęć Twojego dziecka";
+
+            // Pobierz dzieci
+            const { data: relations } = await _supabase
+                .from('parent_children')
+                .select('child_id, users:child_id(id, username, class_id)')
+                .eq('parent_id', currentUser.id);
+
+            const select = document.getElementById('childSelect');
+            select.innerHTML = '';
+
+            if (relations && relations.length > 0) {
+                relations.forEach(rel => {
+                    const child = rel.users;
+                    const opt = new Option(child.username, child.id);
+                    // Zapisujemy klasę dziecka w atrybucie
+                    opt.dataset.classId = child.class_id || ""; 
+                    select.add(opt);
+                });
+
+                // Wybierz pierwsze dziecko domyślnie
+                changeChild();
+            } else {
+                select.innerHTML = '<option>Brak przypisanych dzieci</option>';
+            }
+        }
+
+        function changeChild() {
+            const select = document.getElementById('childSelect');
+            const selectedOpt = select.options[select.selectedIndex];
+            const childId = selectedOpt.value;
+            const classId = selectedOpt.dataset.classId;
+
+            // Odśwież sidebar dla wybranego dziecka
+            loadSidebarCalendar(childId);
+            loadSidebarGrades(childId);
+            loadSidebarRemarks(childId);
+
+            if (classId && classId !== "undefined" && classId !== "null" && classId !== "") {
+                currentViewClassId = classId;
+                generateGrid(); // Czyści tabelę
+                fetchAndRenderSchedule(classId);
+            } else {
+                generateGrid();
+                const tbody = document.getElementById('schedule-body');
+                // Nadpisz pierwszy wiersz komunikatem
+                tbody.innerHTML = '<tr><td colspan="6" style="padding:40px; text-align:center; color:#888;">To dziecko nie jest przypisane do żadnej klasy.</td></tr>';
+            }
+        }
+
+        // --- WIDOK DLA KADRY ---
         async function setupStaffView() {
             document.getElementById('teacher-controls').style.display = 'block';
             document.getElementById('schedule-info-text').innerText = "Wybierz klasę, aby edytować jej plan.";
@@ -320,11 +404,10 @@
             if (classes && classes.length > 0) {
                 classes.forEach(cls => { 
                     const opt = new Option(cls.name, cls.id);
-                    opt.dataset.schoolId = cls.school_id; // Zapisz ID szkoły
+                    opt.dataset.schoolId = cls.school_id;
                     select.add(opt); 
                 });
                 
-                // Inicjalizacja pierwszej klasy
                 currentViewClassId = classes[0].id;
                 select.value = currentViewClassId;
                 await loadTeachersForSelect(classes[0].school_id);
@@ -339,7 +422,6 @@
             const select = document.getElementById('classSelect');
             currentViewClassId = select.value;
             
-            // Pobierz ID szkoły z dataset opcji (dla Admina to ważne, bo każda klasa może być z innej szkoły)
             const selectedOption = select.options[select.selectedIndex];
             const schoolId = selectedOption.dataset.schoolId || currentUser.school_id;
 
@@ -350,12 +432,10 @@
             fetchAndRenderSchedule(currentViewClassId);
         }
 
-        // Ładuje listę nauczycieli do modala edycji
         async function loadTeachersForSelect(schoolId) {
             const sel = document.getElementById('edit-teacher');
             sel.innerHTML = '<option disabled>Ładowanie...</option>';
             
-            // Pobieramy nauczycieli + adminów/managerów z tej szkoły
             const { data: teachers } = await _supabase.from('users')
                 .select('id, username')
                 .eq('school_id', schoolId)
@@ -369,7 +449,6 @@
         }
 
         async function fetchAndRenderSchedule(classId) {
-            // Pobieramy plan WRAZ z nazwą nauczyciela (join)
             const { data: scheduleData } = await _supabase
                 .from('weekly_schedule')
                 .select('*, teacher:teacher_id(username)')
@@ -389,7 +468,6 @@
                             <span class="subject-teacher">${teacherName}</span>
                         </div>`;
                     
-                    // Zapisujemy dane w atrybutach dla łatwej edycji
                     cell.dataset.subject = item.subject_name;
                     cell.dataset.room = item.room || "";
                     cell.dataset.teacherId = item.teacher_id || "";
@@ -404,7 +482,6 @@
                 cell.onclick = () => {
                     if (!currentViewClassId) return;
                     
-                    // Wypełnij modal danymi z klikniętej komórki
                     document.getElementById('edit-day').value = cell.dataset.day;
                     document.getElementById('edit-hour').value = cell.dataset.hour;
                     
@@ -425,19 +502,17 @@
             
             const subject = document.getElementById('edit-subject').value;
             const room = document.getElementById('edit-room').value;
-            const teacherId = document.getElementById('edit-teacher').value || null; // null jeśli pusty
+            const teacherId = document.getElementById('edit-teacher').value || null;
 
             const startTime = `${hour.toString().padStart(2,'0')}:00`;
             const endTime = `${hour.toString().padStart(2,'0')}:45`;
 
-            // Usuń starą lekcję w tym slocie
             await _supabase.from('weekly_schedule')
                 .delete()
                 .eq('class_id', currentViewClassId)
                 .eq('day_of_week', day)
                 .eq('start_time', startTime);
 
-            // Dodaj nową
             const { error } = await _supabase.from('weekly_schedule').insert({
                 class_id: currentViewClassId,
                 day_of_week: day,
@@ -451,8 +526,7 @@
             if(error) alert(error.message);
             else {
                 closeModal('editLessonModal');
-                fetchAndRenderSchedule(currentViewClassId); // Odśwież widok
-                // Zaktualizuj atrybuty w komórce (żeby kolejne kliknięcie miało nowe dane bez odświeżania strony)
+                fetchAndRenderSchedule(currentViewClassId);
                 const cell = document.getElementById(`cell-${day}-${hour}`);
                 cell.dataset.subject = subject;
                 cell.dataset.room = room;
@@ -473,7 +547,6 @@
                 .eq('start_time', startTime);
             
             closeModal('editLessonModal');
-            // Wyczyść komórkę
             const cell = document.getElementById(`cell-${day}-${hour}`);
             cell.innerHTML = '—';
             delete cell.dataset.subject;
