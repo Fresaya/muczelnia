@@ -44,6 +44,30 @@
         @media (prefers-color-scheme: dark) {
             .sidebar-grade-circle { background: #333; border-color: #555; color: #fff; }
         }
+        /* Styl dla listy mapowania w modalu */
+        .mapping-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 15px 0;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px;
+            background: rgba(0,0,0,0.02);
+        }
+        .mapping-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--panel-bg);
+            margin-bottom: 5px;
+            border-radius: 4px;
+        }
+        .mapping-row:last-child { margin-bottom: 0; border-bottom: none; }
+        .sheet-name { font-weight: bold; color: #D32F2F; display:flex; align-items:center; gap:5px; }
+        .arrow-icon { color: var(--text-muted); font-size: 18px; margin: 0 10px; }
+        .mapping-select { padding: 5px; border-radius: 4px; border: 1px solid var(--border-color); width: 180px; }
     </style>
 </head>
 <body>
@@ -179,6 +203,26 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="mappingModal">
+        <div class="modal-window" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Mapowanie Arkuszy</h3>
+                <span class="close-modal" onclick="closeModal('mappingModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:13px; color:var(--text-main);">Niektóre arkusze w pliku Excel nie pasują nazwą do żadnej klasy. Przypisz je ręcznie lub pomiń.</p>
+                
+                <div id="mapping-container" class="mapping-list">
+                    </div>
+
+                <div style="text-align:right; margin-top:15px;">
+                    <button class="login-button" style="background:#ccc; width:auto; color:#333;" onclick="closeModal('mappingModal')">Anuluj</button>
+                    <button class="login-button" style="width:auto;" onclick="finalizeImport()">Zatwierdź i Importuj</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
@@ -188,7 +232,13 @@
         let currentUser = null;
         let currentViewClassId = null;
         let isStaff = false; 
-        let canEdit = false; // Tylko Admin i Manager
+        let canEdit = false; 
+
+        // Zmienne do procesu importu
+        let pendingWorkbook = null;
+        let pendingClassList = [];
+        let autoMatchedSheets = []; // { sheetName, classId }
+        let unmatchedSheets = [];   // [sheetName, sheetName...]
 
         function generateGrid() {
             const tbody = document.getElementById('schedule-body');
@@ -225,7 +275,6 @@
             setupProfileCard(userDetails);
             setupSidebarEvents();
 
-            // Role
             isStaff = ['teacher', 'manager', 'admin', 'lecturer'].includes(currentUser.role);
             canEdit = ['manager', 'admin'].includes(currentUser.role);
 
@@ -243,7 +292,7 @@
             }
         }
 
-        // --- SIDEBAR (Bez zmian) ---
+        // --- SIDEBAR & PROFILE (Bez zmian) ---
         function setupProfileCard(profile) {
             document.getElementById('profile-name-display').textContent = profile.username;
             const roleMap = { 'student': 'UCZEŃ', 'teacher': 'NAUCZYCIEL', 'manager': 'SEKRETARIAT', 'admin': 'ADMIN', 'lecturer': 'WYKŁADOWCA', 'parent': 'RODZIC' };
@@ -259,8 +308,7 @@
             document.getElementById('logoutBtn').addEventListener('click', async () => { await _supabase.auth.signOut(); window.location.href = 'login.html'; });
             document.getElementById('changePassBtn').addEventListener('click', () => { window.location.href = 'settings.html'; });
         }
-        async function loadSidebarCalendar(uid) { /* ... (bez zmian, kod identyczny jak wcześniej) ... */
-            // Dla czytelności skracam, logika się nie zmienia
+        async function loadSidebarCalendar(uid) { 
             const list = document.getElementById('sidebar-calendar-list');
             const { data: u } = await _supabase.from('users').select('class_id').eq('id', uid).single();
             if(!u || !u.class_id) { list.innerHTML = '<p class="empty-sidebar">Brak klasy.</p>'; return; }
@@ -269,14 +317,14 @@
             list.innerHTML=''; if(!data||!data.length){list.innerHTML='<p class="empty-sidebar">Brak wydarzeń.</p>';return;}
             data.forEach(e=>{ list.innerHTML+=`<div class="sidebar-list-item"><div class="sidebar-list-date">${new Date(e.event_date).getDate()}.${new Date(e.event_date).getMonth()+1}</div><div class="sidebar-list-content">${e.subject_name?`<b>${e.subject_name}:</b> `:''}${e.title}</div></div>`; });
         }
-        async function loadSidebarGrades(uid){ /* ... */ 
+        async function loadSidebarGrades(uid){ 
             const list = document.getElementById('sidebar-grades-list');
             const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
             const { data: g } = await _supabase.from('grades').select('grade, packages(title)').eq('user_id', uid).gte('created_at', weekAgo).order('created_at', {ascending:false}).limit(5);
             list.innerHTML=''; if(!g||!g.length){list.innerHTML='<p class="empty-sidebar">Brak nowych ocen.</p>';return;}
             g.forEach(x=>{ list.innerHTML+=`<div class="sidebar-list-item"><div class="sidebar-grade-circle">${x.grade}</div><div class="sidebar-list-content">${x.packages?x.packages.title:'Inne'}</div></div>`; });
         }
-        async function loadSidebarRemarks(uid){ /* ... */
+        async function loadSidebarRemarks(uid){ 
             const list = document.getElementById('sidebar-remarks-list');
             const { data: r } = await _supabase.from('remarks').select('category, subject_name, created_at, points').eq('student_id', uid).order('created_at', {ascending:false}).limit(3);
             list.innerHTML=''; if(!r||!r.length){list.innerHTML='<p class="empty-sidebar">Brak uwag.</p>';return;}
@@ -333,16 +381,12 @@
         }
 
         async function setupStaffView() {
-            // Panel podglądu dla WSZYSTKICH nauczycieli
             document.getElementById('staff-view-controls').style.display = 'block';
             document.getElementById('schedule-info-text').innerText = "Wybierz klasę, aby zobaczyć plan.";
-
-            // Panel edycji (Excel) TYLKO dla Admina/Managera
             if (canEdit) {
                 document.getElementById('admin-controls').style.display = 'block';
                 document.getElementById('schedule-info-text').innerText = "Wybierz klasę do podglądu lub użyj przycisków poniżej, aby zarządzać całą szkołą.";
             }
-            
             let query = _supabase.from('classes').select('id, name, school_id').order('name', { ascending: true });
             if (currentUser.role !== 'admin') query = query.eq('school_id', currentUser.school_id);
             const { data: classes } = await query;
@@ -358,7 +402,6 @@
                 select.value = currentViewClassId;
                 await loadTeachersForSelect(classes[0].school_id);
                 fetchAndRenderSchedule(currentViewClassId);
-                // Edycja klikana tylko jeśli canEdit
                 if (canEdit) enableEditing(); 
             } else {
                 select.innerHTML = '<option>Brak klas</option>';
@@ -376,9 +419,9 @@
             fetchAndRenderSchedule(currentViewClassId);
         }
 
-        // --- FETCHING DATA ---
+        // --- FETCHING DATA & EDIT ---
         async function loadTeachersForSelect(schoolId) {
-            if(!canEdit) return; // Nauczyciele nie widzą modala edycji, więc nie potrzebują listy
+            if(!canEdit) return;
             const sel = document.getElementById('edit-teacher');
             sel.innerHTML = '<option disabled>Ładowanie...</option>';
             const { data: teachers } = await _supabase.from('users').select('id, username').eq('school_id', schoolId).in('role', ['teacher', 'manager', 'admin', 'lecturer']).order('username');
@@ -402,7 +445,6 @@
             });
         }
 
-        // --- EDYCJA POJEDYNCZA (TYLKO ADMIN/MANAGER) ---
         function enableEditing() {
             const cells = document.querySelectorAll('td[data-day]');
             cells.forEach(cell => {
@@ -437,7 +479,6 @@
             else {
                 closeModal('editLessonModal');
                 fetchAndRenderSchedule(currentViewClassId);
-                // Lokalna aktualizacja
                 const cell = document.getElementById(`cell-${day}-${hour}`);
                 cell.dataset.subject = subject;
                 cell.dataset.room = room;
@@ -458,42 +499,34 @@
             delete cell.dataset.subject; delete cell.dataset.room; delete cell.dataset.teacherId;
         }
 
-        // --- LOGIKA EXCELA (ZMIENIONA NA MASOWĄ) ---
+        // --- EXCEL ---
         const DAY_MAP = { 1: "Poniedziałek", 2: "Wtorek", 3: "Środa", 4: "Czwartek", 5: "Piątek" };
         const REVERSE_DAY_MAP = { "poniedziałek": 1, "wtorek": 2, "środa": 3, "czwartek": 4, "piątek": 5, "pon": 1, "wt": 2, "śr": 3, "czw": 4, "pt": 5 };
 
-        // 1. Export Wszystkich Klas
         async function exportAllClassesToExcel() {
-            if (typeof XLSX === 'undefined') { alert("Biblioteka Excel nie została załadowana."); return; }
+            if (typeof XLSX === 'undefined') { alert("Błąd biblioteki Excel."); return; }
             if (!currentUser.school_id && currentUser.role !== 'admin') { alert("Błąd danych szkoły."); return; }
 
             try {
-                // 1. Pobierz wszystkie klasy
                 let qClasses = _supabase.from('classes').select('id, name').order('name');
                 if (currentUser.role !== 'admin') qClasses = qClasses.eq('school_id', currentUser.school_id);
                 const { data: classes } = await qClasses;
                 
                 if (!classes || classes.length === 0) return alert("Brak klas w szkole.");
 
-                // 2. Pobierz WSZYSTKIE wpisy planu dla tych klas (w jednym zapytaniu)
                 const classIds = classes.map(c => c.id);
                 const { data: allSchedules } = await _supabase.from('weekly_schedule').select('*').in('class_id', classIds);
 
                 const wb = XLSX.utils.book_new();
 
-                // 3. Dla każdej klasy stwórz osobny Sheet
                 classes.forEach(cls => {
-                    const sheetData = [["Dzień", "Godzina", "Przedmiot", "Sala"]]; // Nagłówki
-                    
-                    // Filtrujemy plan dla tej konkretnej klasy
+                    const sheetData = [["Dzień", "Godzina", "Przedmiot", "Sala"]];
                     const classSchedule = allSchedules ? allSchedules.filter(s => s.class_id === cls.id) : [];
 
-                    // Generujemy siatkę
                     for (let day = 1; day <= 5; day++) {
                         for (let hour = 8; hour < 20; hour++) {
                             const timePrefix = hour.toString().padStart(2, '0') + ":00";
                             const lesson = classSchedule.find(s => s.day_of_week === day && s.start_time.startsWith(timePrefix));
-                            
                             const timeString = `${hour.toString().padStart(2, '0')}:00 - ${hour.toString().padStart(2, '0')}:45`;
                             
                             sheetData.push([
@@ -508,8 +541,7 @@
                     const ws = XLSX.utils.aoa_to_sheet(sheetData);
                     ws['!cols'] = [{wch:15}, {wch:15}, {wch:30}, {wch:10}];
                     
-                    // Ograniczenie nazwy arkusza (Excel limit 31 znaków)
-                    let sheetName = cls.name.replace(/[:\\\/?*\[\]]/g, ""); // Usuń znaki niedozwolone w Excelu
+                    let sheetName = cls.name.replace(/[:\\\/?*\[\]]/g, ""); 
                     if (sheetName.length > 30) sheetName = sheetName.substring(0, 30);
                     
                     XLSX.utils.book_append_sheet(wb, ws, sheetName);
@@ -524,7 +556,7 @@
             } catch (err) { console.error(err); alert("Błąd eksportu: " + err.message); }
         }
 
-        // 2. Import Masowy
+        // --- ZMODYFIKOWANA FUNKCJA IMPORTU (Z MAPOWANIEM) ---
         async function importAllClassesFromExcel(input) {
             if (!input.files || input.files.length === 0) return;
             const file = input.files[0];
@@ -533,94 +565,154 @@
             reader.onload = async (e) => {
                 try {
                     const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
+                    pendingWorkbook = XLSX.read(data, { type: 'array' });
                     
-                    // 1. Pobierz mapę klas: Nazwa -> ID
+                    // Pobierz klasy ze szkoły
                     let qClasses = _supabase.from('classes').select('id, name');
                     if (currentUser.role !== 'admin') qClasses = qClasses.eq('school_id', currentUser.school_id);
                     const { data: classes } = await qClasses;
                     
                     if (!classes) throw new Error("Nie można pobrać listy klas.");
-                    
-                    // Mapa { "1A": "uuid-...", "2B": "uuid-..." }
-                    // Normalizujemy nazwy (trim, lowercase) dla pewności
+                    pendingClassList = classes;
+
+                    // Reset stanów
+                    autoMatchedSheets = [];
+                    unmatchedSheets = [];
+
+                    // Mapa do szybkiego szukania ID po nazwie
                     const classMap = {};
                     classes.forEach(c => classMap[c.name.trim().toLowerCase()] = c.id);
 
-                    if (!confirm(`Znaleziono ${workbook.SheetNames.length} arkuszy w pliku. Czy chcesz nadpisać plany zajęć dla klas o pasujących nazwach?`)) {
-                        input.value = ''; return;
-                    }
-
-                    let processedCount = 0;
-                    let notFoundClasses = [];
-
-                    for (const sheetName of workbook.SheetNames) {
+                    // Analiza arkuszy
+                    for (const sheetName of pendingWorkbook.SheetNames) {
                         const normalizedName = sheetName.trim().toLowerCase();
                         const classId = classMap[normalizedName];
 
-                        if (!classId) {
-                            notFoundClasses.push(sheetName);
-                            continue;
+                        if (classId) {
+                            autoMatchedSheets.push({ sheetName: sheetName, classId: classId });
+                        } else {
+                            unmatchedSheets.push(sheetName);
                         }
-
-                        // Przetwarzanie arkusza dla danej klasy
-                        const sheet = workbook.Sheets[sheetName];
-                        const jsonData = XLSX.utils.sheet_to_json(sheet);
-                        
-                        const toInsert = [];
-                        for (const row of jsonData) {
-                            const dayRaw = row["Dzień"] || row["dzien"] || row["Dzien"];
-                            const hourRaw = row["Godzina"] || row["godzina"]; 
-                            const subject = row["Przedmiot"] || row["przedmiot"];
-                            const room = row["Sala"] || row["sala"] || "";
-                            
-                            if (!dayRaw || !hourRaw || !subject) continue; 
-
-                            let dayInt = typeof dayRaw === 'number' ? dayRaw : REVERSE_DAY_MAP[dayRaw.toLowerCase().trim()] || 0;
-                            if (dayInt < 1 || dayInt > 5) continue; 
-
-                            let hour = parseInt(hourRaw); 
-                            if (isNaN(hour) || hour < 8 || hour > 19) continue; 
-
-                            toInsert.push({ 
-                                class_id: classId, 
-                                day_of_week: dayInt, 
-                                start_time: `${hour.toString().padStart(2,'0')}:00`, 
-                                end_time: `${hour.toString().padStart(2,'0')}:45`, 
-                                subject_name: subject, 
-                                room: room.toString(), 
-                                teacher_id: null 
-                            });
-                        }
-
-                        // Usuń stary plan i wstaw nowy
-                        await _supabase.from('weekly_schedule').delete().eq('class_id', classId);
-                        if (toInsert.length > 0) {
-                            await _supabase.from('weekly_schedule').insert(toInsert);
-                        }
-                        processedCount++;
                     }
 
-                    let msg = `Zaktualizowano plany dla ${processedCount} klas.`;
-                    if (notFoundClasses.length > 0) {
-                        msg += `\n\nNie znaleziono klas dla arkuszy: ${notFoundClasses.join(", ")}`;
+                    if (unmatchedSheets.length > 0) {
+                        // Otwórz modal do mapowania
+                        showMappingModal();
+                    } else {
+                        // Wszystko pasuje automatycznie
+                        if(confirm(`Znaleziono ${autoMatchedSheets.length} arkuszy pasujących do klas. Zaimportować?`)) {
+                            await executeImport([]);
+                        } else {
+                            input.value = '';
+                        }
                     }
-                    alert(msg);
-                    
-                    // Odśwież widok
-                    if(currentViewClassId) fetchAndRenderSchedule(currentViewClassId);
 
                 } catch (err) {
                     console.error(err);
                     alert("Błąd importu: " + err.message);
-                } finally {
                     input.value = '';
                 }
             };
             reader.readAsArrayBuffer(file);
         }
 
-        // 3. Pobierz Szablon Masowy (Dla wszystkich klas, ale pusty)
+        function showMappingModal() {
+            const container = document.getElementById('mapping-container');
+            container.innerHTML = '';
+
+            unmatchedSheets.forEach((sheetName, index) => {
+                const row = document.createElement('div');
+                row.className = 'mapping-row';
+                
+                let optionsHtml = `<option value="">-- Pomiń ten arkusz --</option>`;
+                pendingClassList.forEach(cls => {
+                    optionsHtml += `<option value="${cls.id}">${cls.name}</option>`;
+                });
+
+                row.innerHTML = `
+                    <div class="sheet-name"><span class="material-symbols-outlined">description</span> ${sheetName}</div>
+                    <span class="arrow-icon">→</span>
+                    <select class="mapping-select" data-sheet="${sheetName}">
+                        ${optionsHtml}
+                    </select>
+                `;
+                container.appendChild(row);
+            });
+
+            openModal('mappingModal');
+        }
+
+        async function finalizeImport() {
+            const selects = document.querySelectorAll('.mapping-select');
+            const manualMatches = [];
+
+            selects.forEach(sel => {
+                const sheetName = sel.dataset.sheet;
+                const classId = sel.value;
+                if (classId) {
+                    manualMatches.push({ sheetName: sheetName, classId: classId });
+                }
+            });
+
+            closeModal('mappingModal');
+            await executeImport(manualMatches);
+        }
+
+        async function executeImport(manualMatches) {
+            const allMatches = [...autoMatchedSheets, ...manualMatches];
+            
+            if (allMatches.length === 0) {
+                alert("Nie wybrano żadnych klas do importu.");
+                document.getElementById('import-excel-input').value = '';
+                return;
+            }
+
+            let processedCount = 0;
+
+            for (const match of allMatches) {
+                const sheet = pendingWorkbook.Sheets[match.sheetName];
+                const jsonData = XLSX.utils.sheet_to_json(sheet);
+                const toInsert = [];
+
+                for (const row of jsonData) {
+                    const dayRaw = row["Dzień"] || row["dzien"] || row["Dzien"];
+                    const hourRaw = row["Godzina"] || row["godzina"]; 
+                    const subject = row["Przedmiot"] || row["przedmiot"];
+                    const room = row["Sala"] || row["sala"] || "";
+                    
+                    if (!dayRaw || !hourRaw || !subject) continue; 
+
+                    let dayInt = typeof dayRaw === 'number' ? dayRaw : REVERSE_DAY_MAP[dayRaw.toLowerCase().trim()] || 0;
+                    if (dayInt < 1 || dayInt > 5) continue; 
+
+                    let hour = parseInt(hourRaw); 
+                    if (isNaN(hour) || hour < 8 || hour > 19) continue; 
+
+                    toInsert.push({ 
+                        class_id: match.classId, 
+                        day_of_week: dayInt, 
+                        start_time: `${hour.toString().padStart(2,'0')}:00`, 
+                        end_time: `${hour.toString().padStart(2,'0')}:45`, 
+                        subject_name: subject, 
+                        room: room.toString(), 
+                        teacher_id: null 
+                    });
+                }
+
+                // Delete old & Insert new
+                await _supabase.from('weekly_schedule').delete().eq('class_id', match.classId);
+                if (toInsert.length > 0) {
+                    await _supabase.from('weekly_schedule').insert(toInsert);
+                }
+                processedCount++;
+            }
+
+            alert(`Pomyślnie zaimportowano plany dla ${processedCount} klas.`);
+            document.getElementById('import-excel-input').value = '';
+            
+            if (currentViewClassId) fetchAndRenderSchedule(currentViewClassId);
+        }
+
         async function downloadAllClassesTemplate() {
             try {
                 let qClasses = _supabase.from('classes').select('name').order('name');
@@ -653,13 +745,8 @@
             } catch(e) { console.error(e); alert("Błąd: " + e.message); }
         }
 
-        // Pojedynczy eksport dla rodzica (podgląd)
         async function exportCurrentViewToExcel() {
             if(!currentViewClassId) return alert("Wybierz dziecko/klasę.");
-            // Logika podobna do exportAll, ale tylko jeden sheet z danymi z bazy
-            // (Skrócona wersja, bo rodzic nie potrzebuje masowego exportu)
-            // ... (Można użyć starej funkcji exportScheduleToExcel, jeśli potrzebna)
-            // Tutaj użyję uproszczonej wersji bazującej na currentViewClassId
             try {
                 const { data: schedule } = await _supabase.from('weekly_schedule').select('*').eq('class_id', currentViewClassId);
                 const wb = XLSX.utils.book_new();
@@ -683,5 +770,7 @@
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
         document.addEventListener('DOMContentLoaded', init);
     </script>
+</body>
+</html>
 </body>
 </html>
