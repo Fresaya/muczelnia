@@ -69,12 +69,17 @@
                                 <option value="" disabled selected>Ładowanie klas...</option>
                             </select>
                             
-                            <button class="login-button" style="width:auto; font-size:12px; padding:5px 15px; background:#2E7D32; display:flex; align-items:center; gap:5px;" onclick="exportScheduleToExcel()">
-                                <span class="material-symbols-outlined" style="font-size:16px;">download</span> Export
-                            </button>
-                            <button class="login-button" style="width:auto; font-size:12px; padding:5px 15px; background:#1565C0; display:flex; align-items:center; gap:5px;" onclick="document.getElementById('import-excel-input').click()">
-                                <span class="material-symbols-outlined" style="font-size:16px;">upload</span> Import
-                            </button>
+                            <div style="display:flex; gap:5px; flex-wrap:wrap;">
+                                <button class="login-button" style="width:auto; font-size:12px; padding:5px 15px; background:#2E7D32; display:flex; align-items:center; gap:5px;" onclick="exportScheduleToExcel()">
+                                    <span class="material-symbols-outlined" style="font-size:16px;">download</span> Export
+                                </button>
+                                <button class="login-button" style="width:auto; font-size:12px; padding:5px 15px; background:#1565C0; display:flex; align-items:center; gap:5px;" onclick="document.getElementById('import-excel-input').click()">
+                                    <span class="material-symbols-outlined" style="font-size:16px;">upload</span> Import
+                                </button>
+                                <button class="login-button" style="width:auto; font-size:12px; padding:5px 15px; background:#7B1FA2; display:flex; align-items:center; gap:5px;" onclick="downloadScheduleTemplate()">
+                                    <span class="material-symbols-outlined" style="font-size:16px;">description</span> Pobierz Szablon
+                                </button>
+                            </div>
                             <input type="file" id="import-excel-input" accept=".xlsx, .xls" style="display:none;" onchange="importScheduleFromExcel(this)">
                         </div>
                     </div>
@@ -484,7 +489,7 @@
 
                         excelData.push({
                             "Dzień": DAY_MAP[day],
-                            "Godzina": `${hour}:00 - ${hour}:45`,
+                            "Godzina": `${hour}`,
                             "Przedmiot": lesson ? lesson.subject_name : "", 
                             "Sala": lesson ? (lesson.room || "") : ""
                         });
@@ -550,6 +555,28 @@
                 finally { input.value = ''; }
             };
             reader.readAsArrayBuffer(file);
+        }
+
+        // --- NOWA FUNKCJA: POBIERZ SZABLON ---
+        function downloadScheduleTemplate() {
+            // Definiujemy nagłówki
+            const headers = ["Dzień", "Godzina", "Przedmiot", "Sala"];
+            
+            // Przykładowy wiersz (opcjonalnie)
+            const exampleRow = ["Poniedziałek", "8", "Matematyka", "101"];
+
+            // Tworzymy arkusz
+            const ws = XLSX.utils.aoa_to_sheet([headers, exampleRow]);
+            
+            // Ustawiamy szerokości kolumn
+            ws['!cols'] = [{wch:15}, {wch:15}, {wch:30}, {wch:10}];
+
+            // Tworzymy skoroszyt
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Szablon");
+
+            // Pobieramy plik
+            XLSX.writeFile(wb, "Plan_Szablon.xlsx");
         }
 
         function openModal(id) { document.getElementById(id).classList.add('active'); }
