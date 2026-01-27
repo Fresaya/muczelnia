@@ -68,8 +68,17 @@
                                 <option value="" disabled selected>Ładowanie klas...</option>
                             </select>
                         </div>
+                        
+                        <div style="display:flex; gap:10px; margin-top:10px;">
+                            <button class="login-button" style="width:auto; font-size:12px; padding:5px 15px; background:#2E7D32;" onclick="exportScheduleToExcel()">
+                                <span class="material-symbols-outlined" style="font-size:16px;">download</span> Export (Excel)
+                            </button>
+                            <button class="login-button" style="width:auto; font-size:12px; padding:5px 15px; background:#1565C0;" onclick="document.getElementById('import-excel-input').click()">
+                                <span class="material-symbols-outlined" style="font-size:16px;">upload</span> Import (Excel)
+                            </button>
+                            <input type="file" id="import-excel-input" accept=".xlsx, .xls" style="display:none;" onchange="importScheduleFromExcel(this)">
+                        </div>
                     </div>
-
                     <div id="parent-controls" style="display:none; margin-top: 10px;">
                         <div class="class-selector-container">
                             <label for="childSelect">Wybierz dziecko:</label>
@@ -557,6 +566,124 @@
         function openModal(id) { document.getElementById(id).classList.add('active'); }
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
         document.addEventListener('DOMContentLoaded', init);
+        // --- OBSŁUGA EXCELA (EXPORT / IMPORT) ---
+
+        const DAY_MAP = { 1: "Poniedziałek", 2: "Wtorek", 3: "Środa", 4: "Czwartek", 5: "Piątek" };
+        const REVERSE_DAY_MAP = { "poniedziałek": 1, "wtorek": 2, "środa": 3, "czwartek": 4, "piątek": 5, "pon": 1, "wt": 2, "śr": 3, "czw": 4, "pt": 5 };
+
+        async function exportScheduleToExcel() {
+            if (!currentViewClassId) return alert("Wybierz klasę!");
+
+            const { data: schedule } = await _supabase
+                .from('weekly_schedule')
+                .select('day_of_week, start_time, subject_name, room')
+                .eq('class_id', currentViewClassId)
+                .order('day_of_week', { ascending: true })
+                .order('start_time', { ascending: true });
+
+            if (!schedule || schedule.length === 0) return alert("Plan tej klasy jest pusty.");
+
+            // Formatowanie danych do Excela
+            const excelData = schedule.map(item => {
+                const hour = parseInt(item.start_time.split(':')[0]);
+                return {
+                    "Dzień": DAY_MAP[item.day_of_week] || item.day_of_week,
+                    "Godzina (Start)": hour,
+                    "Przedmiot": item.subject_name,
+                    "Sala": item.room || ""
+                };
+            });
+
+            // Generowanie pliku
+            const ws = XLSX.utils.json_to_sheet(excelData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Plan Zajęć");
+            
+            // Pobierz nazwę klasy dla nazwy pliku
+            const className = document.getElementById('classSelect').options[document.getElementById('classSelect').selectedIndex].text;
+            XLSX.writeFile(wb, `Plan_Zajec_${className}.xlsx`);
+        }
+
+        async function importScheduleFromExcel(input) {
+            if (!currentViewClassId) return alert("Najpierw wybierz klasę z listy!");
+            if (!input.files || input.files.length === 0) return;
+
+            const file = input.files[0];
+            const reader = new FileReader();
+
+            reader.onload = async (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+
+                    if (jsonData.length === 0) return alert("Plik jest pusty!");
+
+                    if (!confirm(`Czy na pewno chcesz nadpisać plan zajęć dla wybranej klasy? Obecne wpisy zostaną usunięte. Znaleziono ${jsonData.length} lekcji.`)) {
+                        input.value = ''; // Reset inputa
+                        return;
+                    }
+
+                    // 1. Przygotuj dane do insertu
+                    const toInsert = [];
+                    for (const row of jsonData) {
+                        // Obsługa różnych nazw kolumn (z małej lub dużej litery)
+                        const dayRaw = row["Dzień"] || row["dzien"] || row["Dzien"];
+                        const hourRaw = row["Godzina (Start)"] || row["Godzina"] || row["godzina"];
+                        const subject = row["Przedmiot"] || row["przedmiot"];
+                        const room = row["Sala"] || row["sala"] || "";
+
+                        if (!dayRaw || !hourRaw || !subject) continue; // Pomiń błędne wiersze
+
+                        // Konwersja dnia na liczbę 1-5
+                        let dayInt = 0;
+                        if (typeof dayRaw === 'number') dayInt = dayRaw;
+                        else if (typeof dayRaw === 'string') dayInt = REVERSE_DAY_MAP[dayRaw.toLowerCase().trim()] || 0;
+
+                        if (dayInt < 1 || dayInt > 5) continue; // Pomiń weekendy/błędy
+
+                        // Konwersja godziny
+                        const hour = parseInt(hourRaw);
+                        if (isNaN(hour) || hour < 8 || hour > 19) continue; // Zakładamy godziny 8-19
+
+                        const startTime = `${hour.toString().padStart(2, '0')}:00`;
+                        const endTime = `${hour.toString().padStart(2, '0')}:45`;
+
+                        toInsert.push({
+                            class_id: currentViewClassId,
+                            day_of_week: dayInt,
+                            start_time: startTime,
+                            end_time: endTime,
+                            subject_name: subject,
+                            room: room.toString(),
+                            teacher_id: null // Import z Excela nie przypisuje nauczyciela (trudno zmapować po nazwisku)
+                        });
+                    }
+
+                    if (toInsert.length === 0) return alert("Nie udało się odczytać poprawnych danych. Sprawdź nagłówki kolumn: Dzień, Godzina, Przedmiot, Sala.");
+
+                    // 2. Wyczyść stary plan TEJ klasy
+                    await _supabase.from('weekly_schedule').delete().eq('class_id', currentViewClassId);
+
+                    // 3. Wstaw nowy plan
+                    const { error } = await _supabase.from('weekly_schedule').insert(toInsert);
+
+                    if (error) throw error;
+
+                    alert("Plan został zaimportowany pomyślnie!");
+                    fetchAndRenderSchedule(currentViewClassId); // Odśwież widok
+
+                } catch (err) {
+                    console.error(err);
+                    alert("Błąd importu: " + err.message);
+                } finally {
+                    input.value = ''; // Reset inputa, żeby można było wgrać ten sam plik ponownie
+                }
+            };
+
+            reader.readAsArrayBuffer(file);
+        }
     </script>
 </body>
 </html>
