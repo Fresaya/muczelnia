@@ -10,153 +10,50 @@
     
     <style>
         /* --- STYLE PLANU ZAJĘĆ --- */
-        .schedule-container { 
-            background: var(--panel-bg); 
-            padding: 20px; 
-            border-radius: 12px; 
-            border: 1px solid var(--border-color); 
-            box-shadow: var(--shadow); 
-            overflow-x: auto; 
-        }
-        .schedule-table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            min-width: 600px; 
-        }
-        .schedule-table th, .schedule-table td { 
-            padding: 5px; 
-            text-align: center; 
-            border: 1px solid var(--border-color); 
-        }
-        .schedule-table th { 
-            background: rgba(0,0,0,0.02); 
-            color: var(--text-muted); 
-            font-size: 12px; 
-            text-transform: uppercase; 
-            padding: 10px; 
-        }
-        .schedule-table td { 
-            height: 85px; 
-            vertical-align: top; 
-            font-size: 13px; 
-            position: relative; 
-            width: 18%; 
-        } 
+        .schedule-container { background: var(--panel-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); box-shadow: var(--shadow); overflow-x: auto; }
+        .schedule-table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        .schedule-table th, .schedule-table td { padding: 5px; text-align: center; border: 1px solid var(--border-color); }
+        .schedule-table th { background: rgba(0,0,0,0.02); color: var(--text-muted); font-size: 12px; text-transform: uppercase; padding: 10px; }
+        .schedule-table td { height: 85px; vertical-align: top; font-size: 13px; position: relative; width: 18%; } 
         
-        .hour-col { 
-            font-weight: bold; 
-            color: var(--text-muted); 
-            width: 80px !important; 
-            vertical-align: middle !important; 
-        }
+        .hour-col { font-weight: bold; color: var(--text-muted); width: 80px !important; vertical-align: middle !important; }
         
-        /* BLOK LEKCJI (Wewnątrz komórki) */
         .lesson-cell-content {
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            height: 100%;
-            width: 100%;
-            position: relative;
-            box-sizing: border-box;
-            padding: 2px;
+            display: flex; flex-direction: column; justify-content: space-between;
+            height: 100%; width: 100%; position: relative; box-sizing: border-box; padding: 2px;
         }
 
-        /* Strefy edycji */
-        .zone-subject { 
-            font-weight: 700; 
-            color: var(--text-main); 
-            padding: 4px; 
-            border-radius: 4px; 
-            margin-top: 5px; 
-            font-size: 13px;
-        }
-        .zone-bottom { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: flex-end; 
-            padding: 4px; 
-            margin-top: auto; 
-        }
-        .zone-teacher { 
-            font-size: 10px; 
-            color: var(--accent-color); 
-            font-weight: 600; 
-            cursor: pointer; 
-        }
-        .zone-room { 
-            font-size: 10px; 
-            background: rgba(0,0,0,0.05); 
-            padding: 2px 5px; 
-            border-radius: 4px; 
-            color: var(--text-muted); 
-            font-weight: bold; 
-        }
+        .zone-subject { font-weight: 700; color: var(--text-main); padding: 4px; border-radius: 4px; margin-top: 5px; font-size: 13px; }
+        .zone-bottom { display: flex; justify-content: space-between; align-items: flex-end; padding: 4px; margin-top: auto; }
+        .zone-teacher { font-size: 10px; color: var(--accent-color); font-weight: 600; cursor: pointer; }
+        .zone-room { font-size: 10px; background: rgba(0,0,0,0.05); padding: 2px 5px; border-radius: 4px; color: var(--text-muted); font-weight: bold; }
 
-        /* Hover effects tylko dla Admina (dodawane klasą .can-edit w JS) */
         .can-edit .zone-subject:hover { background: rgba(33, 150, 243, 0.1); cursor: pointer; outline: 1px dashed #2196F3; }
         .can-edit .zone-teacher:hover { text-decoration: underline; }
         .can-edit .zone-room:hover { background: #ddd; cursor: pointer; }
 
-        /* Przycisk usuwania (X) */
         .delete-x {
-            position: absolute;
-            top: 0px;
-            right: 0px;
-            width: 18px;
-            height: 18px;
-            background: #F44336;
-            color: white;
-            border-radius: 50%;
-            font-size: 12px;
-            display: none; 
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            z-index: 10;
-            line-height: 1;
-            font-weight: bold;
+            position: absolute; top: 0px; right: 0px; width: 18px; height: 18px;
+            background: #F44336; color: white; border-radius: 50%; font-size: 12px;
+            display: none; align-items: center; justify-content: center; cursor: pointer; z-index: 10; line-height: 1; font-weight: bold;
         }
         .can-edit .lesson-cell-content:hover .delete-x { display: flex; } 
 
-        /* Pusta komórka do dodawania */
-        .empty-cell-trigger {
-            width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
-            color: transparent; font-size: 24px; cursor: default;
-        }
+        .empty-cell-trigger { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: transparent; font-size: 24px; cursor: default; }
         .can-edit .empty-cell-trigger { cursor: pointer; }
         .can-edit .empty-cell-trigger:hover { color: #ccc; background: rgba(0,0,0,0.02); }
 
         /* Style Mapowania (Modal) */
-        .mapping-list {
-            max-height: 300px;
-            overflow-y: auto;
-            margin: 15px 0;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 10px;
-            background: rgba(0,0,0,0.02);
-        }
-        .mapping-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 8px;
-            border-bottom: 1px solid var(--border-color);
-            background: var(--panel-bg);
-            margin-bottom: 5px;
-            border-radius: 4px;
-        }
+        .mapping-list { max-height: 300px; overflow-y: auto; margin: 15px 0; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; background: rgba(0,0,0,0.02); }
+        .mapping-row { display: flex; align-items: center; justify-content: space-between; padding: 8px; border-bottom: 1px solid var(--border-color); background: var(--panel-bg); margin-bottom: 5px; border-radius: 4px; }
         .mapping-row:last-child { margin-bottom: 0; border-bottom: none; }
         .sheet-name { font-weight: bold; color: #D32F2F; display:flex; align-items:center; gap:5px; font-size: 13px; }
         .arrow-icon { color: var(--text-muted); font-size: 18px; margin: 0 10px; }
         .mapping-select { padding: 5px; border-radius: 4px; border: 1px solid var(--border-color); width: 180px; font-size: 12px; }
 
-        /* Kontrolki */
+        /* Reszta stylów */
         .class-selector-container { margin-bottom: 15px; display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }
         .class-select { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--panel-bg); color: var(--text-main); font-size: 14px; }
-
-        /* Sidebar */
         .widget-icon { display: flex; align-items: center; justify-content: center; background: none !important; }
         #student-sidebar-content { display: flex; flex-direction: column; gap: 30px; width: 100%; margin-top: 30px;}
         .sidebar-section { width: 100%; display: block; }
@@ -168,9 +65,7 @@
         .sidebar-grade-circle { width: 30px; height: 30px; border-radius: 50%; background: var(--hover-bg); border: 2px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; margin-right: 10px; color: var(--text-main); }
         .empty-sidebar { font-size: 12px; color: var(--text-muted); font-style: italic; }
 
-        @media (prefers-color-scheme: dark) {
-            .sidebar-grade-circle { background: #333; border-color: #555; color: #fff; }
-        }
+        @media (prefers-color-scheme: dark) { .sidebar-grade-circle { background: #333; border-color: #555; color: #fff; } }
     </style>
 </head>
 <body>
@@ -228,7 +123,8 @@
                             </button>
                         </div>
                     </div>
-                    
+
+                    <p id="schedule-info-text" style="margin-top: 15px;">Ładowanie planu...</p>
                 </div>
             </div>
 
@@ -315,11 +211,28 @@
                 <span class="close-modal" onclick="closeModal('mappingModal')">&times;</span>
             </div>
             <div class="modal-body">
-                <p style="font-size:13px; color:var(--text-main);">Niektóre arkusze w pliku Excel nie pasują nazwą do żadnej klasy. Przypisz je ręcznie lub pomiń.</p>
+                <p style="font-size:13px; color:var(--text-main);">Niektóre arkusze nie pasują do nazw klas. Przypisz je ręcznie.</p>
                 <div id="mapping-container" class="mapping-list"></div>
                 <div style="text-align:right; margin-top:15px;">
                     <button class="login-button" style="background:#ccc; width:auto; color:#333;" onclick="closeModal('mappingModal')">Anuluj</button>
-                    <button class="login-button" style="width:auto;" onclick="finalizeImport()">Zatwierdź i Importuj</button>
+                    <button class="login-button" style="width:auto;" onclick="resolveSheetMapping()">Dalej</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="teacherMappingModal">
+        <div class="modal-window" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Mapowanie Nauczycieli</h3>
+                <span class="close-modal" onclick="closeModal('teacherMappingModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:13px; color:var(--text-main);">Niektórzy nauczyciele z pliku nie zostali rozpoznani w bazie danych.</p>
+                <div id="teacher-mapping-container" class="mapping-list"></div>
+                <div style="text-align:right; margin-top:15px;">
+                    <button class="login-button" style="background:#ccc; width:auto; color:#333;" onclick="closeModal('teacherMappingModal')">Anuluj</button>
+                    <button class="login-button" style="width:auto;" onclick="finalizeTeacherMapping()">Importuj</button>
                 </div>
             </div>
         </div>
@@ -336,11 +249,16 @@
         let isStaff = false; 
         let canEdit = false; 
 
-        // Import variables
+        // Zmienne do procesu importu
         let pendingWorkbook = null;
         let pendingClassList = [];
-        let autoMatchedSheets = [];
+        let pendingTeacherList = []; // Lista nauczycieli z bazy
+        
+        let sheetMatches = []; // [{sheetName, classId}] - Finalne pary
         let unmatchedSheets = [];
+
+        let teacherMatches = {}; // { "Jan Kowalski": "uuid" } - Finalne pary
+        let unmatchedTeacherNames = new Set(); 
 
         function generateGrid() {
             const tbody = document.getElementById('schedule-body');
@@ -369,33 +287,21 @@
             const { data: userDetails } = await _supabase
                 .from('users')
                 .select('id, username, role, school_id, class_id, schools(name), classes(name)')
-                .eq('id', session.user.id)
-                .single();
+                .eq('id', session.user.id).single();
                 
             if (!userDetails) return;
             currentUser = userDetails;
-
-            setupProfileCard(userDetails);
-            setupSidebarEvents();
+            setupProfileCard(userDetails); setupSidebarEvents();
 
             isStaff = ['teacher', 'manager', 'admin', 'lecturer'].includes(currentUser.role);
             canEdit = ['manager', 'admin'].includes(currentUser.role);
 
-            if (isStaff) {
-                await setupStaffView();
-            } else if (currentUser.role === 'parent') {
-                await setupParentView();
-                document.getElementById('student-sidebar-content').style.display = 'flex';
-            } else {
-                setupStudentView();
-                document.getElementById('student-sidebar-content').style.display = 'flex';
-                loadSidebarCalendar(currentUser.id);
-                loadSidebarGrades(currentUser.id);
-                loadSidebarRemarks(currentUser.id);
-            }
+            if (isStaff) await setupStaffView();
+            else if (currentUser.role === 'parent') { await setupParentView(); document.getElementById('student-sidebar-content').style.display = 'flex'; }
+            else { setupStudentView(); document.getElementById('student-sidebar-content').style.display = 'flex'; loadSidebarCalendar(currentUser.id); loadSidebarGrades(currentUser.id); loadSidebarRemarks(currentUser.id); }
         }
 
-        // --- RENDEROWANIE PLANU Z LOGIKĄ EDYCJI (Split Zones) ---
+        // --- RENDEROWANIE & EDYCJA ---
         async function fetchAndRenderSchedule(classId) {
             generateGrid(); 
             const { data: scheduleData } = await _supabase.from('weekly_schedule').select('*, teacher:teacher_id(username)').eq('class_id', classId);
@@ -407,7 +313,6 @@
                 if (cell) {
                     const teacherName = item.teacher ? item.teacher.username : 'Brak';
                     const editClass = canEdit ? 'can-edit' : '';
-                    
                     cell.className = editClass; 
                     cell.innerHTML = `
                         <div class="lesson-cell-content">
@@ -423,7 +328,6 @@
             });
         }
 
-        // --- OBSŁUGA KLIKNIĘĆ (EDYCJA) ---
         function handleEmptyClick(day, hour) {
             if (!canEdit || !currentViewClassId) return;
             document.getElementById('add-day').value = day;
@@ -437,30 +341,22 @@
         async function editSubject(day, hour, currentVal) {
             if (!canEdit) return;
             const newVal = prompt("Edytuj nazwę przedmiotu:", currentVal);
-            if (newVal && newVal.trim() !== "") {
-                await updateScheduleField(day, hour, { subject_name: newVal.trim() });
-            }
+            if (newVal && newVal.trim() !== "") await updateScheduleField(day, hour, { subject_name: newVal.trim() });
         }
-
         async function editRoom(day, hour, currentVal) {
             if (!canEdit) return;
             const newVal = prompt("Edytuj numer sali:", currentVal);
-            if (newVal !== null) {
-                await updateScheduleField(day, hour, { room: newVal.trim() });
-            }
+            if (newVal !== null) await updateScheduleField(day, hour, { room: newVal.trim() });
         }
-
         function editTeacher(day, hour) {
             if (!canEdit) return;
             document.getElementById('ch-day').value = day;
             document.getElementById('ch-hour').value = hour;
-            // Kopiuj opcje z głównego selecta do tego w modalu
             const mainSel = document.getElementById('add-teacher');
             const targetSel = document.getElementById('ch-teacher-select');
             targetSel.innerHTML = mainSel.innerHTML;
             openModal('changeTeacherModal');
         }
-
         async function saveTeacherChange() {
             const day = document.getElementById('ch-day').value;
             const hour = document.getElementById('ch-hour').value;
@@ -468,63 +364,39 @@
             await updateScheduleField(day, hour, { teacher_id: teacherId });
             closeModal('changeTeacherModal');
         }
-
         async function deleteLessonDirect(day, hour) {
             if (!canEdit) return;
             if(!confirm("Usunąć tę lekcję?")) return;
             const startTime = `${hour.toString().padStart(2,'0')}:00`;
-            await _supabase.from('weekly_schedule')
-                .delete()
-                .eq('class_id', currentViewClassId)
-                .eq('day_of_week', day)
-                .eq('start_time', startTime);
-            
+            await _supabase.from('weekly_schedule').delete().eq('class_id', currentViewClassId).eq('day_of_week', day).eq('start_time', startTime);
             fetchAndRenderSchedule(currentViewClassId);
         }
-
         async function updateScheduleField(day, hour, updates) {
             const startTime = `${hour.toString().padStart(2,'0')}:00`;
-            const { error } = await _supabase.from('weekly_schedule')
-                .update(updates)
-                .eq('class_id', currentViewClassId)
-                .eq('day_of_week', day)
-                .eq('start_time', startTime);
-            
-            if (error) alert("Błąd zapisu: " + error.message);
-            else fetchAndRenderSchedule(currentViewClassId);
+            const { error } = await _supabase.from('weekly_schedule').update(updates).eq('class_id', currentViewClassId).eq('day_of_week', day).eq('start_time', startTime);
+            if (error) alert("Błąd: " + error.message); else fetchAndRenderSchedule(currentViewClassId);
         }
 
-        // Zapis nowej lekcji
         document.getElementById('addLessonForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const day = document.getElementById('add-day').value;
             const hour = parseInt(document.getElementById('add-hour').value);
-            const startTime = `${hour.toString().padStart(2,'0')}:00`;
-            const endTime = `${hour.toString().padStart(2,'0')}:45`;
-            
+            const startTime = `${hour.toString().padStart(2,'0')}:00`; const endTime = `${hour.toString().padStart(2,'0')}:45`;
             const insertData = {
-                class_id: currentViewClassId,
-                day_of_week: day,
-                start_time: startTime,
-                end_time: endTime,
+                class_id: currentViewClassId, day_of_week: day, start_time: startTime, end_time: endTime,
                 subject_name: document.getElementById('add-subject').value,
                 room: document.getElementById('add-room').value,
                 teacher_id: document.getElementById('add-teacher').value || null
             };
-
             const { error } = await _supabase.from('weekly_schedule').insert(insertData);
-            if(error) alert(error.message);
-            else { closeModal('addLessonModal'); fetchAndRenderSchedule(currentViewClassId); }
+            if(error) alert(error.message); else { closeModal('addLessonModal'); fetchAndRenderSchedule(currentViewClassId); }
         });
 
-        // --- SIDEBAR & WIDOKI ---
+        // --- SIDEBAR & VIEW SETUP ---
         function setupProfileCard(p){ document.getElementById('profile-name-display').textContent=p.username;document.getElementById('profile-role-display').textContent=p.role.toUpperCase(); document.getElementById('profile-school-display').textContent=p.schools?.name||""; }
         function setupSidebarEvents(){ document.getElementById('avatarTrigger').onclick=()=>{let d=document.getElementById('profileDropdown');d.style.display=d.style.display==='block'?'none':'block';}; document.getElementById('logoutBtn').onclick=async()=>{await _supabase.auth.signOut();window.location.href='login.html';};}
-        
         async function loadSidebarCalendar(uid){const l=document.getElementById('sidebar-calendar-list');const{data:u}=await _supabase.from('users').select('class_id').eq('id',uid).single();if(!u?.class_id){l.innerHTML='<p class="empty-sidebar">Brak.</p>';return;} const t=new Date().toISOString().split('T')[0];const{data}=await _supabase.from('calendar_events').select('*').eq('class_id',u.class_id).gte('event_date',t).limit(3);l.innerHTML='';if(!data||!data.length){l.innerHTML='<p class="empty-sidebar">Brak wydarzeń.</p>';return;} data.forEach(e=>l.innerHTML+=`<div class="sidebar-list-item"><b>${e.event_date.slice(5)}</b>: ${e.title}</div>`);}
-        
         async function loadSidebarGrades(uid){ const l=document.getElementById('sidebar-grades-list'); const w=new Date(Date.now()-7*24*60*60*1000).toISOString(); const{data:g}=await _supabase.from('grades').select('grade,packages(title)').eq('user_id',uid).gte('created_at',w).order('created_at',{ascending:false}).limit(5); l.innerHTML=''; if(!g||!g.length){l.innerHTML='<p class="empty-sidebar">Brak ocen.</p>';return;} g.forEach(x=>l.innerHTML+=`<div class="sidebar-list-item"><div class="sidebar-grade-circle">${x.grade}</div><div class="sidebar-list-content">${x.packages?x.packages.title:'Inne'}</div></div>`);}
-        
         async function loadSidebarRemarks(uid){ const l=document.getElementById('sidebar-remarks-list'); const{data:r}=await _supabase.from('remarks').select('points,subject_name,created_at').eq('student_id',uid).order('created_at',{ascending:false}).limit(3); l.innerHTML=''; if(!r||!r.length){l.innerHTML='<p class="empty-sidebar">Brak uwag.</p>';return;} r.forEach(x=>{ let c=x.points>0?'#4CAF50':(x.points<0?'#F44336':'#757575'); let t=x.points>0?`+${x.points}`:x.points; l.innerHTML+=`<div class="sidebar-list-item"><div class="sidebar-grade-circle" style="color:${c};border-color:${c};font-size:14px;width:35px;height:35px;">${t}</div><div class="sidebar-list-content">${x.subject_name}</div></div>`; });}
 
         function setupStudentView() { if(currentUser.class_id){currentViewClassId=currentUser.class_id;fetchAndRenderSchedule(currentViewClassId);} }
@@ -536,12 +408,10 @@
             changeChild();
         }
         function changeChild(){
-            const s=document.getElementById('childSelect'); const cid=s.options[s.selectedIndex].dataset.classId;
-            const uid=s.value;
+            const s=document.getElementById('childSelect'); const cid=s.options[s.selectedIndex].dataset.classId; const uid=s.value;
             loadSidebarCalendar(uid); loadSidebarGrades(uid); loadSidebarRemarks(uid);
             if(cid) {currentViewClassId=cid; fetchAndRenderSchedule(cid);} else {generateGrid();}
         }
-
         async function setupStaffView() {
             document.getElementById('staff-view-controls').style.display='block';
             if(canEdit) document.getElementById('admin-controls').style.display='block';
@@ -556,17 +426,15 @@
                 fetchAndRenderSchedule(currentViewClassId);
             }
         }
-        async function changeClass(){
-            const s=document.getElementById('classSelect'); currentViewClassId=s.value;
-            fetchAndRenderSchedule(currentViewClassId);
-        }
+        async function changeClass(){ const s=document.getElementById('classSelect'); currentViewClassId=s.value; fetchAndRenderSchedule(currentViewClassId); }
         async function loadTeachersForSelect(sid){
             const s=document.getElementById('add-teacher'); s.innerHTML='<option value="">-- Wybierz --</option>';
             const{data}=await _supabase.from('users').select('id,username').eq('school_id',sid).in('role',['teacher','manager','admin','lecturer']).order('username');
+            pendingTeacherList = data || []; // Zapisz na przyszłość dla importu
             data?.forEach(t=>s.add(new Option(t.username,t.id)));
         }
 
-        // --- EXCEL (MASOWY) ---
+        // --- IMPORT I EKSPORT Z MAPOWANIEM NAUCZYCIELI ---
         const DAY_MAP={1:"Poniedziałek",2:"Wtorek",3:"Środa",4:"Czwartek",5:"Piątek"};
         const REV_MAP={"poniedziałek":1,"wtorek":2,"środa":3,"czwartek":4,"piątek":5,"pon":1,"wt":2,"śr":3,"czw":4,"pt":5};
 
@@ -577,20 +445,20 @@
                 if(currentUser.role!=='admin') q=q.eq('school_id',currentUser.school_id);
                 const{data:classes}=await q;
                 const cids=classes.map(c=>c.id);
-                const{data:sched}=await _supabase.from('weekly_schedule').select('*').in('class_id',cids);
+                const{data:sched}=await _supabase.from('weekly_schedule').select('*, teacher:teacher_id(username)').in('class_id',cids);
                 const wb=XLSX.utils.book_new();
                 classes.forEach(c=>{
-                    const rows=[["Dzień","Godzina","Przedmiot","Sala"]];
+                    const rows=[["Dzień","Godzina","Przedmiot","Sala","Nauczyciel"]];
                     const cs=sched.filter(x=>x.class_id===c.id);
                     for(let d=1;d<=5;d++){
                         for(let h=8;h<20;h++){
                             const st=`${h.toString().padStart(2,'0')}:00`;
                             const l=cs.find(x=>x.day_of_week===d && x.start_time.startsWith(st));
-                            const timeStr = `${h.toString().padStart(2,'0')}:00 - ${h.toString().padStart(2,'0')}:45`;
-                            rows.push([DAY_MAP[d], timeStr, l?l.subject_name:"", l?l.room:""]);
+                            const ts=`${h}:00 - ${h}:45`;
+                            rows.push([DAY_MAP[d], ts, l?l.subject_name:"", l?l.room:"", l&&l.teacher?l.teacher.username:""]);
                         }
                     }
-                    const ws=XLSX.utils.aoa_to_sheet(rows); ws['!cols']=[{wch:15},{wch:15},{wch:30},{wch:10}];
+                    const ws=XLSX.utils.aoa_to_sheet(rows); ws['!cols']=[{wch:15},{wch:15},{wch:30},{wch:10},{wch:20}];
                     XLSX.utils.book_append_sheet(wb,ws,c.name.substring(0,30));
                 });
                 XLSX.writeFile(wb,"Plan_Cala_Szkola.xlsx");
@@ -604,47 +472,125 @@
                 try{
                     const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
                     pendingWorkbook=wb;
+                    
+                    // 1. Pobierz klasy
                     let q=_supabase.from('classes').select('id,name');
                     if(currentUser.role!=='admin') q=q.eq('school_id',currentUser.school_id);
                     const{data:cls}=await q;
                     pendingClassList=cls;
-                    autoMatchedSheets=[]; unmatchedSheets=[];
-                    const map={}; cls.forEach(c=>map[c.name.trim().toLowerCase()]=c.id);
+                    
+                    // 2. Pobierz nauczycieli (jeśli nie pobrano wcześniej)
+                    if(pendingTeacherList.length === 0) {
+                        const sid = currentUser.role==='admin' ? null : currentUser.school_id;
+                        let qt = _supabase.from('users').select('id,username').in('role',['teacher','manager','admin','lecturer']);
+                        if(sid) qt = qt.eq('school_id', sid);
+                        const {data: tch} = await qt;
+                        pendingTeacherList = tch || [];
+                    }
 
+                    // 3. Reset
+                    sheetMatches=[]; unmatchedSheets=[];
+                    const classMap={}; cls.forEach(c=>classMap[c.name.trim().toLowerCase()]=c.id);
+
+                    // 4. Analiza Arkuszy
                     wb.SheetNames.forEach(sn=>{
-                        const cid=map[sn.trim().toLowerCase()];
-                        if(cid) autoMatchedSheets.push({sheet:sn,id:cid}); else unmatchedSheets.push(sn);
+                        const cid=classMap[sn.trim().toLowerCase()];
+                        if(cid) sheetMatches.push({sheet:sn,id:cid}); else unmatchedSheets.push(sn);
                     });
 
+                    // Start łańcucha
                     if(unmatchedSheets.length) showMappingModal();
-                    else { if(confirm(`Znaleziono ${autoMatchedSheets.length} arkuszy. Importować?`)) executeImport([]); }
-                } catch(err){alert(err.message);} finally{input.value='';}
+                    else analyzeTeachers();
+
+                } catch(err){alert(err.message); input.value='';}
             };
             reader.readAsArrayBuffer(input.files[0]);
         }
 
+        // KROK 1: MAPOWANIE ARKUSZY
         function showMappingModal(){
             const c=document.getElementById('mapping-container'); c.innerHTML='';
             unmatchedSheets.forEach(sn=>{
                 let opts='<option value="">-- Pomiń --</option>';
                 pendingClassList.forEach(cl=>opts+=`<option value="${cl.id}">${cl.name}</option>`);
-                c.innerHTML+=`<div class="mapping-row"><div class="sheet-name"><span class="material-symbols-outlined">description</span> ${sn}</div><span class="arrow-icon">→</span><select class="mapping-select" data-sheet="${sn}">${opts}</select></div>`;
+                c.innerHTML+=`<div class="mapping-row"><div class="sheet-name"><span class="material-symbols-outlined">description</span> ${sn}</div><span class="arrow-icon">→</span><select class="mapping-select sheet-map" data-sheet="${sn}">${opts}</select></div>`;
             });
             openModal('mappingModal');
         }
 
-        async function finalizeImport(){
-            const matches=[];
-            document.querySelectorAll('.mapping-select').forEach(s=>{if(s.value) matches.push({sheet:s.dataset.sheet,id:s.value});});
+        function resolveSheetMapping(){
+            document.querySelectorAll('.sheet-map').forEach(s=>{if(s.value) sheetMatches.push({sheet:s.dataset.sheet,id:s.value});});
             closeModal('mappingModal');
-            await executeImport(matches);
+            analyzeTeachers();
         }
 
-        async function executeImport(manual){
-            const all=[...autoMatchedSheets,...manual];
-            if(!all.length) return alert("Nic do importu.");
+        // KROK 2: ANALIZA NAUCZYCIELI
+        function analyzeTeachers() {
+            if(sheetMatches.length === 0) { alert("Brak klas do importu."); return; }
+            
+            teacherMatches = {}; 
+            unmatchedTeacherNames = new Set();
+            const dbTeacherMap = {}; // name_lower -> id
+            pendingTeacherList.forEach(t => dbTeacherMap[t.username.trim().toLowerCase()] = t.id);
+
+            sheetMatches.forEach(m => {
+                const ws = pendingWorkbook.Sheets[m.sheet];
+                const rows = XLSX.utils.sheet_to_json(ws);
+                rows.forEach(r => {
+                    const rawName = r['Nauczyciel'];
+                    if (rawName && typeof rawName === 'string' && rawName.trim() !== "") {
+                        const cleanName = rawName.trim();
+                        const lowerName = cleanName.toLowerCase();
+                        
+                        if (dbTeacherMap[lowerName]) {
+                            teacherMatches[cleanName] = dbTeacherMap[lowerName];
+                        } else {
+                            unmatchedTeacherNames.add(cleanName);
+                        }
+                    }
+                });
+            });
+
+            if (unmatchedTeacherNames.size > 0) showTeacherMappingModal();
+            else executeImport();
+        }
+
+        // KROK 3: MAPOWANIE NAUCZYCIELI
+        function showTeacherMappingModal() {
+            const c = document.getElementById('teacher-mapping-container');
+            c.innerHTML = '';
+            
+            let teacherOptions = '<option value="">-- Brak / Pomiń --</option>';
+            pendingTeacherList.sort((a,b)=>a.username.localeCompare(b.username)).forEach(t => {
+                teacherOptions += `<option value="${t.id}">${t.username}</option>`;
+            });
+
+            unmatchedTeacherNames.forEach(name => {
+                c.innerHTML += `
+                    <div class="mapping-row">
+                        <div class="sheet-name"><span class="material-symbols-outlined">person</span> ${name}</div>
+                        <span class="arrow-icon">→</span>
+                        <select class="mapping-select teacher-map" data-name="${name}">${teacherOptions}</select>
+                    </div>`;
+            });
+            openModal('teacherMappingModal');
+        }
+
+        function finalizeTeacherMapping() {
+            document.querySelectorAll('.teacher-map').forEach(s => {
+                const name = s.dataset.name;
+                const tid = s.value; // może być pusty (null)
+                if (tid) teacherMatches[name] = tid;
+                // Jeśli pusty, to teacherMatches[name] pozostaje undefined -> czyli null przy imporcie
+            });
+            closeModal('teacherMappingModal');
+            executeImport();
+        }
+
+        // KROK 4: WYKONANIE
+        async function executeImport() {
             let count=0;
-            for(const m of all){
+            for(const m of sheetMatches){
                 const ws=pendingWorkbook.Sheets[m.sheet];
                 const rows=XLSX.utils.sheet_to_json(ws);
                 const inserts=[];
@@ -652,11 +598,16 @@
                     const day=REV_MAP[(r['Dzień']||"").toLowerCase().trim()];
                     const hRaw=parseInt(r['Godzina']);
                     if(day && hRaw && r['Przedmiot']){
+                        // Rozwiąż nauczyciela
+                        const tRaw = r['Nauczyciel'] ? r['Nauczyciel'].trim() : null;
+                        const tId = tRaw ? (teacherMatches[tRaw] || teacherMatches[tRaw.toLowerCase()] || null) : null;
+
                         inserts.push({
                             class_id:m.id, day_of_week:day,
                             start_time:`${hRaw.toString().padStart(2,'0')}:00`,
                             end_time:`${hRaw.toString().padStart(2,'0')}:45`,
-                            subject_name:r['Przedmiot'], room:r['Sala']||"", teacher_id:null
+                            subject_name:r['Przedmiot'], room:r['Sala']||"", 
+                            teacher_id: tId
                         });
                     }
                 });
@@ -665,6 +616,7 @@
                 count++;
             }
             alert(`Zaimportowano plan dla ${count} klas.`);
+            document.getElementById('import-excel-input').value = '';
             if(currentViewClassId) fetchAndRenderSchedule(currentViewClassId);
         }
 
@@ -672,18 +624,18 @@
         
         async function exportCurrentViewToExcel(){
             if(!currentViewClassId) return alert("Wybierz.");
-            const { data: schedule } = await _supabase.from('weekly_schedule').select('*').eq('class_id', currentViewClassId);
+            const { data: schedule } = await _supabase.from('weekly_schedule').select('*, teacher:teacher_id(username)').eq('class_id', currentViewClassId);
             const wb = XLSX.utils.book_new();
-            const data = [["Dzień", "Godzina", "Przedmiot", "Sala"]];
+            const data = [["Dzień", "Godzina", "Przedmiot", "Sala", "Nauczyciel"]];
             for (let d=1; d<=5; d++) {
                 for (let h=8; h<20; h++) {
                     const st=`${h.toString().padStart(2,'0')}:00`;
                     const l=schedule?.find(s=>s.day_of_week===d && s.start_time.startsWith(st));
-                    const ts=`${h.toString().padStart(2,'0')}:00 - ${h.toString().padStart(2,'0')}:45`;
-                    data.push([DAY_MAP[d], ts, l?l.subject_name:"", l?l.room:""]);
+                    const ts=`${h}:00 - ${h}:45`;
+                    data.push([DAY_MAP[d], ts, l?l.subject_name:"", l?l.room:"", l&&l.teacher?l.teacher.username:""]);
                 }
             }
-            const ws = XLSX.utils.aoa_to_sheet(data); ws['!cols']=[{wch:15},{wch:15},{wch:30},{wch:10}];
+            const ws = XLSX.utils.aoa_to_sheet(data); ws['!cols']=[{wch:15},{wch:15},{wch:30},{wch:10},{wch:20}];
             XLSX.utils.book_append_sheet(wb, ws, "Plan");
             XLSX.writeFile(wb, "Plan_Zajec.xlsx");
         }
