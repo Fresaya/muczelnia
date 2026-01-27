@@ -6,6 +6,7 @@
     <title>mUczelnia - Plan Zajęć</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     
     <style>
         /* --- STYLE PLANU ZAJĘĆ --- */
@@ -23,7 +24,7 @@
         .subject-teacher { font-size: 9px; color: var(--accent-color); margin-top: 2px; font-weight: 500; }
         
         .editable:hover { background-color: rgba(33, 150, 243, 0.05); cursor: pointer; outline: 1px dashed var(--accent-color); }
-        .class-selector-container { margin-bottom: 15px; display: inline-flex; align-items: center; gap: 10px; }
+        .class-selector-container { margin-bottom: 15px; display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }
         .class-select { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--panel-bg); color: var(--text-main); font-size: 14px; }
 
         /* --- STYLE SIDEBARA --- */
@@ -67,24 +68,27 @@
                             <select id="classSelect" class="class-select" onchange="changeClass()">
                                 <option value="" disabled selected>Ładowanie klas...</option>
                             </select>
-                        </div>
-                        
-                        <div style="display:flex; gap:10px; margin-top:10px;">
-                            <button class="login-button" style="width:auto; font-size:12px; padding:5px 15px; background:#2E7D32;" onclick="exportScheduleToExcel()">
-                                <span class="material-symbols-outlined" style="font-size:16px;">download</span> Export (Excel)
+                            
+                            <button class="login-button" style="width:auto; font-size:12px; padding:5px 15px; background:#2E7D32; display:flex; align-items:center; gap:5px;" onclick="exportScheduleToExcel()">
+                                <span class="material-symbols-outlined" style="font-size:16px;">download</span> Export
                             </button>
-                            <button class="login-button" style="width:auto; font-size:12px; padding:5px 15px; background:#1565C0;" onclick="document.getElementById('import-excel-input').click()">
-                                <span class="material-symbols-outlined" style="font-size:16px;">upload</span> Import (Excel)
+                            <button class="login-button" style="width:auto; font-size:12px; padding:5px 15px; background:#1565C0; display:flex; align-items:center; gap:5px;" onclick="document.getElementById('import-excel-input').click()">
+                                <span class="material-symbols-outlined" style="font-size:16px;">upload</span> Import
                             </button>
                             <input type="file" id="import-excel-input" accept=".xlsx, .xls" style="display:none;" onchange="importScheduleFromExcel(this)">
                         </div>
                     </div>
+
                     <div id="parent-controls" style="display:none; margin-top: 10px;">
                         <div class="class-selector-container">
                             <label for="childSelect">Wybierz dziecko:</label>
                             <select id="childSelect" class="class-select" onchange="changeChild()">
                                 <option value="" disabled selected>Ładowanie...</option>
                             </select>
+                            
+                            <button class="login-button" style="width:auto; font-size:12px; padding:5px 15px; background:#2E7D32; display:flex; align-items:center; gap:5px;" onclick="exportScheduleToExcel()">
+                                <span class="material-symbols-outlined" style="font-size:16px;">download</span> Pobierz Plan
+                            </button>
                         </div>
                     </div>
 
@@ -215,10 +219,8 @@
             if (isStaff) {
                 await setupStaffView();
             } else if (currentUser.role === 'parent') {
-                // NOWA LOGIKA DLA RODZICA
                 await setupParentView();
                 document.getElementById('student-sidebar-content').style.display = 'flex';
-                // Sidebar ładuje się po wybraniu dziecka w changeChild()
             } else {
                 // UCZEŃ
                 setupStudentView();
@@ -247,25 +249,13 @@
             document.getElementById('changePassBtn').addEventListener('click', () => { window.location.href = 'settings.html'; });
         }
 
-        // --- SIDEBAR CONTENT ---
         async function loadSidebarCalendar(targetUserId) {
             const list = document.getElementById('sidebar-calendar-list');
-            // Jeśli to rodzic, targetUserId to ID dziecka. Pobieramy klasę DZIECKA.
             const { data: targetUser } = await _supabase.from('users').select('class_id').eq('id', targetUserId).single();
-            
-            if(!targetUser || !targetUser.class_id) { 
-                list.innerHTML = '<p class="empty-sidebar">Brak przypisanej klasy.</p>'; 
-                return; 
-            }
+            if(!targetUser || !targetUser.class_id) { list.innerHTML = '<p class="empty-sidebar">Brak klasy.</p>'; return; }
 
             const today = new Date().toISOString().split('T')[0];
-            const { data } = await _supabase.from('calendar_events')
-                .select('title, event_date, subject_name')
-                .eq('class_id', targetUser.class_id)
-                .gte('event_date', today)
-                .order('event_date', { ascending: true })
-                .limit(3);
-                
+            const { data } = await _supabase.from('calendar_events').select('title, event_date, subject_name').eq('class_id', targetUser.class_id).gte('event_date', today).order('event_date', { ascending: true }).limit(3);
             list.innerHTML = '';
             if(!data || data.length === 0) { list.innerHTML = '<p class="empty-sidebar">Brak wydarzeń.</p>'; return; }
             data.forEach(e => {
@@ -278,63 +268,31 @@
         async function loadSidebarGrades(targetUserId) {
             const list = document.getElementById('sidebar-grades-list');
             const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-            
-            const { data: grades } = await _supabase.from('grades')
-                .select('grade, packages(title)')
-                .eq('user_id', targetUserId)
-                .gte('created_at', weekAgo)
-                .order('created_at', { ascending: false })
-                .limit(5);
-
+            const { data: grades } = await _supabase.from('grades').select('grade, packages(title)').eq('user_id', targetUserId).gte('created_at', weekAgo).order('created_at', { ascending: false }).limit(5);
             list.innerHTML = '';
-            if(!grades || grades.length === 0) { 
-                list.innerHTML = '<p class="empty-sidebar">Brak nowych ocen.</p>'; 
-                return; 
-            }
-
+            if(!grades || grades.length === 0) { list.innerHTML = '<p class="empty-sidebar">Brak nowych ocen.</p>'; return; }
             grades.forEach(g => {
                 const pkgTitle = g.packages ? g.packages.title : 'Inne';
-                list.innerHTML += `
-                    <div class="sidebar-list-item">
-                        <div class="sidebar-grade-circle">${g.grade}</div>
-                        <div class="sidebar-list-content">${pkgTitle}</div>
-                    </div>`;
+                list.innerHTML += `<div class="sidebar-list-item"><div class="sidebar-grade-circle">${g.grade}</div><div class="sidebar-list-content">${pkgTitle}</div></div>`;
             });
         }
 
         async function loadSidebarRemarks(targetUserId) {
             const list = document.getElementById('sidebar-remarks-list');
-            
-            const { data: remarks } = await _supabase.from('remarks')
-                .select('category, subject_name, created_at, points')
-                .eq('student_id', targetUserId)
-                .order('created_at', { ascending: false })
-                .limit(3);
-
+            const { data: remarks } = await _supabase.from('remarks').select('category, subject_name, created_at, points').eq('student_id', targetUserId).order('created_at', { ascending: false }).limit(3);
             list.innerHTML = '';
-            if (!remarks || remarks.length === 0) { 
-                list.innerHTML = '<p class="empty-sidebar">Brak uwag.</p>'; 
-                return; 
-            }
-
+            if (!remarks || remarks.length === 0) { list.innerHTML = '<p class="empty-sidebar">Brak uwag.</p>'; return; }
             remarks.forEach(r => {
                 const d = new Date(r.created_at);
                 const dateStr = `${d.getDate()}.${d.getMonth() + 1}`;
                 let pts = r.points || 0;
                 let txt = pts > 0 ? "+" + pts : pts; 
                 let color = pts > 0 ? '#4CAF50' : (pts < 0 ? '#F44336' : '#757575'); 
-
-                list.innerHTML += `
-                    <div class="sidebar-list-item">
-                        <div class="sidebar-grade-circle" style="color:${color}; border-color:${color}; font-size:14px; width:35px; height:35px;">${txt}</div>
-                        <div class="sidebar-list-content">
-                            <span style="font-size:11px; color:#888;">${dateStr}</span><br>${r.subject_name}
-                        </div>
-                    </div>`;
+                list.innerHTML += `<div class="sidebar-list-item"><div class="sidebar-grade-circle" style="color:${color}; border-color:${color}; font-size:14px; width:35px; height:35px;">${txt}</div><div class="sidebar-list-content"><span style="font-size:11px; color:#888;">${dateStr}</span><br>${r.subject_name}</div></div>`;
             });
         }
 
-        // --- WIDOK DLA UCZNIA ---
+        // --- WIDOKI ---
         function setupStudentView() {
             if (currentUser.class_id) {
                 currentViewClassId = currentUser.class_id;
@@ -345,17 +303,11 @@
             }
         }
 
-        // --- WIDOK DLA RODZICA ---
         async function setupParentView() {
             document.getElementById('parent-controls').style.display = 'block';
             document.getElementById('schedule-info-text').innerText = "Plan zajęć Twojego dziecka";
-
-            // Pobierz dzieci
-            const { data: relations } = await _supabase
-                .from('parent_children')
-                .select('child_id, users:child_id(id, username, class_id)')
-                .eq('parent_id', currentUser.id);
-
+            
+            const { data: relations } = await _supabase.from('parent_children').select('child_id, users:child_id(id, username, class_id)').eq('parent_id', currentUser.id);
             const select = document.getElementById('childSelect');
             select.innerHTML = '';
 
@@ -363,12 +315,9 @@
                 relations.forEach(rel => {
                     const child = rel.users;
                     const opt = new Option(child.username, child.id);
-                    // Zapisujemy klasę dziecka w atrybucie
                     opt.dataset.classId = child.class_id || ""; 
                     select.add(opt);
                 });
-
-                // Wybierz pierwsze dziecko domyślnie
                 changeChild();
             } else {
                 select.innerHTML = '<option>Brak przypisanych dzieci</option>';
@@ -381,24 +330,20 @@
             const childId = selectedOpt.value;
             const classId = selectedOpt.dataset.classId;
 
-            // Odśwież sidebar dla wybranego dziecka
             loadSidebarCalendar(childId);
             loadSidebarGrades(childId);
             loadSidebarRemarks(childId);
 
             if (classId && classId !== "undefined" && classId !== "null" && classId !== "") {
                 currentViewClassId = classId;
-                generateGrid(); // Czyści tabelę
+                generateGrid(); 
                 fetchAndRenderSchedule(classId);
             } else {
                 generateGrid();
-                const tbody = document.getElementById('schedule-body');
-                // Nadpisz pierwszy wiersz komunikatem
-                tbody.innerHTML = '<tr><td colspan="6" style="padding:40px; text-align:center; color:#888;">To dziecko nie jest przypisane do żadnej klasy.</td></tr>';
+                document.getElementById('schedule-body').innerHTML = '<tr><td colspan="6" style="padding:40px; text-align:center; color:#888;">To dziecko nie jest przypisane do żadnej klasy.</td></tr>';
             }
         }
 
-        // --- WIDOK DLA KADRY ---
         async function setupStaffView() {
             document.getElementById('teacher-controls').style.display = 'block';
             document.getElementById('schedule-info-text').innerText = "Wybierz klasę, aby edytować jej plan.";
@@ -416,7 +361,6 @@
                     opt.dataset.schoolId = cls.school_id;
                     select.add(opt); 
                 });
-                
                 currentViewClassId = classes[0].id;
                 select.value = currentViewClassId;
                 await loadTeachersForSelect(classes[0].school_id);
@@ -430,12 +374,9 @@
         async function changeClass() {
             const select = document.getElementById('classSelect');
             currentViewClassId = select.value;
-            
             const selectedOption = select.options[select.selectedIndex];
             const schoolId = selectedOption.dataset.schoolId || currentUser.school_id;
-
             await loadTeachersForSelect(schoolId);
-
             generateGrid(); 
             if(isStaff) enableEditing(); 
             fetchAndRenderSchedule(currentViewClassId);
@@ -444,13 +385,7 @@
         async function loadTeachersForSelect(schoolId) {
             const sel = document.getElementById('edit-teacher');
             sel.innerHTML = '<option disabled>Ładowanie...</option>';
-            
-            const { data: teachers } = await _supabase.from('users')
-                .select('id, username')
-                .eq('school_id', schoolId)
-                .in('role', ['teacher', 'manager', 'admin', 'lecturer'])
-                .order('username');
-
+            const { data: teachers } = await _supabase.from('users').select('id, username').eq('school_id', schoolId).in('role', ['teacher', 'manager', 'admin', 'lecturer']).order('username');
             sel.innerHTML = '<option value="">-- Brak / Zastępstwo --</option>';
             if(teachers) {
                 teachers.forEach(t => sel.add(new Option(t.username, t.id)));
@@ -458,25 +393,14 @@
         }
 
         async function fetchAndRenderSchedule(classId) {
-            const { data: scheduleData } = await _supabase
-                .from('weekly_schedule')
-                .select('*, teacher:teacher_id(username)')
-                .eq('class_id', classId);
-            
+            const { data: scheduleData } = await _supabase.from('weekly_schedule').select('*, teacher:teacher_id(username)').eq('class_id', classId);
             if (!scheduleData) return;
-
             scheduleData.forEach(item => {
                 const hourPart = parseInt(item.start_time.split(':')[0]); 
                 const cell = document.getElementById(`cell-${item.day_of_week}-${hourPart}`);
                 if (cell) {
                     const teacherName = item.teacher ? item.teacher.username : '';
-                    cell.innerHTML = `
-                        <div class="subject-block">
-                            <span class="subject-name">${item.subject_name}</span>
-                            <span class="subject-info">${item.room || ''}</span>
-                            <span class="subject-teacher">${teacherName}</span>
-                        </div>`;
-                    
+                    cell.innerHTML = `<div class="subject-block"><span class="subject-name">${item.subject_name}</span><span class="subject-info">${item.room || ''}</span><span class="subject-teacher">${teacherName}</span></div>`;
                     cell.dataset.subject = item.subject_name;
                     cell.dataset.room = item.room || "";
                     cell.dataset.teacherId = item.teacher_id || "";
@@ -490,47 +414,28 @@
                 cell.classList.add('editable');
                 cell.onclick = () => {
                     if (!currentViewClassId) return;
-                    
                     document.getElementById('edit-day').value = cell.dataset.day;
                     document.getElementById('edit-hour').value = cell.dataset.hour;
-                    
                     document.getElementById('edit-subject').value = cell.dataset.subject || "";
                     document.getElementById('edit-room').value = cell.dataset.room || "";
                     document.getElementById('edit-teacher').value = cell.dataset.teacherId || "";
-
                     openModal('editLessonModal');
                 };
             });
         }
 
-        // Zapisywanie z modala
         document.getElementById('editLessonForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const day = document.getElementById('edit-day').value;
             const hour = parseInt(document.getElementById('edit-hour').value);
-            
             const subject = document.getElementById('edit-subject').value;
             const room = document.getElementById('edit-room').value;
             const teacherId = document.getElementById('edit-teacher').value || null;
-
             const startTime = `${hour.toString().padStart(2,'0')}:00`;
             const endTime = `${hour.toString().padStart(2,'0')}:45`;
 
-            await _supabase.from('weekly_schedule')
-                .delete()
-                .eq('class_id', currentViewClassId)
-                .eq('day_of_week', day)
-                .eq('start_time', startTime);
-
-            const { error } = await _supabase.from('weekly_schedule').insert({
-                class_id: currentViewClassId,
-                day_of_week: day,
-                start_time: startTime,
-                end_time: endTime,
-                subject_name: subject,
-                room: room,
-                teacher_id: teacherId
-            });
+            await _supabase.from('weekly_schedule').delete().eq('class_id', currentViewClassId).eq('day_of_week', day).eq('start_time', startTime);
+            const { error } = await _supabase.from('weekly_schedule').insert({ class_id: currentViewClassId, day_of_week: day, start_time: startTime, end_time: endTime, subject_name: subject, room: room, teacher_id: teacherId });
 
             if(error) alert(error.message);
             else {
@@ -548,13 +453,7 @@
             const day = document.getElementById('edit-day').value;
             const hour = parseInt(document.getElementById('edit-hour').value);
             const startTime = `${hour.toString().padStart(2,'0')}:00`;
-
-            await _supabase.from('weekly_schedule')
-                .delete()
-                .eq('class_id', currentViewClassId)
-                .eq('day_of_week', day)
-                .eq('start_time', startTime);
-            
+            await _supabase.from('weekly_schedule').delete().eq('class_id', currentViewClassId).eq('day_of_week', day).eq('start_time', startTime);
             closeModal('editLessonModal');
             const cell = document.getElementById(`cell-${day}-${hour}`);
             cell.innerHTML = '—';
@@ -563,127 +462,89 @@
             delete cell.dataset.teacherId;
         }
 
-        function openModal(id) { document.getElementById(id).classList.add('active'); }
-        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
-        document.addEventListener('DOMContentLoaded', init);
         // --- OBSŁUGA EXCELA (EXPORT / IMPORT) ---
-
         const DAY_MAP = { 1: "Poniedziałek", 2: "Wtorek", 3: "Środa", 4: "Czwartek", 5: "Piątek" };
         const REVERSE_DAY_MAP = { "poniedziałek": 1, "wtorek": 2, "środa": 3, "czwartek": 4, "piątek": 5, "pon": 1, "wt": 2, "śr": 3, "czw": 4, "pt": 5 };
 
         async function exportScheduleToExcel() {
-            if (!currentViewClassId) return alert("Wybierz klasę!");
+            if (typeof XLSX === 'undefined') { alert("Biblioteka Excel nie została załadowana. Odśwież stronę."); return; }
+            if (!currentViewClassId) { alert("Najpierw wybierz klasę/dziecko, aby załadować plan."); return; }
 
-            const { data: schedule } = await _supabase
-                .from('weekly_schedule')
-                .select('day_of_week, start_time, subject_name, room')
-                .eq('class_id', currentViewClassId)
-                .order('day_of_week', { ascending: true })
-                .order('start_time', { ascending: true });
+            try {
+                const { data: schedule, error } = await _supabase.from('weekly_schedule').select('day_of_week, start_time, subject_name, room').eq('class_id', currentViewClassId).order('day_of_week', { ascending: true }).order('start_time', { ascending: true });
+                if (error) throw error;
+                if (!schedule || schedule.length === 0) { alert("Plan zajęć dla tej klasy jest pusty. Nie ma czego eksportować."); return; }
 
-            if (!schedule || schedule.length === 0) return alert("Plan tej klasy jest pusty.");
+                const excelData = schedule.map(item => {
+                    const hour = parseInt(item.start_time.split(':')[0]);
+                    return { "Dzień": DAY_MAP[item.day_of_week] || item.day_of_week, "Godzina": `${hour}:00 - ${hour}:45`, "Przedmiot": item.subject_name, "Sala": item.room || "" };
+                });
 
-            // Formatowanie danych do Excela
-            const excelData = schedule.map(item => {
-                const hour = parseInt(item.start_time.split(':')[0]);
-                return {
-                    "Dzień": DAY_MAP[item.day_of_week] || item.day_of_week,
-                    "Godzina (Start)": hour,
-                    "Przedmiot": item.subject_name,
-                    "Sala": item.room || ""
-                };
-            });
+                let defaultName = "Plan_Zajec";
+                const teacherSel = document.getElementById('classSelect');
+                const parentSel = document.getElementById('childSelect');
+                if (teacherSel && teacherSel.offsetParent !== null && teacherSel.selectedIndex >= 0) defaultName += "_" + teacherSel.options[teacherSel.selectedIndex].text;
+                else if (parentSel && parentSel.offsetParent !== null && parentSel.selectedIndex >= 0) defaultName += "_" + parentSel.options[parentSel.selectedIndex].text;
 
-            // Generowanie pliku
-            const ws = XLSX.utils.json_to_sheet(excelData);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Plan Zajęć");
-            
-            // Pobierz nazwę klasy dla nazwy pliku
-            const className = document.getElementById('classSelect').options[document.getElementById('classSelect').selectedIndex].text;
-            XLSX.writeFile(wb, `Plan_Zajec_${className}.xlsx`);
+                let fileName = prompt("Podaj nazwę pliku do zapisu:", defaultName);
+                if (!fileName) return; 
+                if (!fileName.endsWith(".xlsx")) fileName += ".xlsx";
+
+                const ws = XLSX.utils.json_to_sheet(excelData);
+                ws['!cols'] = [{wch:15}, {wch:15}, {wch:30}, {wch:10}];
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Plan");
+                XLSX.writeFile(wb, fileName);
+            } catch (err) { console.error(err); alert("Wystąpił błąd: " + err.message); }
         }
 
         async function importScheduleFromExcel(input) {
-            if (!currentViewClassId) return alert("Najpierw wybierz klasę z listy!");
+            if (!currentViewClassId) return alert("Najpierw wybierz klasę!");
             if (!input.files || input.files.length === 0) return;
-
             const file = input.files[0];
             const reader = new FileReader();
-
             reader.onload = async (e) => {
                 try {
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
                     const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
                     const jsonData = XLSX.utils.sheet_to_json(firstSheet);
-
                     if (jsonData.length === 0) return alert("Plik jest pusty!");
+                    if (!confirm(`Nadpisać plan dla tej klasy? Usunie to ${jsonData.length} starych wpisów.`)) { input.value = ''; return; }
 
-                    if (!confirm(`Czy na pewno chcesz nadpisać plan zajęć dla wybranej klasy? Obecne wpisy zostaną usunięte. Znaleziono ${jsonData.length} lekcji.`)) {
-                        input.value = ''; // Reset inputa
-                        return;
-                    }
-
-                    // 1. Przygotuj dane do insertu
                     const toInsert = [];
                     for (const row of jsonData) {
-                        // Obsługa różnych nazw kolumn (z małej lub dużej litery)
                         const dayRaw = row["Dzień"] || row["dzien"] || row["Dzien"];
-                        const hourRaw = row["Godzina (Start)"] || row["Godzina"] || row["godzina"];
+                        const hourRaw = row["Godzina"] || row["godzina"]; // format "8:00 - 8:45" lub "8"
                         const subject = row["Przedmiot"] || row["przedmiot"];
                         const room = row["Sala"] || row["sala"] || "";
+                        if (!dayRaw || !hourRaw || !subject) continue; 
 
-                        if (!dayRaw || !hourRaw || !subject) continue; // Pomiń błędne wiersze
+                        let dayInt = typeof dayRaw === 'number' ? dayRaw : REVERSE_DAY_MAP[dayRaw.toLowerCase().trim()] || 0;
+                        if (dayInt < 1 || dayInt > 5) continue; 
 
-                        // Konwersja dnia na liczbę 1-5
-                        let dayInt = 0;
-                        if (typeof dayRaw === 'number') dayInt = dayRaw;
-                        else if (typeof dayRaw === 'string') dayInt = REVERSE_DAY_MAP[dayRaw.toLowerCase().trim()] || 0;
+                        let hour = parseInt(hourRaw); 
+                        // Jeśli format to "8:00 - 8:45", parseInt weźmie 8.
+                        if (isNaN(hour) || hour < 8 || hour > 19) continue; 
 
-                        if (dayInt < 1 || dayInt > 5) continue; // Pomiń weekendy/błędy
-
-                        // Konwersja godziny
-                        const hour = parseInt(hourRaw);
-                        if (isNaN(hour) || hour < 8 || hour > 19) continue; // Zakładamy godziny 8-19
-
-                        const startTime = `${hour.toString().padStart(2, '0')}:00`;
-                        const endTime = `${hour.toString().padStart(2, '0')}:45`;
-
-                        toInsert.push({
-                            class_id: currentViewClassId,
-                            day_of_week: dayInt,
-                            start_time: startTime,
-                            end_time: endTime,
-                            subject_name: subject,
-                            room: room.toString(),
-                            teacher_id: null // Import z Excela nie przypisuje nauczyciela (trudno zmapować po nazwisku)
-                        });
+                        toInsert.push({ class_id: currentViewClassId, day_of_week: dayInt, start_time: `${hour.toString().padStart(2,'0')}:00`, end_time: `${hour.toString().padStart(2,'0')}:45`, subject_name: subject, room: room.toString(), teacher_id: null });
                     }
 
-                    if (toInsert.length === 0) return alert("Nie udało się odczytać poprawnych danych. Sprawdź nagłówki kolumn: Dzień, Godzina, Przedmiot, Sala.");
-
-                    // 2. Wyczyść stary plan TEJ klasy
+                    if (toInsert.length === 0) return alert("Błąd formatu danych w Excelu.");
                     await _supabase.from('weekly_schedule').delete().eq('class_id', currentViewClassId);
-
-                    // 3. Wstaw nowy plan
                     const { error } = await _supabase.from('weekly_schedule').insert(toInsert);
-
                     if (error) throw error;
-
-                    alert("Plan został zaimportowany pomyślnie!");
-                    fetchAndRenderSchedule(currentViewClassId); // Odśwież widok
-
-                } catch (err) {
-                    console.error(err);
-                    alert("Błąd importu: " + err.message);
-                } finally {
-                    input.value = ''; // Reset inputa, żeby można było wgrać ten sam plik ponownie
-                }
+                    alert("Import zakończony sukcesem!");
+                    fetchAndRenderSchedule(currentViewClassId);
+                } catch (err) { console.error(err); alert("Błąd importu: " + err.message); } 
+                finally { input.value = ''; }
             };
-
             reader.readAsArrayBuffer(file);
         }
+
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
