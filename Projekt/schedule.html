@@ -14,7 +14,7 @@
         .schedule-table { width: 100%; border-collapse: collapse; min-width: 600px; }
         .schedule-table th, .schedule-table td { padding: 10px; text-align: center; border: 1px solid var(--border-color); }
         .schedule-table th { background: rgba(0,0,0,0.02); color: var(--text-muted); font-size: 12px; text-transform: uppercase; }
-        .schedule-table td { height: 70px; vertical-align: middle; font-size: 13px; position: relative; } /* Większa wysokość dla nauczyciela */
+        .schedule-table td { height: 70px; vertical-align: middle; font-size: 13px; position: relative; } 
         
         .hour-col { font-weight: bold; color: var(--text-muted); width: 100px; }
         
@@ -222,7 +222,6 @@
                 await setupParentView();
                 document.getElementById('student-sidebar-content').style.display = 'flex';
             } else {
-                // UCZEŃ
                 setupStudentView();
                 document.getElementById('student-sidebar-content').style.display = 'flex';
                 loadSidebarCalendar(currentUser.id);
@@ -292,7 +291,6 @@
             });
         }
 
-        // --- WIDOKI ---
         function setupStudentView() {
             if (currentUser.class_id) {
                 currentViewClassId = currentUser.class_id;
@@ -306,11 +304,9 @@
         async function setupParentView() {
             document.getElementById('parent-controls').style.display = 'block';
             document.getElementById('schedule-info-text').innerText = "Plan zajęć Twojego dziecka";
-            
             const { data: relations } = await _supabase.from('parent_children').select('child_id, users:child_id(id, username, class_id)').eq('parent_id', currentUser.id);
             const select = document.getElementById('childSelect');
             select.innerHTML = '';
-
             if (relations && relations.length > 0) {
                 relations.forEach(rel => {
                     const child = rel.users;
@@ -329,11 +325,9 @@
             const selectedOpt = select.options[select.selectedIndex];
             const childId = selectedOpt.value;
             const classId = selectedOpt.dataset.classId;
-
             loadSidebarCalendar(childId);
             loadSidebarGrades(childId);
             loadSidebarRemarks(childId);
-
             if (classId && classId !== "undefined" && classId !== "null" && classId !== "") {
                 currentViewClassId = classId;
                 generateGrid(); 
@@ -347,14 +341,11 @@
         async function setupStaffView() {
             document.getElementById('teacher-controls').style.display = 'block';
             document.getElementById('schedule-info-text').innerText = "Wybierz klasę, aby edytować jej plan.";
-            
             let query = _supabase.from('classes').select('id, name, school_id').order('name', { ascending: true });
             if (currentUser.role !== 'admin') query = query.eq('school_id', currentUser.school_id);
-
             const { data: classes } = await query;
             const select = document.getElementById('classSelect');
             select.innerHTML = ''; 
-
             if (classes && classes.length > 0) {
                 classes.forEach(cls => { 
                     const opt = new Option(cls.name, cls.id);
@@ -471,14 +462,34 @@
             if (!currentViewClassId) { alert("Najpierw wybierz klasę/dziecko, aby załadować plan."); return; }
 
             try {
-                const { data: schedule, error } = await _supabase.from('weekly_schedule').select('day_of_week, start_time, subject_name, room').eq('class_id', currentViewClassId).order('day_of_week', { ascending: true }).order('start_time', { ascending: true });
+                // Pobieramy istniejący plan
+                const { data: schedule, error } = await _supabase.from('weekly_schedule')
+                    .select('day_of_week, start_time, subject_name, room')
+                    .eq('class_id', currentViewClassId);
+                
                 if (error) throw error;
-                if (!schedule || schedule.length === 0) { alert("Plan zajęć dla tej klasy jest pusty. Nie ma czego eksportować."); return; }
 
-                const excelData = schedule.map(item => {
-                    const hour = parseInt(item.start_time.split(':')[0]);
-                    return { "Dzień": DAY_MAP[item.day_of_week] || item.day_of_week, "Godzina": `${hour}:00 - ${hour}:45`, "Przedmiot": item.subject_name, "Sala": item.room || "" };
-                });
+                const excelData = [];
+                // Generujemy pełną siatkę dla dni 1-5 i godzin 8-19
+                for (let day = 1; day <= 5; day++) {
+                    for (let hour = 8; hour < 20; hour++) {
+                        // Format godziny startu (np. "08:00")
+                        const timePrefix = hour.toString().padStart(2, '0') + ":00";
+                        
+                        // Znajdź lekcję w pobranych danych
+                        const lesson = schedule ? schedule.find(s => 
+                            s.day_of_week === day && 
+                            s.start_time.startsWith(timePrefix)
+                        ) : null;
+
+                        excelData.push({
+                            "Dzień": DAY_MAP[day],
+                            "Godzina": `${hour}:00 - ${hour}:45`,
+                            "Przedmiot": lesson ? lesson.subject_name : "", 
+                            "Sala": lesson ? (lesson.room || "") : ""
+                        });
+                    }
+                }
 
                 let defaultName = "Plan_Zajec";
                 const teacherSel = document.getElementById('classSelect');
@@ -515,7 +526,7 @@
                     const toInsert = [];
                     for (const row of jsonData) {
                         const dayRaw = row["Dzień"] || row["dzien"] || row["Dzien"];
-                        const hourRaw = row["Godzina"] || row["godzina"]; // format "8:00 - 8:45" lub "8"
+                        const hourRaw = row["Godzina"] || row["godzina"]; 
                         const subject = row["Przedmiot"] || row["przedmiot"];
                         const room = row["Sala"] || row["sala"] || "";
                         if (!dayRaw || !hourRaw || !subject) continue; 
@@ -524,7 +535,6 @@
                         if (dayInt < 1 || dayInt > 5) continue; 
 
                         let hour = parseInt(hourRaw); 
-                        // Jeśli format to "8:00 - 8:45", parseInt weźmie 8.
                         if (isNaN(hour) || hour < 8 || hour > 19) continue; 
 
                         toInsert.push({ class_id: currentViewClassId, day_of_week: dayInt, start_time: `${hour.toString().padStart(2,'0')}:00`, end_time: `${hour.toString().padStart(2,'0')}:45`, subject_name: subject, room: room.toString(), teacher_id: null });
