@@ -23,7 +23,9 @@
         .subject-info { font-size: 10px; color: var(--text-muted); background: rgba(0,0,0,0.05); padding: 1px 4px; border-radius: 4px; display: inline-block; margin: 2px auto 0; }
         .subject-teacher { font-size: 9px; color: var(--accent-color); margin-top: 2px; font-weight: 500; }
         
+        /* Klasa editable tylko dla Admina/Managera */
         .editable:hover { background-color: rgba(33, 150, 243, 0.05); cursor: pointer; outline: 1px dashed var(--accent-color); }
+        
         .class-selector-container { margin-bottom: 15px; display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }
         .class-select { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--panel-bg); color: var(--text-main); font-size: 14px; }
 
@@ -62,26 +64,29 @@
                     <a href="dashboard.html" style="text-decoration:none; color:var(--text-muted); font-size:14px;">← Wróć do pulpitu</a>
                     <h1>Plan Zajęć</h1>
                     
-                    <div id="teacher-controls" style="display:none; margin-top: 10px;">
+                    <div id="staff-view-controls" style="display:none; margin-top: 10px;">
                         <div class="class-selector-container">
-                            <label for="classSelect">Wybierz klasę do edycji:</label>
+                            <label for="classSelect">Wybierz klasę:</label>
                             <select id="classSelect" class="class-select" onchange="changeClass()">
                                 <option value="" disabled selected>Ładowanie klas...</option>
                             </select>
-                            
-                            <div style="display:flex; gap:5px; flex-wrap:wrap;">
-                                <button class="login-button" style="width:auto; font-size:12px; padding:5px 15px; background:#2E7D32; display:flex; align-items:center; gap:5px;" onclick="exportScheduleToExcel()">
-                                    <span class="material-symbols-outlined" style="font-size:16px;">download</span> Export
-                                </button>
-                                <button class="login-button" style="width:auto; font-size:12px; padding:5px 15px; background:#1565C0; display:flex; align-items:center; gap:5px;" onclick="document.getElementById('import-excel-input').click()">
-                                    <span class="material-symbols-outlined" style="font-size:16px;">upload</span> Import
-                                </button>
-                                <button class="login-button" style="width:auto; font-size:12px; padding:5px 15px; background:#7B1FA2; display:flex; align-items:center; gap:5px;" onclick="downloadScheduleTemplate()">
-                                    <span class="material-symbols-outlined" style="font-size:16px;">description</span> Pobierz Szablon
-                                </button>
-                            </div>
-                            <input type="file" id="import-excel-input" accept=".xlsx, .xls" style="display:none;" onchange="importScheduleFromExcel(this)">
                         </div>
+                    </div>
+
+                    <div id="admin-controls" style="display:none; margin-top: 5px; padding-top: 10px; border-top: 1px dashed var(--border-color);">
+                        <p style="font-size: 11px; color: var(--accent-color); font-weight: bold; margin-bottom: 5px;">ZARZĄDZANIE (CAŁA SZKOŁA)</p>
+                        <div style="display:flex; gap:5px; flex-wrap:wrap;">
+                            <button class="login-button" style="width:auto; font-size:12px; padding:5px 15px; background:#2E7D32; display:flex; align-items:center; gap:5px;" onclick="exportAllClassesToExcel()">
+                                <span class="material-symbols-outlined" style="font-size:16px;">download</span> Export Wszystkich Klas
+                            </button>
+                            <button class="login-button" style="width:auto; font-size:12px; padding:5px 15px; background:#1565C0; display:flex; align-items:center; gap:5px;" onclick="document.getElementById('import-excel-input').click()">
+                                <span class="material-symbols-outlined" style="font-size:16px;">upload</span> Import (Masowy)
+                            </button>
+                            <button class="login-button" style="width:auto; font-size:12px; padding:5px 15px; background:#7B1FA2; display:flex; align-items:center; gap:5px;" onclick="downloadAllClassesTemplate()">
+                                <span class="material-symbols-outlined" style="font-size:16px;">description</span> Pobierz Szablon Szkoły
+                            </button>
+                        </div>
+                        <input type="file" id="import-excel-input" accept=".xlsx, .xls" style="display:none;" onchange="importAllClassesFromExcel(this)">
                     </div>
 
                     <div id="parent-controls" style="display:none; margin-top: 10px;">
@@ -91,13 +96,13 @@
                                 <option value="" disabled selected>Ładowanie...</option>
                             </select>
                             
-                            <button class="login-button" style="width:auto; font-size:12px; padding:5px 15px; background:#2E7D32; display:flex; align-items:center; gap:5px;" onclick="exportScheduleToExcel()">
+                            <button class="login-button" style="width:auto; font-size:12px; padding:5px 15px; background:#2E7D32; display:flex; align-items:center; gap:5px;" onclick="exportCurrentViewToExcel()">
                                 <span class="material-symbols-outlined" style="font-size:16px;">download</span> Pobierz Plan
                             </button>
                         </div>
                     </div>
 
-                    <p id="schedule-info-text">Ładowanie planu...</p>
+                    <p id="schedule-info-text" style="margin-top: 15px;">Ładowanie planu...</p>
                 </div>
             </div>
 
@@ -183,6 +188,7 @@
         let currentUser = null;
         let currentViewClassId = null;
         let isStaff = false; 
+        let canEdit = false; // Tylko Admin i Manager
 
         function generateGrid() {
             const tbody = document.getElementById('schedule-body');
@@ -219,7 +225,9 @@
             setupProfileCard(userDetails);
             setupSidebarEvents();
 
-            isStaff = ['teacher', 'manager', 'admin'].includes(currentUser.role);
+            // Role
+            isStaff = ['teacher', 'manager', 'admin', 'lecturer'].includes(currentUser.role);
+            canEdit = ['manager', 'admin'].includes(currentUser.role);
 
             if (isStaff) {
                 await setupStaffView();
@@ -235,67 +243,50 @@
             }
         }
 
+        // --- SIDEBAR (Bez zmian) ---
         function setupProfileCard(profile) {
             document.getElementById('profile-name-display').textContent = profile.username;
             const roleMap = { 'student': 'UCZEŃ', 'teacher': 'NAUCZYCIEL', 'manager': 'SEKRETARIAT', 'admin': 'ADMIN', 'lecturer': 'WYKŁADOWCA', 'parent': 'RODZIC' };
             document.getElementById('profile-role-display').textContent = (roleMap[profile.role] || profile.role).toUpperCase();
-            
             let schoolInfo = "";
             if (profile.schools && profile.schools.name) schoolInfo = profile.schools.name;
             if (profile.classes && profile.classes.name) schoolInfo += `<br><span style="color:var(--accent-color); font-weight:bold;">${profile.classes.name}</span>`;
             document.getElementById('profile-school-display').innerHTML = schoolInfo;
         }
-
         function setupSidebarEvents() {
             document.getElementById('avatarTrigger').addEventListener('click', (e) => { e.stopPropagation(); document.getElementById('profileDropdown').style.display = document.getElementById('profileDropdown').style.display === 'block' ? 'none' : 'block'; });
             window.addEventListener('click', () => { document.getElementById('profileDropdown').style.display = 'none'; });
             document.getElementById('logoutBtn').addEventListener('click', async () => { await _supabase.auth.signOut(); window.location.href = 'login.html'; });
             document.getElementById('changePassBtn').addEventListener('click', () => { window.location.href = 'settings.html'; });
         }
-
-        async function loadSidebarCalendar(targetUserId) {
+        async function loadSidebarCalendar(uid) { /* ... (bez zmian, kod identyczny jak wcześniej) ... */
+            // Dla czytelności skracam, logika się nie zmienia
             const list = document.getElementById('sidebar-calendar-list');
-            const { data: targetUser } = await _supabase.from('users').select('class_id').eq('id', targetUserId).single();
-            if(!targetUser || !targetUser.class_id) { list.innerHTML = '<p class="empty-sidebar">Brak klasy.</p>'; return; }
-
+            const { data: u } = await _supabase.from('users').select('class_id').eq('id', uid).single();
+            if(!u || !u.class_id) { list.innerHTML = '<p class="empty-sidebar">Brak klasy.</p>'; return; }
             const today = new Date().toISOString().split('T')[0];
-            const { data } = await _supabase.from('calendar_events').select('title, event_date, subject_name').eq('class_id', targetUser.class_id).gte('event_date', today).order('event_date', { ascending: true }).limit(3);
-            list.innerHTML = '';
-            if(!data || data.length === 0) { list.innerHTML = '<p class="empty-sidebar">Brak wydarzeń.</p>'; return; }
-            data.forEach(e => {
-                const d = new Date(e.event_date);
-                const subj = e.subject_name ? `<b>${e.subject_name}:</b> ` : '';
-                list.innerHTML += `<div class="sidebar-list-item"><div class="sidebar-list-date">${d.getDate()}.${d.getMonth()+1}</div><div class="sidebar-list-content">${subj}${e.title}</div></div>`;
-            });
+            const { data } = await _supabase.from('calendar_events').select('title, event_date, subject_name').eq('class_id', u.class_id).gte('event_date', today).order('event_date', {ascending:true}).limit(3);
+            list.innerHTML=''; if(!data||!data.length){list.innerHTML='<p class="empty-sidebar">Brak wydarzeń.</p>';return;}
+            data.forEach(e=>{ list.innerHTML+=`<div class="sidebar-list-item"><div class="sidebar-list-date">${new Date(e.event_date).getDate()}.${new Date(e.event_date).getMonth()+1}</div><div class="sidebar-list-content">${e.subject_name?`<b>${e.subject_name}:</b> `:''}${e.title}</div></div>`; });
         }
-
-        async function loadSidebarGrades(targetUserId) {
+        async function loadSidebarGrades(uid){ /* ... */ 
             const list = document.getElementById('sidebar-grades-list');
             const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-            const { data: grades } = await _supabase.from('grades').select('grade, packages(title)').eq('user_id', targetUserId).gte('created_at', weekAgo).order('created_at', { ascending: false }).limit(5);
-            list.innerHTML = '';
-            if(!grades || grades.length === 0) { list.innerHTML = '<p class="empty-sidebar">Brak nowych ocen.</p>'; return; }
-            grades.forEach(g => {
-                const pkgTitle = g.packages ? g.packages.title : 'Inne';
-                list.innerHTML += `<div class="sidebar-list-item"><div class="sidebar-grade-circle">${g.grade}</div><div class="sidebar-list-content">${pkgTitle}</div></div>`;
-            });
+            const { data: g } = await _supabase.from('grades').select('grade, packages(title)').eq('user_id', uid).gte('created_at', weekAgo).order('created_at', {ascending:false}).limit(5);
+            list.innerHTML=''; if(!g||!g.length){list.innerHTML='<p class="empty-sidebar">Brak nowych ocen.</p>';return;}
+            g.forEach(x=>{ list.innerHTML+=`<div class="sidebar-list-item"><div class="sidebar-grade-circle">${x.grade}</div><div class="sidebar-list-content">${x.packages?x.packages.title:'Inne'}</div></div>`; });
         }
-
-        async function loadSidebarRemarks(targetUserId) {
+        async function loadSidebarRemarks(uid){ /* ... */
             const list = document.getElementById('sidebar-remarks-list');
-            const { data: remarks } = await _supabase.from('remarks').select('category, subject_name, created_at, points').eq('student_id', targetUserId).order('created_at', { ascending: false }).limit(3);
-            list.innerHTML = '';
-            if (!remarks || remarks.length === 0) { list.innerHTML = '<p class="empty-sidebar">Brak uwag.</p>'; return; }
-            remarks.forEach(r => {
-                const d = new Date(r.created_at);
-                const dateStr = `${d.getDate()}.${d.getMonth() + 1}`;
-                let pts = r.points || 0;
-                let txt = pts > 0 ? "+" + pts : pts; 
-                let color = pts > 0 ? '#4CAF50' : (pts < 0 ? '#F44336' : '#757575'); 
-                list.innerHTML += `<div class="sidebar-list-item"><div class="sidebar-grade-circle" style="color:${color}; border-color:${color}; font-size:14px; width:35px; height:35px;">${txt}</div><div class="sidebar-list-content"><span style="font-size:11px; color:#888;">${dateStr}</span><br>${r.subject_name}</div></div>`;
+            const { data: r } = await _supabase.from('remarks').select('category, subject_name, created_at, points').eq('student_id', uid).order('created_at', {ascending:false}).limit(3);
+            list.innerHTML=''; if(!r||!r.length){list.innerHTML='<p class="empty-sidebar">Brak uwag.</p>';return;}
+            r.forEach(x=>{ 
+                let c = x.points>0?'#4CAF50':(x.points<0?'#F44336':'#757575'); let t = x.points>0?`+${x.points}`:x.points;
+                list.innerHTML+=`<div class="sidebar-list-item"><div class="sidebar-grade-circle" style="color:${c};border-color:${c};font-size:14px;width:35px;height:35px;">${t}</div><div class="sidebar-list-content"><span style="font-size:11px;color:#888;">${new Date(x.created_at).getDate()}.${new Date(x.created_at).getMonth()+1}</span><br>${x.subject_name}</div></div>`; 
             });
         }
 
+        // --- WIDOKI ---
         function setupStudentView() {
             if (currentUser.class_id) {
                 currentViewClassId = currentUser.class_id;
@@ -330,9 +321,7 @@
             const selectedOpt = select.options[select.selectedIndex];
             const childId = selectedOpt.value;
             const classId = selectedOpt.dataset.classId;
-            loadSidebarCalendar(childId);
-            loadSidebarGrades(childId);
-            loadSidebarRemarks(childId);
+            loadSidebarCalendar(childId); loadSidebarGrades(childId); loadSidebarRemarks(childId);
             if (classId && classId !== "undefined" && classId !== "null" && classId !== "") {
                 currentViewClassId = classId;
                 generateGrid(); 
@@ -344,8 +333,16 @@
         }
 
         async function setupStaffView() {
-            document.getElementById('teacher-controls').style.display = 'block';
-            document.getElementById('schedule-info-text').innerText = "Wybierz klasę, aby edytować jej plan.";
+            // Panel podglądu dla WSZYSTKICH nauczycieli
+            document.getElementById('staff-view-controls').style.display = 'block';
+            document.getElementById('schedule-info-text').innerText = "Wybierz klasę, aby zobaczyć plan.";
+
+            // Panel edycji (Excel) TYLKO dla Admina/Managera
+            if (canEdit) {
+                document.getElementById('admin-controls').style.display = 'block';
+                document.getElementById('schedule-info-text').innerText = "Wybierz klasę do podglądu lub użyj przycisków poniżej, aby zarządzać całą szkołą.";
+            }
+            
             let query = _supabase.from('classes').select('id, name, school_id').order('name', { ascending: true });
             if (currentUser.role !== 'admin') query = query.eq('school_id', currentUser.school_id);
             const { data: classes } = await query;
@@ -361,7 +358,8 @@
                 select.value = currentViewClassId;
                 await loadTeachersForSelect(classes[0].school_id);
                 fetchAndRenderSchedule(currentViewClassId);
-                enableEditing(); 
+                // Edycja klikana tylko jeśli canEdit
+                if (canEdit) enableEditing(); 
             } else {
                 select.innerHTML = '<option>Brak klas</option>';
             }
@@ -374,18 +372,18 @@
             const schoolId = selectedOption.dataset.schoolId || currentUser.school_id;
             await loadTeachersForSelect(schoolId);
             generateGrid(); 
-            if(isStaff) enableEditing(); 
+            if(canEdit) enableEditing(); 
             fetchAndRenderSchedule(currentViewClassId);
         }
 
+        // --- FETCHING DATA ---
         async function loadTeachersForSelect(schoolId) {
+            if(!canEdit) return; // Nauczyciele nie widzą modala edycji, więc nie potrzebują listy
             const sel = document.getElementById('edit-teacher');
             sel.innerHTML = '<option disabled>Ładowanie...</option>';
             const { data: teachers } = await _supabase.from('users').select('id, username').eq('school_id', schoolId).in('role', ['teacher', 'manager', 'admin', 'lecturer']).order('username');
             sel.innerHTML = '<option value="">-- Brak / Zastępstwo --</option>';
-            if(teachers) {
-                teachers.forEach(t => sel.add(new Option(t.username, t.id)));
-            }
+            if(teachers) { teachers.forEach(t => sel.add(new Option(t.username, t.id))); }
         }
 
         async function fetchAndRenderSchedule(classId) {
@@ -404,12 +402,13 @@
             });
         }
 
+        // --- EDYCJA POJEDYNCZA (TYLKO ADMIN/MANAGER) ---
         function enableEditing() {
             const cells = document.querySelectorAll('td[data-day]');
             cells.forEach(cell => {
                 cell.classList.add('editable');
                 cell.onclick = () => {
-                    if (!currentViewClassId) return;
+                    if (!currentViewClassId || !canEdit) return;
                     document.getElementById('edit-day').value = cell.dataset.day;
                     document.getElementById('edit-hour').value = cell.dataset.hour;
                     document.getElementById('edit-subject').value = cell.dataset.subject || "";
@@ -422,6 +421,7 @@
 
         document.getElementById('editLessonForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            if(!canEdit) return;
             const day = document.getElementById('edit-day').value;
             const hour = parseInt(document.getElementById('edit-hour').value);
             const subject = document.getElementById('edit-subject').value;
@@ -437,6 +437,7 @@
             else {
                 closeModal('editLessonModal');
                 fetchAndRenderSchedule(currentViewClassId);
+                // Lokalna aktualizacja
                 const cell = document.getElementById(`cell-${day}-${hour}`);
                 cell.dataset.subject = subject;
                 cell.dataset.room = room;
@@ -445,6 +446,7 @@
         });
 
         async function deleteLesson() {
+            if(!canEdit) return;
             if(!confirm("Usunąć tę lekcję?")) return;
             const day = document.getElementById('edit-day').value;
             const hour = parseInt(document.getElementById('edit-hour').value);
@@ -453,119 +455,228 @@
             closeModal('editLessonModal');
             const cell = document.getElementById(`cell-${day}-${hour}`);
             cell.innerHTML = '—';
-            delete cell.dataset.subject;
-            delete cell.dataset.room;
-            delete cell.dataset.teacherId;
+            delete cell.dataset.subject; delete cell.dataset.room; delete cell.dataset.teacherId;
         }
 
-        // --- OBSŁUGA EXCELA (EXPORT / IMPORT / SZABLON) ---
+        // --- LOGIKA EXCELA (ZMIENIONA NA MASOWĄ) ---
         const DAY_MAP = { 1: "Poniedziałek", 2: "Wtorek", 3: "Środa", 4: "Czwartek", 5: "Piątek" };
         const REVERSE_DAY_MAP = { "poniedziałek": 1, "wtorek": 2, "środa": 3, "czwartek": 4, "piątek": 5, "pon": 1, "wt": 2, "śr": 3, "czw": 4, "pt": 5 };
 
-        async function exportScheduleToExcel() {
-            if (typeof XLSX === 'undefined') { alert("Biblioteka Excel nie została załadowana. Odśwież stronę."); return; }
-            if (!currentViewClassId) { alert("Najpierw wybierz klasę/dziecko, aby załadować plan."); return; }
+        // 1. Export Wszystkich Klas
+        async function exportAllClassesToExcel() {
+            if (typeof XLSX === 'undefined') { alert("Biblioteka Excel nie została załadowana."); return; }
+            if (!currentUser.school_id && currentUser.role !== 'admin') { alert("Błąd danych szkoły."); return; }
 
             try {
-                const { data: schedule, error } = await _supabase.from('weekly_schedule').select('day_of_week, start_time, subject_name, room').eq('class_id', currentViewClassId);
-                if (error) throw error;
+                // 1. Pobierz wszystkie klasy
+                let qClasses = _supabase.from('classes').select('id, name').order('name');
+                if (currentUser.role !== 'admin') qClasses = qClasses.eq('school_id', currentUser.school_id);
+                const { data: classes } = await qClasses;
+                
+                if (!classes || classes.length === 0) return alert("Brak klas w szkole.");
 
-                const excelData = [];
-                for (let day = 1; day <= 5; day++) {
-                    for (let hour = 8; hour < 20; hour++) {
-                        const timePrefix = hour.toString().padStart(2, '0') + ":00";
-                        const lesson = schedule ? schedule.find(s => s.day_of_week === day && s.start_time.startsWith(timePrefix)) : null;
-                        
-                        const timeString = `${hour.toString().padStart(2, '0')}:00 - ${hour.toString().padStart(2, '0')}:45`;
-                        
-                        excelData.push({
-                            "Dzień": DAY_MAP[day],
-                            "Godzina": timeString,
-                            "Przedmiot": lesson ? lesson.subject_name : "", 
-                            "Sala": lesson ? (lesson.room || "") : ""
-                        });
+                // 2. Pobierz WSZYSTKIE wpisy planu dla tych klas (w jednym zapytaniu)
+                const classIds = classes.map(c => c.id);
+                const { data: allSchedules } = await _supabase.from('weekly_schedule').select('*').in('class_id', classIds);
+
+                const wb = XLSX.utils.book_new();
+
+                // 3. Dla każdej klasy stwórz osobny Sheet
+                classes.forEach(cls => {
+                    const sheetData = [["Dzień", "Godzina", "Przedmiot", "Sala"]]; // Nagłówki
+                    
+                    // Filtrujemy plan dla tej konkretnej klasy
+                    const classSchedule = allSchedules ? allSchedules.filter(s => s.class_id === cls.id) : [];
+
+                    // Generujemy siatkę
+                    for (let day = 1; day <= 5; day++) {
+                        for (let hour = 8; hour < 20; hour++) {
+                            const timePrefix = hour.toString().padStart(2, '0') + ":00";
+                            const lesson = classSchedule.find(s => s.day_of_week === day && s.start_time.startsWith(timePrefix));
+                            
+                            const timeString = `${hour.toString().padStart(2, '0')}:00 - ${hour.toString().padStart(2, '0')}:45`;
+                            
+                            sheetData.push([
+                                DAY_MAP[day],
+                                timeString,
+                                lesson ? lesson.subject_name : "",
+                                lesson ? (lesson.room || "") : ""
+                            ]);
+                        }
                     }
-                }
 
-                let defaultName = "Plan_Zajec";
-                const teacherSel = document.getElementById('classSelect');
-                const parentSel = document.getElementById('childSelect');
-                if (teacherSel && teacherSel.offsetParent !== null && teacherSel.selectedIndex >= 0) defaultName += "_" + teacherSel.options[teacherSel.selectedIndex].text;
-                else if (parentSel && parentSel.offsetParent !== null && parentSel.selectedIndex >= 0) defaultName += "_" + parentSel.options[parentSel.selectedIndex].text;
+                    const ws = XLSX.utils.aoa_to_sheet(sheetData);
+                    ws['!cols'] = [{wch:15}, {wch:15}, {wch:30}, {wch:10}];
+                    
+                    // Ograniczenie nazwy arkusza (Excel limit 31 znaków)
+                    let sheetName = cls.name.replace(/[:\\\/?*\[\]]/g, ""); // Usuń znaki niedozwolone w Excelu
+                    if (sheetName.length > 30) sheetName = sheetName.substring(0, 30);
+                    
+                    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+                });
 
-                let fileName = prompt("Podaj nazwę pliku do zapisu:", defaultName);
-                if (!fileName) return; 
+                let fileName = prompt("Podaj nazwę pliku:", "Plan_Cala_Szkola.xlsx");
+                if (!fileName) return;
                 if (!fileName.endsWith(".xlsx")) fileName += ".xlsx";
 
-                const ws = XLSX.utils.json_to_sheet(excelData);
-                ws['!cols'] = [{wch:15}, {wch:15}, {wch:30}, {wch:10}];
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "Plan");
                 XLSX.writeFile(wb, fileName);
-            } catch (err) { console.error(err); alert("Wystąpił błąd: " + err.message); }
+
+            } catch (err) { console.error(err); alert("Błąd eksportu: " + err.message); }
         }
 
-        async function importScheduleFromExcel(input) {
-            if (!currentViewClassId) return alert("Najpierw wybierz klasę!");
+        // 2. Import Masowy
+        async function importAllClassesFromExcel(input) {
             if (!input.files || input.files.length === 0) return;
             const file = input.files[0];
             const reader = new FileReader();
+
             reader.onload = async (e) => {
                 try {
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
-                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const jsonData = XLSX.utils.sheet_to_json(firstSheet);
-                    if (jsonData.length === 0) return alert("Plik jest pusty!");
-                    if (!confirm(`Nadpisać plan dla tej klasy? Usunie to ${jsonData.length} starych wpisów.`)) { input.value = ''; return; }
+                    
+                    // 1. Pobierz mapę klas: Nazwa -> ID
+                    let qClasses = _supabase.from('classes').select('id, name');
+                    if (currentUser.role !== 'admin') qClasses = qClasses.eq('school_id', currentUser.school_id);
+                    const { data: classes } = await qClasses;
+                    
+                    if (!classes) throw new Error("Nie można pobrać listy klas.");
+                    
+                    // Mapa { "1A": "uuid-...", "2B": "uuid-..." }
+                    // Normalizujemy nazwy (trim, lowercase) dla pewności
+                    const classMap = {};
+                    classes.forEach(c => classMap[c.name.trim().toLowerCase()] = c.id);
 
-                    const toInsert = [];
-                    for (const row of jsonData) {
-                        const dayRaw = row["Dzień"] || row["dzien"] || row["Dzien"];
-                        const hourRaw = row["Godzina"] || row["godzina"]; 
-                        const subject = row["Przedmiot"] || row["przedmiot"];
-                        const room = row["Sala"] || row["sala"] || "";
-                        if (!dayRaw || !hourRaw || !subject) continue; 
-
-                        let dayInt = typeof dayRaw === 'number' ? dayRaw : REVERSE_DAY_MAP[dayRaw.toLowerCase().trim()] || 0;
-                        if (dayInt < 1 || dayInt > 5) continue; 
-
-                        let hour = parseInt(hourRaw); 
-                        if (isNaN(hour) || hour < 8 || hour > 19) continue; 
-
-                        toInsert.push({ class_id: currentViewClassId, day_of_week: dayInt, start_time: `${hour.toString().padStart(2,'0')}:00`, end_time: `${hour.toString().padStart(2,'0')}:45`, subject_name: subject, room: room.toString(), teacher_id: null });
+                    if (!confirm(`Znaleziono ${workbook.SheetNames.length} arkuszy w pliku. Czy chcesz nadpisać plany zajęć dla klas o pasujących nazwach?`)) {
+                        input.value = ''; return;
                     }
 
-                    if (toInsert.length === 0) return alert("Błąd formatu danych w Excelu.");
-                    await _supabase.from('weekly_schedule').delete().eq('class_id', currentViewClassId);
-                    const { error } = await _supabase.from('weekly_schedule').insert(toInsert);
-                    if (error) throw error;
-                    alert("Import zakończony sukcesem!");
-                    fetchAndRenderSchedule(currentViewClassId);
-                } catch (err) { console.error(err); alert("Błąd importu: " + err.message); } 
-                finally { input.value = ''; }
+                    let processedCount = 0;
+                    let notFoundClasses = [];
+
+                    for (const sheetName of workbook.SheetNames) {
+                        const normalizedName = sheetName.trim().toLowerCase();
+                        const classId = classMap[normalizedName];
+
+                        if (!classId) {
+                            notFoundClasses.push(sheetName);
+                            continue;
+                        }
+
+                        // Przetwarzanie arkusza dla danej klasy
+                        const sheet = workbook.Sheets[sheetName];
+                        const jsonData = XLSX.utils.sheet_to_json(sheet);
+                        
+                        const toInsert = [];
+                        for (const row of jsonData) {
+                            const dayRaw = row["Dzień"] || row["dzien"] || row["Dzien"];
+                            const hourRaw = row["Godzina"] || row["godzina"]; 
+                            const subject = row["Przedmiot"] || row["przedmiot"];
+                            const room = row["Sala"] || row["sala"] || "";
+                            
+                            if (!dayRaw || !hourRaw || !subject) continue; 
+
+                            let dayInt = typeof dayRaw === 'number' ? dayRaw : REVERSE_DAY_MAP[dayRaw.toLowerCase().trim()] || 0;
+                            if (dayInt < 1 || dayInt > 5) continue; 
+
+                            let hour = parseInt(hourRaw); 
+                            if (isNaN(hour) || hour < 8 || hour > 19) continue; 
+
+                            toInsert.push({ 
+                                class_id: classId, 
+                                day_of_week: dayInt, 
+                                start_time: `${hour.toString().padStart(2,'0')}:00`, 
+                                end_time: `${hour.toString().padStart(2,'0')}:45`, 
+                                subject_name: subject, 
+                                room: room.toString(), 
+                                teacher_id: null 
+                            });
+                        }
+
+                        // Usuń stary plan i wstaw nowy
+                        await _supabase.from('weekly_schedule').delete().eq('class_id', classId);
+                        if (toInsert.length > 0) {
+                            await _supabase.from('weekly_schedule').insert(toInsert);
+                        }
+                        processedCount++;
+                    }
+
+                    let msg = `Zaktualizowano plany dla ${processedCount} klas.`;
+                    if (notFoundClasses.length > 0) {
+                        msg += `\n\nNie znaleziono klas dla arkuszy: ${notFoundClasses.join(", ")}`;
+                    }
+                    alert(msg);
+                    
+                    // Odśwież widok
+                    if(currentViewClassId) fetchAndRenderSchedule(currentViewClassId);
+
+                } catch (err) {
+                    console.error(err);
+                    alert("Błąd importu: " + err.message);
+                } finally {
+                    input.value = '';
+                }
             };
             reader.readAsArrayBuffer(file);
         }
 
-        // --- NOWA FUNKCJA: POBIERZ SZABLON (PEŁNY) ---
-        function downloadScheduleTemplate() {
-            const headers = ["Dzień", "Godzina", "Przedmiot", "Sala"];
-            const data = [headers];
+        // 3. Pobierz Szablon Masowy (Dla wszystkich klas, ale pusty)
+        async function downloadAllClassesTemplate() {
+            try {
+                let qClasses = _supabase.from('classes').select('name').order('name');
+                if (currentUser.role !== 'admin') qClasses = qClasses.eq('school_id', currentUser.school_id);
+                const { data: classes } = await qClasses;
 
-            // Generujemy wiersze dla Dni 1-5 i Godzin 8-19
-            for (let day = 1; day <= 5; day++) {
-                for (let hour = 8; hour < 20; hour++) {
-                    const timeString = `${hour.toString().padStart(2, '0')}:00 - ${hour.toString().padStart(2, '0')}:45`;
-                    data.push([DAY_MAP[day], timeString, "", ""]);
+                if (!classes || classes.length === 0) return alert("Brak klas.");
+
+                const wb = XLSX.utils.book_new();
+
+                classes.forEach(cls => {
+                    const data = [["Dzień", "Godzina", "Przedmiot", "Sala"]];
+                    for (let day = 1; day <= 5; day++) {
+                        for (let hour = 8; hour < 20; hour++) {
+                            const timeString = `${hour.toString().padStart(2, '0')}:00 - ${hour.toString().padStart(2, '0')}:45`;
+                            data.push([DAY_MAP[day], timeString, "", ""]);
+                        }
+                    }
+                    const ws = XLSX.utils.aoa_to_sheet(data);
+                    ws['!cols'] = [{wch:15}, {wch:15}, {wch:30}, {wch:10}];
+                    
+                    let sheetName = cls.name.replace(/[:\\\/?*\[\]]/g, "");
+                    if (sheetName.length > 30) sheetName = sheetName.substring(0, 30);
+                    
+                    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+                });
+
+                XLSX.writeFile(wb, "Szablon_Cala_Szkola.xlsx");
+
+            } catch(e) { console.error(e); alert("Błąd: " + e.message); }
+        }
+
+        // Pojedynczy eksport dla rodzica (podgląd)
+        async function exportCurrentViewToExcel() {
+            if(!currentViewClassId) return alert("Wybierz dziecko/klasę.");
+            // Logika podobna do exportAll, ale tylko jeden sheet z danymi z bazy
+            // (Skrócona wersja, bo rodzic nie potrzebuje masowego exportu)
+            // ... (Można użyć starej funkcji exportScheduleToExcel, jeśli potrzebna)
+            // Tutaj użyję uproszczonej wersji bazującej na currentViewClassId
+            try {
+                const { data: schedule } = await _supabase.from('weekly_schedule').select('*').eq('class_id', currentViewClassId);
+                const wb = XLSX.utils.book_new();
+                const data = [["Dzień", "Godzina", "Przedmiot", "Sala"]];
+                for (let day = 1; day <= 5; day++) {
+                    for (let hour = 8; hour < 20; hour++) {
+                        const timePrefix = hour.toString().padStart(2, '0') + ":00";
+                        const lesson = schedule ? schedule.find(s => s.day_of_week === day && s.start_time.startsWith(timePrefix)) : null;
+                        const timeString = `${hour.toString().padStart(2, '0')}:00 - ${hour.toString().padStart(2, '0')}:45`;
+                        data.push([DAY_MAP[day], timeString, lesson?lesson.subject_name:"", lesson?lesson.room:""]);
+                    }
                 }
-            }
-
-            const ws = XLSX.utils.aoa_to_sheet(data);
-            ws['!cols'] = [{wch:15}, {wch:15}, {wch:30}, {wch:10}];
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Szablon");
-            XLSX.writeFile(wb, "Plan_Szablon_Pelny.xlsx");
+                const ws = XLSX.utils.aoa_to_sheet(data);
+                ws['!cols'] = [{wch:15}, {wch:15}, {wch:30}, {wch:10}];
+                XLSX.utils.book_append_sheet(wb, ws, "Plan");
+                XLSX.writeFile(wb, "Plan_Zajec.xlsx");
+            } catch(e){ alert(e.message); }
         }
 
         function openModal(id) { document.getElementById(id).classList.add('active'); }
