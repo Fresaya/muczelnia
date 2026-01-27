@@ -10,15 +10,47 @@
     
     <style>
         /* --- STYLE PLANU ZAJĘĆ --- */
-        .schedule-container { background: var(--panel-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); box-shadow: var(--shadow); overflow-x: auto; }
-        .schedule-table { width: 100%; border-collapse: collapse; min-width: 600px; }
-        .schedule-table th, .schedule-table td { padding: 5px; text-align: center; border: 1px solid var(--border-color); }
-        .schedule-table th { background: rgba(0,0,0,0.02); color: var(--text-muted); font-size: 12px; text-transform: uppercase; padding: 10px; }
-        .schedule-table td { height: 80px; vertical-align: top; font-size: 13px; position: relative; width: 18%; } 
+        .schedule-container { 
+            background: var(--panel-bg); 
+            padding: 20px; 
+            border-radius: 12px; 
+            border: 1px solid var(--border-color); 
+            box-shadow: var(--shadow); 
+            overflow-x: auto; 
+        }
+        .schedule-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            min-width: 600px; 
+        }
+        .schedule-table th, .schedule-table td { 
+            padding: 5px; 
+            text-align: center; 
+            border: 1px solid var(--border-color); 
+        }
+        .schedule-table th { 
+            background: rgba(0,0,0,0.02); 
+            color: var(--text-muted); 
+            font-size: 12px; 
+            text-transform: uppercase; 
+            padding: 10px; 
+        }
+        .schedule-table td { 
+            height: 85px; 
+            vertical-align: top; 
+            font-size: 13px; 
+            position: relative; 
+            width: 18%; 
+        } 
         
-        .hour-col { font-weight: bold; color: var(--text-muted); width: 80px !important; vertical-align: middle !important; }
+        .hour-col { 
+            font-weight: bold; 
+            color: var(--text-muted); 
+            width: 80px !important; 
+            vertical-align: middle !important; 
+        }
         
-        /* BLOK LEKCJI */
+        /* BLOK LEKCJI (Wewnątrz komórki) */
         .lesson-cell-content {
             display: flex;
             flex-direction: column;
@@ -26,13 +58,40 @@
             height: 100%;
             width: 100%;
             position: relative;
+            box-sizing: border-box;
+            padding: 2px;
         }
 
         /* Strefy edycji */
-        .zone-subject { font-weight: 700; color: var(--text-main); padding: 4px; border-radius: 4px; margin-top: 5px; }
-        .zone-bottom { display: flex; justify-content: space-between; align-items: flex-end; padding: 4px; margin-top: auto; }
-        .zone-teacher { font-size: 10px; color: var(--accent-color); font-weight: 600; cursor: pointer; }
-        .zone-room { font-size: 10px; background: rgba(0,0,0,0.05); padding: 2px 5px; border-radius: 4px; color: var(--text-muted); font-weight: bold; }
+        .zone-subject { 
+            font-weight: 700; 
+            color: var(--text-main); 
+            padding: 4px; 
+            border-radius: 4px; 
+            margin-top: 5px; 
+            font-size: 13px;
+        }
+        .zone-bottom { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: flex-end; 
+            padding: 4px; 
+            margin-top: auto; 
+        }
+        .zone-teacher { 
+            font-size: 10px; 
+            color: var(--accent-color); 
+            font-weight: 600; 
+            cursor: pointer; 
+        }
+        .zone-room { 
+            font-size: 10px; 
+            background: rgba(0,0,0,0.05); 
+            padding: 2px 5px; 
+            border-radius: 4px; 
+            color: var(--text-muted); 
+            font-weight: bold; 
+        }
 
         /* Hover effects tylko dla Admina (dodawane klasą .can-edit w JS) */
         .can-edit .zone-subject:hover { background: rgba(33, 150, 243, 0.1); cursor: pointer; outline: 1px dashed #2196F3; }
@@ -42,22 +101,23 @@
         /* Przycisk usuwania (X) */
         .delete-x {
             position: absolute;
-            top: 2px;
-            right: 2px;
+            top: 0px;
+            right: 0px;
             width: 18px;
             height: 18px;
             background: #F44336;
             color: white;
             border-radius: 50%;
             font-size: 12px;
-            display: none; /* Ukryty domyślnie */
+            display: none; 
             align-items: center;
             justify-content: center;
             cursor: pointer;
             z-index: 10;
             line-height: 1;
+            font-weight: bold;
         }
-        .can-edit .lesson-cell-content:hover .delete-x { display: flex; } /* Pokaż po najechaniu */
+        .can-edit .lesson-cell-content:hover .delete-x { display: flex; } 
 
         /* Pusta komórka do dodawania */
         .empty-cell-trigger {
@@ -67,9 +127,36 @@
         .can-edit .empty-cell-trigger { cursor: pointer; }
         .can-edit .empty-cell-trigger:hover { color: #ccc; background: rgba(0,0,0,0.02); }
 
-        /* Reszta stylów (Sidebar itp.) */
+        /* Style Mapowania (Modal) */
+        .mapping-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 15px 0;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px;
+            background: rgba(0,0,0,0.02);
+        }
+        .mapping-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--panel-bg);
+            margin-bottom: 5px;
+            border-radius: 4px;
+        }
+        .mapping-row:last-child { margin-bottom: 0; border-bottom: none; }
+        .sheet-name { font-weight: bold; color: #D32F2F; display:flex; align-items:center; gap:5px; font-size: 13px; }
+        .arrow-icon { color: var(--text-muted); font-size: 18px; margin: 0 10px; }
+        .mapping-select { padding: 5px; border-radius: 4px; border: 1px solid var(--border-color); width: 180px; font-size: 12px; }
+
+        /* Kontrolki */
         .class-selector-container { margin-bottom: 15px; display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }
         .class-select { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--panel-bg); color: var(--text-main); font-size: 14px; }
+
+        /* Sidebar */
         .widget-icon { display: flex; align-items: center; justify-content: center; background: none !important; }
         #student-sidebar-content { display: flex; flex-direction: column; gap: 30px; width: 100%; margin-top: 30px;}
         .sidebar-section { width: 100%; display: block; }
@@ -135,8 +222,9 @@
                             <select id="childSelect" class="class-select" onchange="changeChild()">
                                 <option value="" disabled selected>Ładowanie...</option>
                             </select>
-                            <button class="login-button" style="width:auto; font-size:12px; padding:5px 15px; background:#2E7D32;" onclick="exportCurrentViewToExcel()">
-                                <span class="material-symbols-outlined" style="font-size:16px;">download</span> Pobierz
+                            
+                            <button class="login-button" style="width:auto; font-size:12px; padding:5px 15px; background:#2E7D32; display:flex; align-items:center; gap:5px;" onclick="exportCurrentViewToExcel()">
+                                <span class="material-symbols-outlined" style="font-size:16px;">download</span> Pobierz Plan
                             </button>
                         </div>
                     </div>
@@ -228,11 +316,11 @@
                 <span class="close-modal" onclick="closeModal('mappingModal')">&times;</span>
             </div>
             <div class="modal-body">
-                <p style="font-size:13px;">Niektóre arkusze nie pasują do nazw klas. Przypisz je ręcznie.</p>
-                <div id="mapping-container" style="max-height:300px;overflow-y:auto;border:1px solid #eee;padding:10px;margin:10px 0;"></div>
-                <div style="text-align:right;">
+                <p style="font-size:13px; color:var(--text-main);">Niektóre arkusze w pliku Excel nie pasują nazwą do żadnej klasy. Przypisz je ręcznie lub pomiń.</p>
+                <div id="mapping-container" class="mapping-list"></div>
+                <div style="text-align:right; margin-top:15px;">
                     <button class="login-button" style="background:#ccc; width:auto; color:#333;" onclick="closeModal('mappingModal')">Anuluj</button>
-                    <button class="login-button" style="width:auto;" onclick="finalizeImport()">Zatwierdź</button>
+                    <button class="login-button" style="width:auto;" onclick="finalizeImport()">Zatwierdź i Importuj</button>
                 </div>
             </div>
         </div>
@@ -250,7 +338,10 @@
         let canEdit = false; 
 
         // Import variables
-        let pendingWorkbook, pendingClassList, autoMatchedSheets, unmatchedSheets;
+        let pendingWorkbook = null;
+        let pendingClassList = [];
+        let autoMatchedSheets = [];
+        let unmatchedSheets = [];
 
         function generateGrid() {
             const tbody = document.getElementById('schedule-body');
@@ -264,7 +355,6 @@
                 for (let day = 1; day <= 5; day++) {
                     const td = document.createElement('td');
                     td.dataset.day = day; td.dataset.hour = hour; td.id = `cell-${day}-${hour}`;
-                    // Domyślnie pusta komórka
                     td.innerHTML = `<div class="empty-cell-trigger" onclick="handleEmptyClick(${day}, ${hour})">+</div>`;
                     tr.appendChild(td);
                 }
@@ -280,25 +370,35 @@
             const { data: userDetails } = await _supabase
                 .from('users')
                 .select('id, username, role, school_id, class_id, schools(name), classes(name)')
-                .eq('id', session.user.id).single();
+                .eq('id', session.user.id)
+                .single();
                 
             if (!userDetails) return;
             currentUser = userDetails;
-            setupProfileCard(userDetails); setupSidebarEvents();
+
+            setupProfileCard(userDetails);
+            setupSidebarEvents();
 
             isStaff = ['teacher', 'manager', 'admin', 'lecturer'].includes(currentUser.role);
             canEdit = ['manager', 'admin'].includes(currentUser.role);
 
-            if (isStaff) await setupStaffView();
-            else if (currentUser.role === 'parent') { await setupParentView(); document.getElementById('student-sidebar-content').style.display = 'flex'; }
-            else { setupStudentView(); document.getElementById('student-sidebar-content').style.display = 'flex'; loadSidebarCalendar(currentUser.id); loadSidebarGrades(currentUser.id); loadSidebarRemarks(currentUser.id); }
+            if (isStaff) {
+                await setupStaffView();
+            } else if (currentUser.role === 'parent') {
+                await setupParentView();
+                document.getElementById('student-sidebar-content').style.display = 'flex';
+            } else {
+                setupStudentView();
+                document.getElementById('student-sidebar-content').style.display = 'flex';
+                loadSidebarCalendar(currentUser.id);
+                loadSidebarGrades(currentUser.id);
+                loadSidebarRemarks(currentUser.id);
+            }
         }
 
-        // --- RENDEROWANIE PLANU Z LOGIKĄ EDYCJI ---
+        // --- RENDEROWANIE PLANU Z LOGIKĄ EDYCJI (Split Zones) ---
         async function fetchAndRenderSchedule(classId) {
-            // Najpierw wyczyść grid (ustaw puste komórki)
             generateGrid(); 
-            
             const { data: scheduleData } = await _supabase.from('weekly_schedule').select('*, teacher:teacher_id(username)').eq('class_id', classId);
             if (!scheduleData) return;
 
@@ -309,8 +409,7 @@
                     const teacherName = item.teacher ? item.teacher.username : 'Brak';
                     const editClass = canEdit ? 'can-edit' : '';
                     
-                    // Budowanie HTML komórki
-                    cell.className = editClass; // Dodaj klasę do styli hover
+                    cell.className = editClass; 
                     cell.innerHTML = `
                         <div class="lesson-cell-content">
                             <div class="delete-x" onclick="deleteLessonDirect(${item.day_of_week}, ${hourPart})">&times;</div>
@@ -384,7 +483,6 @@
             fetchAndRenderSchedule(currentViewClassId);
         }
 
-        // Pomocnicza funkcja do aktualizacji jednego pola
         async function updateScheduleField(day, hour, updates) {
             const startTime = `${hour.toString().padStart(2,'0')}:00`;
             const { error } = await _supabase.from('weekly_schedule')
@@ -397,7 +495,7 @@
             else fetchAndRenderSchedule(currentViewClassId);
         }
 
-        // Zapis nowej lekcji (z pustej komórki)
+        // Zapis nowej lekcji
         document.getElementById('addLessonForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const day = document.getElementById('add-day').value;
@@ -420,13 +518,15 @@
             else { closeModal('addLessonModal'); fetchAndRenderSchedule(currentViewClassId); }
         });
 
-        // --- WIDOKI & DANE ---
-        function setupProfileCard(p){ /* ...standard code... */ document.getElementById('profile-name-display').textContent=p.username;document.getElementById('profile-role-display').textContent=p.role.toUpperCase(); document.getElementById('profile-school-display').textContent=p.schools?.name||""; }
+        // --- SIDEBAR & WIDOKI ---
+        function setupProfileCard(p){ document.getElementById('profile-name-display').textContent=p.username;document.getElementById('profile-role-display').textContent=p.role.toUpperCase(); document.getElementById('profile-school-display').textContent=p.schools?.name||""; }
         function setupSidebarEvents(){ document.getElementById('avatarTrigger').onclick=()=>{let d=document.getElementById('profileDropdown');d.style.display=d.style.display==='block'?'none':'block';}; document.getElementById('logoutBtn').onclick=async()=>{await _supabase.auth.signOut();window.location.href='login.html';};}
-        // Skrócone loadery sidebara (identyczne jak wcześniej)
-        async function loadSidebarCalendar(uid){const l=document.getElementById('sidebar-calendar-list');const{data:u}=await _supabase.from('users').select('class_id').eq('id',uid).single();if(!u?.class_id){l.innerHTML='<p class="empty-sidebar">Brak.</p>';return;} const t=new Date().toISOString().split('T')[0];const{data}=await _supabase.from('calendar_events').select('*').eq('class_id',u.class_id).gte('event_date',t).limit(3);l.innerHTML='';data?.forEach(e=>l.innerHTML+=`<div class="sidebar-list-item"><b>${e.event_date.slice(5)}</b>: ${e.title}</div>`);}
-        async function loadSidebarGrades(uid){/* analogicznie */}
-        async function loadSidebarRemarks(uid){/* analogicznie */}
+        
+        async function loadSidebarCalendar(uid){const l=document.getElementById('sidebar-calendar-list');const{data:u}=await _supabase.from('users').select('class_id').eq('id',uid).single();if(!u?.class_id){l.innerHTML='<p class="empty-sidebar">Brak.</p>';return;} const t=new Date().toISOString().split('T')[0];const{data}=await _supabase.from('calendar_events').select('*').eq('class_id',u.class_id).gte('event_date',t).limit(3);l.innerHTML='';if(!data||!data.length){l.innerHTML='<p class="empty-sidebar">Brak wydarzeń.</p>';return;} data.forEach(e=>l.innerHTML+=`<div class="sidebar-list-item"><b>${e.event_date.slice(5)}</b>: ${e.title}</div>`);}
+        
+        async function loadSidebarGrades(uid){ const l=document.getElementById('sidebar-grades-list'); const w=new Date(Date.now()-7*24*60*60*1000).toISOString(); const{data:g}=await _supabase.from('grades').select('grade,packages(title)').eq('user_id',uid).gte('created_at',w).order('created_at',{ascending:false}).limit(5); l.innerHTML=''; if(!g||!g.length){l.innerHTML='<p class="empty-sidebar">Brak ocen.</p>';return;} g.forEach(x=>l.innerHTML+=`<div class="sidebar-list-item"><div class="sidebar-grade-circle">${x.grade}</div><div class="sidebar-list-content">${x.packages?x.packages.title:'Inne'}</div></div>`);}
+        
+        async function loadSidebarRemarks(uid){ const l=document.getElementById('sidebar-remarks-list'); const{data:r}=await _supabase.from('remarks').select('points,subject_name,created_at').eq('student_id',uid).order('created_at',{ascending:false}).limit(3); l.innerHTML=''; if(!r||!r.length){l.innerHTML='<p class="empty-sidebar">Brak uwag.</p>';return;} r.forEach(x=>{ let c=x.points>0?'#4CAF50':(x.points<0?'#F44336':'#757575'); let t=x.points>0?`+${x.points}`:x.points; l.innerHTML+=`<div class="sidebar-list-item"><div class="sidebar-grade-circle" style="color:${c};border-color:${c};font-size:14px;width:35px;height:35px;">${t}</div><div class="sidebar-list-content">${x.subject_name}</div></div>`; });}
 
         function setupStudentView() { if(currentUser.class_id){currentViewClassId=currentUser.class_id;fetchAndRenderSchedule(currentViewClassId);} }
         async function setupParentView() { 
@@ -438,6 +538,8 @@
         }
         function changeChild(){
             const s=document.getElementById('childSelect'); const cid=s.options[s.selectedIndex].dataset.classId;
+            const uid=s.value;
+            loadSidebarCalendar(uid); loadSidebarGrades(uid); loadSidebarRemarks(uid);
             if(cid) {currentViewClassId=cid; fetchAndRenderSchedule(cid);} else {generateGrid();}
         }
 
@@ -461,7 +563,7 @@
         }
         async function loadTeachersForSelect(sid){
             const s=document.getElementById('add-teacher'); s.innerHTML='<option value="">-- Wybierz --</option>';
-            const{data}=await _supabase.from('users').select('id,username').eq('school_id',sid).in('role',['teacher','manager','lecturer']).order('username');
+            const{data}=await _supabase.from('users').select('id,username').eq('school_id',sid).in('role',['teacher','manager','admin','lecturer']).order('username');
             data?.forEach(t=>s.add(new Option(t.username,t.id)));
         }
 
@@ -485,7 +587,8 @@
                         for(let h=8;h<20;h++){
                             const st=`${h.toString().padStart(2,'0')}:00`;
                             const l=cs.find(x=>x.day_of_week===d && x.start_time.startsWith(st));
-                            rows.push([DAY_MAP[d],`${h}:00 - ${h}:45`,l?l.subject_name:"",l?l.room:""]);
+                            const timeStr = `${h.toString().padStart(2,'0')}:00 - ${h.toString().padStart(2,'0')}:45`;
+                            rows.push([DAY_MAP[d], timeStr, l?l.subject_name:"", l?l.room:""]);
                         }
                     }
                     const ws=XLSX.utils.aoa_to_sheet(rows); ws['!cols']=[{wch:15},{wch:15},{wch:30},{wch:10}];
@@ -526,14 +629,14 @@
             unmatchedSheets.forEach(sn=>{
                 let opts='<option value="">-- Pomiń --</option>';
                 pendingClassList.forEach(cl=>opts+=`<option value="${cl.id}">${cl.name}</option>`);
-                c.innerHTML+=`<div style="display:flex;justify-content:space-between;margin-bottom:5px;border-bottom:1px solid #eee;padding:5px;"><span>${sn}</span><select class="map-sel" data-sheet="${sn}">${opts}</select></div>`;
+                c.innerHTML+=`<div class="mapping-row"><div class="sheet-name"><span class="material-symbols-outlined">description</span> ${sn}</div><span class="arrow-icon">→</span><select class="mapping-select" data-sheet="${sn}">${opts}</select></div>`;
             });
             openModal('mappingModal');
         }
 
         async function finalizeImport(){
             const matches=[];
-            document.querySelectorAll('.map-sel').forEach(s=>{if(s.value) matches.push({sheet:s.dataset.sheet,id:s.value});});
+            document.querySelectorAll('.mapping-select').forEach(s=>{if(s.value) matches.push({sheet:s.dataset.sheet,id:s.value});});
             closeModal('mappingModal');
             await executeImport(matches);
         }
@@ -566,8 +669,25 @@
             if(currentViewClassId) fetchAndRenderSchedule(currentViewClassId);
         }
 
-        async function downloadAllClassesTemplate(){ exportAllClassesToExcel(); } // Używamy tej samej logiki co export, bo generuje pełną siatkę
-        async function exportCurrentViewToExcel(){ /* Logika exportu pojedynczego dla rodzica - opcjonalne */ }
+        async function downloadAllClassesTemplate(){ exportAllClassesToExcel(); } 
+        
+        async function exportCurrentViewToExcel(){
+            if(!currentViewClassId) return alert("Wybierz.");
+            const { data: schedule } = await _supabase.from('weekly_schedule').select('*').eq('class_id', currentViewClassId);
+            const wb = XLSX.utils.book_new();
+            const data = [["Dzień", "Godzina", "Przedmiot", "Sala"]];
+            for (let d=1; d<=5; d++) {
+                for (let h=8; h<20; h++) {
+                    const st=`${h.toString().padStart(2,'0')}:00`;
+                    const l=schedule?.find(s=>s.day_of_week===d && s.start_time.startsWith(st));
+                    const ts=`${h.toString().padStart(2,'0')}:00 - ${h.toString().padStart(2,'0')}:45`;
+                    data.push([DAY_MAP[d], ts, l?l.subject_name:"", l?l.room:""]);
+                }
+            }
+            const ws = XLSX.utils.aoa_to_sheet(data); ws['!cols']=[{wch:15},{wch:15},{wch:30},{wch:10}];
+            XLSX.utils.book_append_sheet(wb, ws, "Plan");
+            XLSX.writeFile(wb, "Plan_Zajec.xlsx");
+        }
 
         function openModal(id) { document.getElementById(id).classList.add('active'); }
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
