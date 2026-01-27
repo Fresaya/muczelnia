@@ -475,9 +475,12 @@
                     for (let hour = 8; hour < 20; hour++) {
                         const timePrefix = hour.toString().padStart(2, '0') + ":00";
                         const lesson = schedule ? schedule.find(s => s.day_of_week === day && s.start_time.startsWith(timePrefix)) : null;
+                        
+                        const timeString = `${hour.toString().padStart(2, '0')}:00 - ${hour.toString().padStart(2, '0')}:45`;
+                        
                         excelData.push({
                             "Dzień": DAY_MAP[day],
-                            "Godzina": `${hour}`,
+                            "Godzina": timeString,
                             "Przedmiot": lesson ? lesson.subject_name : "", 
                             "Sala": lesson ? (lesson.room || "") : ""
                         });
@@ -495,7 +498,7 @@
                 if (!fileName.endsWith(".xlsx")) fileName += ".xlsx";
 
                 const ws = XLSX.utils.json_to_sheet(excelData);
-                ws['!cols'] = [{wch:15}, {wch:10}, {wch:30}, {wch:10}];
+                ws['!cols'] = [{wch:15}, {wch:15}, {wch:30}, {wch:10}];
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, "Plan");
                 XLSX.writeFile(wb, fileName);
@@ -545,7 +548,7 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // --- GENEROWANIE SZABLONU (PEŁNA SIATKA) ---
+        // --- NOWA FUNKCJA: POBIERZ SZABLON (PEŁNY) ---
         function downloadScheduleTemplate() {
             const headers = ["Dzień", "Godzina", "Przedmiot", "Sala"];
             const data = [headers];
@@ -553,12 +556,13 @@
             // Generujemy wiersze dla Dni 1-5 i Godzin 8-19
             for (let day = 1; day <= 5; day++) {
                 for (let hour = 8; hour < 20; hour++) {
-                    data.push([DAY_MAP[day], hour, "", ""]);
+                    const timeString = `${hour.toString().padStart(2, '0')}:00 - ${hour.toString().padStart(2, '0')}:45`;
+                    data.push([DAY_MAP[day], timeString, "", ""]);
                 }
             }
 
             const ws = XLSX.utils.aoa_to_sheet(data);
-            ws['!cols'] = [{wch:15}, {wch:10}, {wch:30}, {wch:10}];
+            ws['!cols'] = [{wch:15}, {wch:15}, {wch:30}, {wch:10}];
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Szablon");
             XLSX.writeFile(wb, "Plan_Szablon_Pelny.xlsx");
