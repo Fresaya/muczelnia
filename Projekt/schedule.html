@@ -458,7 +458,7 @@
             delete cell.dataset.teacherId;
         }
 
-        // --- OBSŁUGA EXCELA (EXPORT / IMPORT) ---
+        // --- OBSŁUGA EXCELA (EXPORT / IMPORT / SZABLON) ---
         const DAY_MAP = { 1: "Poniedziałek", 2: "Wtorek", 3: "Środa", 4: "Czwartek", 5: "Piątek" };
         const REVERSE_DAY_MAP = { "poniedziałek": 1, "wtorek": 2, "środa": 3, "czwartek": 4, "piątek": 5, "pon": 1, "wt": 2, "śr": 3, "czw": 4, "pt": 5 };
 
@@ -467,26 +467,14 @@
             if (!currentViewClassId) { alert("Najpierw wybierz klasę/dziecko, aby załadować plan."); return; }
 
             try {
-                // Pobieramy istniejący plan
-                const { data: schedule, error } = await _supabase.from('weekly_schedule')
-                    .select('day_of_week, start_time, subject_name, room')
-                    .eq('class_id', currentViewClassId);
-                
+                const { data: schedule, error } = await _supabase.from('weekly_schedule').select('day_of_week, start_time, subject_name, room').eq('class_id', currentViewClassId);
                 if (error) throw error;
 
                 const excelData = [];
-                // Generujemy pełną siatkę dla dni 1-5 i godzin 8-19
                 for (let day = 1; day <= 5; day++) {
                     for (let hour = 8; hour < 20; hour++) {
-                        // Format godziny startu (np. "08:00")
                         const timePrefix = hour.toString().padStart(2, '0') + ":00";
-                        
-                        // Znajdź lekcję w pobranych danych
-                        const lesson = schedule ? schedule.find(s => 
-                            s.day_of_week === day && 
-                            s.start_time.startsWith(timePrefix)
-                        ) : null;
-
+                        const lesson = schedule ? schedule.find(s => s.day_of_week === day && s.start_time.startsWith(timePrefix)) : null;
                         excelData.push({
                             "Dzień": DAY_MAP[day],
                             "Godzina": `${hour}`,
@@ -507,7 +495,7 @@
                 if (!fileName.endsWith(".xlsx")) fileName += ".xlsx";
 
                 const ws = XLSX.utils.json_to_sheet(excelData);
-                ws['!cols'] = [{wch:15}, {wch:15}, {wch:30}, {wch:10}];
+                ws['!cols'] = [{wch:15}, {wch:10}, {wch:30}, {wch:10}];
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, "Plan");
                 XLSX.writeFile(wb, fileName);
@@ -557,26 +545,23 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // --- NOWA FUNKCJA: POBIERZ SZABLON ---
+        // --- GENEROWANIE SZABLONU (PEŁNA SIATKA) ---
         function downloadScheduleTemplate() {
-            // Definiujemy nagłówki
             const headers = ["Dzień", "Godzina", "Przedmiot", "Sala"];
-            
-            // Przykładowy wiersz (opcjonalnie)
-            const exampleRow = ["Poniedziałek", "8", "Matematyka", "101"];
+            const data = [headers];
 
-            // Tworzymy arkusz
-            const ws = XLSX.utils.aoa_to_sheet([headers, exampleRow]);
-            
-            // Ustawiamy szerokości kolumn
-            ws['!cols'] = [{wch:15}, {wch:15}, {wch:30}, {wch:10}];
+            // Generujemy wiersze dla Dni 1-5 i Godzin 8-19
+            for (let day = 1; day <= 5; day++) {
+                for (let hour = 8; hour < 20; hour++) {
+                    data.push([DAY_MAP[day], hour, "", ""]);
+                }
+            }
 
-            // Tworzymy skoroszyt
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            ws['!cols'] = [{wch:15}, {wch:10}, {wch:30}, {wch:10}];
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Szablon");
-
-            // Pobieramy plik
-            XLSX.writeFile(wb, "Plan_Szablon.xlsx");
+            XLSX.writeFile(wb, "Plan_Szablon_Pelny.xlsx");
         }
 
         function openModal(id) { document.getElementById(id).classList.add('active'); }
