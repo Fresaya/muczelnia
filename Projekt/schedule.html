@@ -393,9 +393,16 @@
         });
 
         // --- SIDEBAR & VIEW SETUP ---
-        function setupProfileCard(p){
-                const roleMap = { 'student': 'UCZEŃ', 'teacher': 'NAUCZYCIEL', 'manager': 'SEKRETARIAT', 'admin': 'ADMIN', 'lecturer': 'WYKŁADOWCA', 'parent': 'RODZIC' };
-                document.getElementById('profile-role-display').textContent = (roleMap[profile.role] || profile.role).toUpperCase();
+
+        function setupProfileCard(profile) {
+            document.getElementById('profile-name-display').textContent = profile.username;
+            const roleMap = { 'student': 'UCZEŃ', 'teacher': 'NAUCZYCIEL', 'manager': 'SEKRETARIAT', 'admin': 'ADMIN', 'lecturer': 'WYKŁADOWCA', 'parent': 'RODZIC' };
+            document.getElementById('profile-role-display').textContent = (roleMap[profile.role] || profile.role).toUpperCase();
+
+            let schoolInfo = "";
+            if (profile.schools && profile.schools.name) schoolInfo = profile.schools.name;
+            if (profile.classes && profile.classes.name) schoolInfo += `<br><span style="color:var(--accent-color); font-weight:bold;">${profile.classes.name}</span>`;
+            document.getElementById('profile-school-display').innerHTML = schoolInfo;
         }
         function setupSidebarEvents(){ document.getElementById('avatarTrigger').onclick=()=>{let d=document.getElementById('profileDropdown');d.style.display=d.style.display==='block'?'none':'block';}; document.getElementById('logoutBtn').onclick=async()=>{await _supabase.auth.signOut();window.location.href='login.html';};}
         async function loadSidebarCalendar(uid){const l=document.getElementById('sidebar-calendar-list');const{data:u}=await _supabase.from('users').select('class_id').eq('id',uid).single();if(!u?.class_id){l.innerHTML='<p class="empty-sidebar">Brak.</p>';return;} const t=new Date().toISOString().split('T')[0];const{data}=await _supabase.from('calendar_events').select('*').eq('class_id',u.class_id).gte('event_date',t).limit(3);l.innerHTML='';if(!data||!data.length){l.innerHTML='<p class="empty-sidebar">Brak wydarzeń.</p>';return;} data.forEach(e=>l.innerHTML+=`<div class="sidebar-list-item"><b>${e.event_date.slice(5)}</b>: ${e.title}</div>`);}
