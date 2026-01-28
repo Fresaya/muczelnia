@@ -393,7 +393,10 @@
         });
 
         // --- SIDEBAR & VIEW SETUP ---
-        function setupProfileCard(p){ document.getElementById('profile-name-display').textContent=p.username;document.getElementById('profile-role-display').textContent=p.role.toUpperCase(); document.getElementById('profile-school-display').textContent=p.schools?.name||""; }
+        function setupProfileCard(p){
+                const roleMap = { 'student': 'UCZEŃ', 'teacher': 'NAUCZYCIEL', 'manager': 'SEKRETARIAT', 'admin': 'ADMIN', 'lecturer': 'WYKŁADOWCA', 'parent': 'RODZIC' };
+                document.getElementById('profile-role-display').textContent = (roleMap[profile.role] || profile.role).toUpperCase();
+        }
         function setupSidebarEvents(){ document.getElementById('avatarTrigger').onclick=()=>{let d=document.getElementById('profileDropdown');d.style.display=d.style.display==='block'?'none':'block';}; document.getElementById('logoutBtn').onclick=async()=>{await _supabase.auth.signOut();window.location.href='login.html';};}
         async function loadSidebarCalendar(uid){const l=document.getElementById('sidebar-calendar-list');const{data:u}=await _supabase.from('users').select('class_id').eq('id',uid).single();if(!u?.class_id){l.innerHTML='<p class="empty-sidebar">Brak.</p>';return;} const t=new Date().toISOString().split('T')[0];const{data}=await _supabase.from('calendar_events').select('*').eq('class_id',u.class_id).gte('event_date',t).limit(3);l.innerHTML='';if(!data||!data.length){l.innerHTML='<p class="empty-sidebar">Brak wydarzeń.</p>';return;} data.forEach(e=>l.innerHTML+=`<div class="sidebar-list-item"><b>${e.event_date.slice(5)}</b>: ${e.title}</div>`);}
         async function loadSidebarGrades(uid){ const l=document.getElementById('sidebar-grades-list'); const w=new Date(Date.now()-7*24*60*60*1000).toISOString(); const{data:g}=await _supabase.from('grades').select('grade,packages(title)').eq('user_id',uid).gte('created_at',w).order('created_at',{ascending:false}).limit(5); l.innerHTML=''; if(!g||!g.length){l.innerHTML='<p class="empty-sidebar">Brak ocen.</p>';return;} g.forEach(x=>l.innerHTML+=`<div class="sidebar-list-item"><div class="sidebar-grade-circle">${x.grade}</div><div class="sidebar-list-content">${x.packages?x.packages.title:'Inne'}</div></div>`);}
