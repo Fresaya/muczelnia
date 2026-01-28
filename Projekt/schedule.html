@@ -99,13 +99,13 @@
                         <p style="font-size: 11px; color: var(--accent-color); font-weight: bold; margin-bottom: 5px;">ZARZĄDZANIE (CAŁA SZKOŁA)</p>
                         <div style="display:flex; gap:5px; flex-wrap:wrap;">
                             <button class="login-button" style="width:auto; font-size:12px; padding:5px 15px; background:#2E7D32; display:flex; align-items:center; gap:5px;" onclick="exportAllClassesToExcel()">
-                                <span class="material-symbols-outlined" style="font-size:16px;">download</span> Export Wszystkich
+                                <span class="material-symbols-outlined" style="font-size:16px;">download</span> Export (.XLSX)
                             </button>
                             <button class="login-button" style="width:auto; font-size:12px; padding:5px 15px; background:#1565C0; display:flex; align-items:center; gap:5px;" onclick="document.getElementById('import-excel-input').click()">
-                                <span class="material-symbols-outlined" style="font-size:16px;">upload</span> Import Masowy
+                                <span class="material-symbols-outlined" style="font-size:16px;">upload</span> Import (.XLSX)
                             </button>
                             <button class="login-button" style="width:auto; font-size:12px; padding:5px 15px; background:#7B1FA2; display:flex; align-items:center; gap:5px;" onclick="downloadAllClassesTemplate()">
-                                <span class="material-symbols-outlined" style="font-size:16px;">description</span> Szablon Szkoły
+                                <span class="material-symbols-outlined" style="font-size:16px;">description</span> Szablon Szkoły (.XLSX)
                             </button>
                         </div>
                         <input type="file" id="import-excel-input" accept=".xlsx, .xls" style="display:none;" onchange="importAllClassesFromExcel(this)">
