@@ -6,8 +6,9 @@
     <title>mUczelnia - Zarządzanie Uczniami</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
     <link rel="stylesheet" href="style.css">
+    
     <style>
-        /* --- STYLE SPECJALNE DLA TEJ STRONY --- */
+        /* Toolbar */
         .tools-header {
             background: var(--panel-bg);
             padding: 20px;
@@ -36,16 +37,15 @@
             text-transform: uppercase;
         }
 
-        /* --- FIX: INPUTY W NAGŁÓWKU (NAPRAWA WYSTAWANIA) --- */
         .tools-header .edit-input {
-            width: 100%;             /* Zajmij 100% rodzica */
-            box-sizing: border-box;  /* Wlicz padding w szerokość elementu (TO NAPRAWIA PROBLEM) */
-            margin: 0;               /* Usuń domyślne marginesy */
-            height: 38px;            /* Stała wysokość dla równości */
-            min-width: 0;            /* Zapobiega wypychaniu flexboxa */
+            width: 100%;             
+            box-sizing: border-box;  
+            margin: 0;               
+            height: 38px;            
+            min-width: 0;            
         }
 
-        /* Tabela Uczniów */
+        /* Table Layout */
         .students-container {
             background: var(--panel-bg);
             border-radius: 12px;
@@ -78,7 +78,7 @@
         .main-table tr:last-child td { border-bottom: none; }
         .main-table tr:hover { background: var(--hover-bg); }
 
-        /* Dropdown klasy w tabeli */
+        /* Table Inputs */
         .class-select-table {
             padding: 8px;
             border-radius: 6px;
@@ -87,14 +87,11 @@
             color: var(--text-main);
             width: 100%;
             max-width: 200px;
-            box-sizing: border-box; /* Tutaj też warto dodać */
+            box-sizing: border-box; 
         }
 
-        /* Przyciski akcji */
-        .action-cell {
-            display: flex;
-            gap: 8px;
-        }
+        /* Action Buttons */
+        .action-cell { display: flex; gap: 8px; }
 
         .table-btn {
             display: inline-flex;
@@ -108,21 +105,16 @@
             cursor: pointer;
             transition: all 0.2s;
             color: var(--text-muted);
-            flex-shrink: 0; /* Zapobiega zgniataniu przycisków */
+            flex-shrink: 0; 
         }
         
-        .table-btn .material-symbols-rounded {
-            font-size: 20px;
-            pointer-events: none;
-        }
-
+        .table-btn .material-symbols-rounded { font-size: 20px; pointer-events: none; }
         .table-btn:hover { transform: scale(1.1); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         
         .btn-save:hover { color: #4CAF50; border-color: #4CAF50; background: rgba(76, 175, 80, 0.1); }
         .btn-pass:hover { color: #FF9800; border-color: #FF9800; background: rgba(255, 152, 0, 0.1); }
         .btn-del:hover { color: #F44336; border-color: #F44336; background: rgba(244, 67, 54, 0.1); }
 
-        /* Dark mode tweaks */
         @media (prefers-color-scheme: dark) {
             .class-select-table { background: #2a2a2a; border-color: #444; }
             .table-btn { background: #2a2a2a; }
