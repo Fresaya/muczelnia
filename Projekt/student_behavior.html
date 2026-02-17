@@ -5,20 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>mUczelnia - Zachowanie</title>
     <link rel="stylesheet" href="style.css">
+    
     <style>
+        /* Points Summary Section */
         .points-summary {
-            /* ZMIANA: Solidny ciemnoszary kolor tła zamiast gradientu */ 
             background: #4b5563; 
             color: white;
             padding: 30px;
             border-radius: 12px;
             text-align: center;
             margin-bottom: 30px;
-            /* ZMIANA: Cień bardziej neutralny */
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
         .points-value { font-size: 3rem; font-weight: 800; display: block; margin: 10px 0; }
         
+        /* Remarks List Section */
         .remarks-list { display: flex; flex-direction: column; gap: 15px; }
         .remark-card {
             background: var(--panel-bg);
@@ -29,10 +30,13 @@
         }
         .remark-positive { border-left: 5px solid #10b981; }
         .remark-negative { border-left: 5px solid #ef4444; }
+        
+        /* Badges */
         .points-badge { font-weight: bold; padding: 5px 10px; border-radius: 6px; }
         .points-pos { background: #d1fae5; color: #047857; }
         .points-neg { background: #fee2e2; color: #b91c1c; }
 
+        /* Parent View Controls */
         .parent-controls {
             margin-bottom: 20px; padding: 15px; background: rgba(0,0,0,0.02);
             border-radius: 8px; display: none;
@@ -76,19 +80,21 @@
             </div>
 
             <h3>Ostatnie uwagi</h3>
-            <div class="remarks-list" id="remarks-container">
-                </div>
+            <div class="remarks-list" id="remarks-container"></div>
         </main>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+        // Config
         const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg';
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
+        // State
         let currentUser = null;
 
+        // Init & Auth
         async function init() {
             const { data: { session } } = await _supabase.auth.getSession();
             if (!session) { window.location.href = 'login.html'; return; }
@@ -103,6 +109,7 @@
             }
         }
 
+        // Parent Mode Logic
         async function setupParentView() {
             document.getElementById('parent-controls').style.display = 'block';
             
@@ -136,6 +143,7 @@
             fetchBehavior(childId, child ? child.behavior_points : 100);
         }
 
+        // Data Fetching & Rendering
         async function fetchBehavior(studentId, currentPoints) {
             document.getElementById('total-points').innerText = currentPoints !== undefined ? currentPoints : '100';
             
