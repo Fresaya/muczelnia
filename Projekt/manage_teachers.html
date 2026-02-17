@@ -6,7 +6,9 @@
     <title>mUczelnia - Zarządzaj Nauczycielami</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
     <link rel="stylesheet" href="style.css">
+    
     <style>
+        /* Toolbar */
         .filter-bar { 
             background: var(--panel-bg); 
             padding: 15px; 
@@ -19,19 +21,18 @@
             align-items: center;
             box-shadow: var(--shadow);
         }
-
-        /* Poprawka dla inputów, żeby nie wychodziły poza obrys */
         .filter-bar .edit-input {
             margin: 0;
             box-sizing: border-box;
             height: 38px;
         }
 
+        /* Table Layout */
         .data-table { width: 100%; border-collapse: collapse; background: var(--panel-bg); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow); }
         .data-table th, .data-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
         .data-table th { background: rgba(0,0,0,0.02); font-weight: 600; color: var(--text-muted); }
 
-        /* --- NOWE STYLE PRZYCISKÓW (IKONY) --- */
+        /* Action Buttons */
         .table-btn { 
             display: inline-flex;
             align-items: center;
@@ -52,7 +53,6 @@
 
         .table-btn:hover { transform: scale(1.1); }
 
-        /* Kolory przycisków */
         .btn-pass { color: #FF9800; background: rgba(255, 152, 0, 0.1); }
         .btn-pass:hover { background: rgba(255, 152, 0, 0.2); }
 
@@ -111,17 +111,19 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+        // Config
         const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg'; 
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
+        // State
         let allTeachers = [];
 
+        // Init & Auth
         document.addEventListener('DOMContentLoaded', async () => {
             const { data: { session } } = await _supabase.auth.getSession();
             if (!session) { window.location.href = 'login.html'; return; }
 
-            // Sprawdź rolę
             const { data: user } = await _supabase.from('users').select('role, school_id').eq('id', session.user.id).single();
             if (!['admin', 'manager'].includes(user.role)) {
                 alert("Brak dostępu."); window.location.href = 'dashboard.html'; return;
@@ -129,17 +131,16 @@
 
             await initData(user);
             
-            // Listenery filtrów
             document.getElementById('search-teacher').addEventListener('input', renderTable);
             document.getElementById('filter-school').addEventListener('change', renderTable);
         });
 
+        // Data Loading
         async function initData(currentUser) {
-            // 1. Ładowanie Szkół do Filtra
+            // 1. Fetch Schools
             const schoolSelect = document.getElementById('filter-school');
             let schoolQuery = _supabase.from('schools').select('id, name').order('name');
             
-            // Jeśli manager -> pobierz tylko jego szkołę
             if (currentUser.role === 'manager') {
                 schoolQuery = schoolQuery.eq('id', currentUser.school_id);
             }
@@ -147,7 +148,6 @@
             const { data: schools } = await schoolQuery;
             
             if (schools) {
-                // Jeśli to Manager, wyczyść opcję "Wszystkie" bo i tak ma widzieć tylko jedną
                 if (currentUser.role === 'manager') {
                     schoolSelect.innerHTML = '';
                 }
@@ -156,20 +156,18 @@
                     schoolSelect.add(new Option(s.name, s.id));
                 });
 
-                // Jeśli Manager -> ustaw jego szkołę i zablokuj select
                 if (currentUser.role === 'manager') {
                     schoolSelect.value = currentUser.school_id;
-                    schoolSelect.disabled = true; // Zablokowanie edycji
+                    schoolSelect.disabled = true; 
                 }
             }
 
-            // 2. Ładowanie Nauczycieli
+            // 2. Fetch Teachers
             let teacherQuery = _supabase.from('users')
                 .select('id, username, email, school_id, schools(name)')
                 .eq('role', 'teacher')
                 .order('username');
             
-            // Jeśli Manager -> pobierz tylko z jego szkoły (zabezpieczenie backendowe)
             if (currentUser.role === 'manager') {
                 teacherQuery = teacherQuery.eq('school_id', currentUser.school_id);
             }
@@ -181,6 +179,7 @@
             renderTable();
         }
 
+        // Rendering & Filtering
         function renderTable() {
             const tbody = document.getElementById('teachers-body');
             tbody.innerHTML = '';
@@ -189,11 +188,8 @@
             const schoolVal = document.getElementById('filter-school').value;
 
             const filtered = allTeachers.filter(t => {
-                // Filtr wyszukiwania
                 const matchSearch = (t.username && t.username.toLowerCase().includes(searchVal)) || 
                                     (t.email && t.email.toLowerCase().includes(searchVal));
-                
-                // Filtr szkoły (jeśli wybrana "Wszystkie" czyli "", to true)
                 const matchSchool = schoolVal === "" || (t.school_id == schoolVal);
 
                 return matchSearch && matchSchool;
@@ -208,7 +204,6 @@
                 const schoolName = t.schools ? t.schools.name : 'Brak';
                 const tr = document.createElement('tr');
                 
-                // UPDATE: Zastąpiono emotki ikonami Google wewnątrz <span>
                 tr.innerHTML = `
                     <td style="font-weight:bold;">${t.username || 'Brak nazwy'}</td>
                     <td>${t.email}</td>
@@ -226,6 +221,7 @@
             });
         }
 
+        // Account Actions
         async function resetPass(userId, name) {
             const newPw = prompt(`Nowe hasło dla ${name}:`, "nauczyciel123");
             if (!newPw) return;
