@@ -8,8 +8,6 @@
 </head>
 <body>
 
-    
-
     <div class="layout-wrapper">
         <aside class="sidebar-left" id="mainSidebar">
             <div class="top-section">
@@ -35,7 +33,7 @@
             </div>
         </main>
 
-       <aside class="sidebar-right">
+        <aside class="sidebar-right">
             <div class="profile-card">
                 <div class="avatar" id="avatarTrigger" title="Kliknij, aby otworzyć opcje"></div>
                 <div class="dropdown-menu" id="profileDropdown">
@@ -53,62 +51,69 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+        // Navigation
         function toggleMobileMenu() { document.getElementById('mainSidebar').classList.toggle('active'); }
+
+        // Config
         const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg';
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
+        // Init & Auth
         document.addEventListener('DOMContentLoaded', async () => {
             const { data: { session } } = await _supabase.auth.getSession();
             if (!session) { window.location.href = 'login.html'; return; }
 
             const userId = session.user.id;
+            
+            // Fetch Profile
             const { data: profile } = await _supabase
                 .from('users')
-                .select('username, role, class_id, schools(name), classes(name)') // Dodano relacje
+                .select('username, role, class_id, schools(name), classes(name)')
                 .eq('id', userId)
                 .single();
             
             document.getElementById('profile-name-display').textContent = profile.username;
             document.getElementById('profile-role-display').textContent = profile.role.toUpperCase();
             
-            // --- NOWY KOD ---
+            // Display School Info
             let schoolInfo = "";
             if (profile.schools) schoolInfo = profile.schools.name;
             if (profile.classes) schoolInfo += `<br><span style="color:#f04a4a;">${profile.classes.name}</span>`;
             document.getElementById('profile-school-display').innerHTML = schoolInfo;
 
-            // POBIERANIE DANYCH
+            // Data Fetching
             let rawData = [];
             
-            // Pobieramy pakiety (Przedmioty) przypisane do klasy ucznia
             if (profile.role === 'admin' || profile.role === 'manager') {
-                 // Admin widzi wszystkie pakiety
+                 // Admin sees all packages
                  const { data } = await _supabase.from('packages').select('*').order('title');
                  rawData = data || [];
             } else {
-                // Uczeń widzi pakiety przypisane do jego klasy
+                // Student sees packages assigned to class
                 if (!profile.class_id) { renderPackages([]); return; }
                 
                 const { data: pkgLinks } = await _supabase
                     .from('package_classes')
-                    .select('package_id, packages(*)') // Join do tabeli packages
+                    .select('package_id, packages(*)')
                     .eq('class_id', profile.class_id);
                 
-                // Wyciągamy same obiekty pakietów z relacji
                 rawData = pkgLinks ? pkgLinks.map(p => p.packages) : [];
             }
 
             renderPackages(rawData);
 
-            // Wylogowanie
-             const avatarTrigger = document.getElementById('avatarTrigger');
+            // User Interactions (Dropdown & Logout)
+            const avatarTrigger = document.getElementById('avatarTrigger');
             const dropdown = document.getElementById('profileDropdown');
             const logoutBtn = document.getElementById('logoutBtn');
+            
             avatarTrigger.addEventListener('click', (e) => { e.stopPropagation(); dropdown.classList.toggle('show'); });
             window.addEventListener('click', () => { if (dropdown.classList.contains('show')) dropdown.classList.remove('show'); });
             logoutBtn.addEventListener('click', async () => { await _supabase.auth.signOut(); window.location.href = 'login.html'; });
         });
+
+        // Rendering Logic
         function renderPackages(packages) {
             const gridContainer = document.getElementById('courses-grid');
             gridContainer.innerHTML = ''; 
@@ -118,7 +123,6 @@
                     const tile = document.createElement('div');
                     tile.className = 'widget-tile';
                     tile.style.cursor = "pointer";
-                    // Stylizacja na "Folder" / "Przedmiot"
                     tile.style.borderLeft = "5px solid var(--accent-color)";
                     
                     tile.innerHTML = `
@@ -128,7 +132,6 @@
                         <div class="course-meta" style="margin-top:15px; font-weight:bold;">Otwórz Przedmiot →</div>
                     `;
                     
-                    // KLIKNIĘCIE PROWADZI DO NOWEGO WIDOKU "SUBJECT.HTML"
                     tile.onclick = () => { window.location.href = `subject.html?id=${pkg.id}`; };
                     gridContainer.appendChild(tile);
                 });
@@ -136,36 +139,6 @@
                  gridContainer.innerHTML += `<div class="widget-tile" style="grid-column:1/-1; text-align:center; padding:50px;"><h3>Brak przedmiotów</h3><p style="color:#888;">Nie przypisano Ci jeszcze żadnych materiałów.</p></div>`;
             }
         }
-        /*
-        function renderCourses(data) {
-            const gridContainer = document.getElementById('courses-grid');
-            gridContainer.innerHTML = ''; 
-
-            const courses = data.filter(item => item.courses && item.courses.type !== 'quiz');
-
-            if (courses.length > 0) {
-                courses.forEach(item => {
-                    const course = item.courses;
-                    const tile = document.createElement('div');
-                    tile.className = 'widget-tile';
-                    tile.style.cursor = "pointer";
-                    
-                    const pkgName = course.packages ? `<div style="font-size:11px; color:#9C27B0; margin-bottom:5px;">📦 ${course.packages.title}</div>` : '';
-
-                    tile.innerHTML = `
-                        <div class="widget-icon icon-course-active"></div>
-                        ${pkgName}
-                        <h3>${course.title}</h3>
-                        <div class="course-meta" style="margin-top:15px;">Przejdź do kursu →</div>
-                    `;
-                    
-                    tile.onclick = () => { window.location.href = `course.html?id=${course.id}`; };
-                    gridContainer.appendChild(tile);
-                });
-            } else {
-                 gridContainer.innerHTML += `<div class="widget-tile" style="grid-column:1/-1; text-align:center; padding:50px;"><h3>Brak kursów</h3><p style="color:#888;">Brak materiałów.</p></div>`;
-            }
-        }*/
     </script>
 </body>
 </html>
