@@ -1,57 +1,33 @@
+// Config
 const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg'; 
 const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-// --- 1. CONFIGURATION ---
 const WIDGETS = {
-    // Widgets exclusive to Students/Parents
-    studentCommon: [
-        'student-sidebar-content', 
-        'widget-student-grades', 
-        'widget-student-calendar', 
-        'widget-student-behavior',
-        'widget-student-schedule'
-    ],
+    studentCommon: ['student-sidebar-content', 'widget-student-grades', 'widget-student-calendar', 'widget-student-behavior', 'widget-student-schedule'],
     studentOnly: ['widget-student-courses'],
-    
-    // Widgets common to Staff (Admin, Teacher, Manager, Lecturer)
-    staffCommon: [
-        'widget-teacher-results', 
-        'widget-teacher-grades', 
-        'widget-calendar', 
-        'widget-teacher-behavior',
-        'widget-student-schedule'
-    ],
-    
-    // Administrative / Management widgets
+    staffCommon: ['widget-teacher-results', 'widget-teacher-grades', 'widget-calendar', 'widget-teacher-behavior', 'widget-student-schedule'],
     adminContent: ['widget-admin-content'],
     creation: ['widget-create-course', 'widget-create-quiz'],
-    management: [
-        'widget-manage-classes', 
-        'widget-manage-students', 
-        'widget-manage-teachers', 
-        'widget-manage-parents'
-    ],
+    management: ['widget-manage-classes', 'widget-manage-students', 'widget-manage-teachers', 'widget-manage-parents'],
     system: ['widget-add-user', 'widget-add-school', 'widget-assign-course']
 };
 
-// --- GLOBAL STATE ---
+// State
 let currentUserRole = null;
 let currentUserSchoolId = null;
 let currentUserClassId = null;
 let schoolsCache = [];
 let generatedMemberCode = null;
-
 let selectedChildrenIds = []; 
 let currentChildId = null;
 
-// --- 2. INITIALIZATION ---
-
+// Init & Auth
 document.addEventListener('DOMContentLoaded', async () => {
     const { data: { session } } = await _supabase.auth.getSession();
     if (!session) { window.location.href = 'login.html'; return; }
 
-    try { await _supabase.rpc('delete_old_events'); } catch (e) { console.log("Brak funkcji RPC, pomijam czyszczenie."); }
+    try { await _supabase.rpc('delete_old_events'); } catch (e) { console.log("RPC error ignored."); }
 
     const userId = session.user.id;
     const { data: profile } = await _supabase.from('users')
@@ -64,7 +40,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         currentUserSchoolId = profile.school_id;
         currentUserClassId = profile.class_id;
         
-        // Setup UI
         updateHeaderInfo(profile);
         await setupDashboardView(profile);
     }
@@ -72,8 +47,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupEventListeners();
 });
 
-// --- 3. VIEW LOGIC & SETUP ---
-
+// UI Setup
 function updateHeaderInfo(profile) {
     document.getElementById('profile-name-display').textContent = profile.username;
     
@@ -92,11 +66,8 @@ async function setupDashboardView(profile) {
     const role = profile.role;
     const userId = profile.id;
 
-    // A. RESET: Hide ALL widgets first
-    const allWidgets = Object.values(WIDGETS).flat();
-    allWidgets.forEach(hide);
+    Object.values(WIDGETS).flat().forEach(hide);
 
-    // B. ROLE LOGIC
     if (role === 'parent') {
         WIDGETS.studentCommon.forEach(show);
         document.getElementById('widget-student-calendar').onclick = () => openCalendarModal();
@@ -106,34 +77,26 @@ async function setupDashboardView(profile) {
         WIDGETS.staffCommon.forEach(show);
         document.getElementById('widget-calendar').onclick = () => openCalendarModal();
 
-        // Special Staff Logic
-        if (role !== 'teacher') {
-            show('widget-assign-course');
-        }
+        if (role !== 'teacher') show('widget-assign-course');
 
         switch (role) {
             case 'admin':
                 [...WIDGETS.adminContent, ...WIDGETS.creation, ...WIDGETS.management].forEach(show);
-                show('widget-add-user');
-                show('widget-add-school');
+                show('widget-add-user'); show('widget-add-school');
                 document.getElementById('widget-add-user').onclick = () => openCreateUserModal();
                 document.getElementById('widget-add-school').onclick = () => openModal('addSchoolModal');
                 break;
-
             case 'manager':
-                show('widget-add-user');
-                WIDGETS.management.forEach(show);
+                show('widget-add-user'); WIDGETS.management.forEach(show);
                 document.getElementById('widget-add-user').onclick = () => openCreateUserModal();
                 break;
-
             case 'lecturer':
                 [...WIDGETS.adminContent, ...WIDGETS.creation].forEach(show);
-                show('widget-manage-classes');
-                show('widget-manage-students');
+                show('widget-manage-classes'); show('widget-manage-students');
                 break;
         }
     } 
-    else { // STUDENT
+    else { 
         [...WIDGETS.studentCommon, ...WIDGETS.studentOnly].forEach(show);
         currentChildId = userId;
         switchChildView(userId);
@@ -170,35 +133,22 @@ function setupEventListeners() {
         menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
     });
     
-    window.addEventListener('click', () => { 
-        document.getElementById('profileDropdown').style.display = 'none'; 
-    });
-    
-    document.getElementById('logoutBtn').addEventListener('click', async () => { 
-        await _supabase.auth.signOut(); 
-        window.location.href = 'login.html'; 
-    });
+    window.addEventListener('click', () => { document.getElementById('profileDropdown').style.display = 'none'; });
+    document.getElementById('logoutBtn').addEventListener('click', async () => { await _supabase.auth.signOut(); window.location.href = 'login.html'; });
 
     const changePassBtn = document.getElementById('changePassBtn');
-    if (changePassBtn) {
-        changePassBtn.addEventListener('click', () => {
-            window.location.href = 'settings.html';
-        });
-    }
+    if (changePassBtn) changePassBtn.addEventListener('click', () => { window.location.href = 'settings.html'; });
 
-    // Forms
     document.getElementById('createUserForm').addEventListener('submit', createNewUser);
     document.getElementById('addSchoolForm').addEventListener('submit', addSchool);
     
-    // Create User Logic
     document.getElementById('new-role').addEventListener('change', handleRoleChange);
     document.getElementById('new-user-level-filter').addEventListener('change', filterNewUserSchools);
     document.getElementById('new-user-school').addEventListener('change', async function() { await loadClassesForSchool(this.value); generateEmail(); });
     document.getElementById('new-user-class').addEventListener('change', generateEmail);
 }
 
-// --- 4. UTILITY FUNCTIONS (Helpers) ---
-
+// Helpers
 function show(id) { const el=document.getElementById(id); if(el)el.style.display='flex'; }
 function hide(id) { const el=document.getElementById(id); if(el)el.style.display='none'; }
 function openModal(id) { document.getElementById(id).classList.add('active'); }
@@ -211,8 +161,7 @@ async function ensureSchoolsCache() {
     }
 }
 
-// --- 5. WIDGET CONTENT LOADERS ---
-
+// Sidebar Widgets
 function switchChildView(childId) {
     currentChildId = childId;
     loadSidebarCalendar(childId);
@@ -278,15 +227,14 @@ async function loadSidebarRemarks(targetUserId) {
         const d = new Date(r.created_at);
         const dateStr = `${d.getDate()}.${d.getMonth() + 1}`;
         let pts = r.points || 0;
-        let txt = pts > 0 ? "+" + pts : pts; 
         let color = pts > 0 ? '#4CAF50' : (pts < 0 ? '#F44336' : '#757575'); 
+        let txt = pts > 0 ? "+" + pts : pts; 
 
         list.innerHTML += `<div class="sidebar-list-item"><div class="sidebar-grade-circle" style="color:${color}; border-color:${color}; font-size:14px; width:35px; height:35px;">${txt}</div><div class="sidebar-list-content"><span style="font-size:11px; color:#888;">${dateStr}</span><br>${r.subject_name}</div></div>`;
     });
 }
 
-// --- 6. CALENDAR MODAL LOGIC ---
-
+// Calendar Logic
 async function openCalendarModal() {
     openModal('calendarModal');
     const list = document.getElementById('calendar-events-list');
@@ -402,8 +350,7 @@ async function deleteCalendarEvent(id) {
     loadFullCalendar(true); 
 }
 
-// --- 7. USER & SCHOOL MANAGEMENT ---
-
+// User Management (Admin)
 async function createNewUser(e) { 
     e.preventDefault(); 
     const btn=document.getElementById('createBtn'); 
