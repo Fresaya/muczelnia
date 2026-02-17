@@ -5,21 +5,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>mUczelnia - Kreator Quizu</title>
     <link rel="stylesheet" href="style.css">
+    
     <style>
-        .editor-tabs { display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 1px sClid var(--border-color); padding-bottom: 10px; }
+        /* Editor Layout */
+        .course-layout { display: flex; height: calc(100vh - 70px); width: 100%; overflow: hidden; margin-top: 0; }
+        .course-content { flex: 1; background-color: var(--bg-color); overflow-y: auto; padding: 40px; display: flex; justify-content: center; align-items: flex-start; }
+        .lesson-card { background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 40px; width: 100%; max-width: 850px; box-shadow: var(--shadow); margin-bottom: 50px; }
+
+        /* Sidebar */
+        .course-sidebar { width: 260px; min-width: 260px; background: var(--panel-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; height: 100%; z-index: 10; }
+        .lesson-list { flex: 1; overflow-y: auto; padding: 0; margin: 0; list-style: none; }
+        .lesson-item { cursor: grab; user-select: none; display: flex; justify-content: space-between; align-items: center; color: var(--text-main); }
+        .lesson-item:active { cursor: grabbing; }
+        
+        .add-lesson-btn {
+            margin: 20px; padding: 15px; text-align: center; border: 2px dashed #9C27B0; border-radius: 12px;
+            background: var(--panel-bg); color: #9C27B0; font-weight: bold; cursor: pointer; flex-shrink: 0; transition: all 0.2s;
+        }
+        .add-lesson-btn:hover { background: rgba(156, 39, 176, 0.05); transform: scale(1.02); }
+
+        /* Editor Components */
+        .editor-tabs { display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
         .tab-btn { background: none; border: none; font-size: 14px; font-weight: 600; color: var(--text-muted); cursor: pointer; padding: 5px 10px; border-radius: 5px; transition: 0.2s; }
         .tab-btn:hover { color: var(--text-main); background: var(--hover-bg); }
         .tab-btn.active { color: #9C27B0; background: rgba(156, 39, 176, 0.1); }
         .edit-area { min-height: 200px; font-family: sans-serif; background: var(--panel-bg); color: var(--text-main); border: 1px solid var(--border-color); width: 100%; box-sizing: border-box; padding: 10px; border-radius: 8px;}
-        .quiz-editor-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-        /* Style dla inputów wyboru */
-        .correct-input { width: 20px; height: 20px; cursor: pointer; accent-color: #4CAF50; }
         
-        .lesson-item { cursor: grab; user-select: none; display: flex; justify-content: space-between; align-items: center; color: var(--text-main);}
-        .lesson-item:active { cursor: grabbing; }
+        .quiz-editor-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .correct-input { width: 20px; height: 20px; cursor: pointer; accent-color: #4CAF50; }
+        .question-type-toggle { margin-bottom: 20px; padding: 10px; background: rgba(0,0,0,0.03); border-radius: 8px; border: 1px solid var(--border-color); display: flex; align-items: center; gap: 10px; }
+
         .big-add-btn { display: inline-block; margin-top: 20px; padding: 15px 30px; border: 2px dashed #9C27B0; color: #9C27B0; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 16px; background: var(--panel-bg); }
         .big-add-btn:hover { background: rgba(156, 39, 176, 0.05); }
-        
+
+        /* Bottom Bar */
         .bottom-bar {
             position: fixed; bottom: 0; right: 0; width: 100%; background: var(--panel-bg); border-top: 1px solid var(--border-color);
             padding: 15px 40px; display: flex; justify-content: flex-end; box-shadow: 0 -5px 20px rgba(0,0,0,0.1); z-index: 1000; box-sizing: border-box;
@@ -30,33 +49,6 @@
         }
         .save-button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(240, 74, 74, 0.4); }
         .save-button:disabled { background-color: #ccc; cursor: not-allowed; transform: none; box-shadow: none; }
-
-        .course-layout { display: flex; height: calc(100vh - 70px); width: 100%; overflow: hidden; margin-top: 0; }
-        .course-sidebar { width: 260px; min-width: 260px; background: var(--panel-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; height: 100%; z-index: 10; }
-        .lesson-list { flex: 1; overflow-y: auto; padding: 0; margin: 0; list-style: none; }
-        .add-lesson-btn {
-            margin: 20px;
-            padding: 15px;
-            text-align: center;
-            border: 2px dashed #9C27B0; /* Fioletowy kolor dla Quizu */
-            border-radius: 12px;
-            background: var(--panel-bg);
-            color: #9C27B0;
-            font-weight: bold;
-            cursor: pointer;
-            flex-shrink: 0;
-            transition: all 0.2s;
-        }
-
-        .add-lesson-btn:hover {
-            background: rgba(156, 39, 176, 0.05);
-            transform: scale(1.02);
-        }
-        .course-content { flex: 1; background-color: var(--bg-color); overflow-y: auto; padding: 40px; display: flex; justify-content: center; align-items: flex-start; }
-        .lesson-card { background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 40px; width: 100%; max-width: 850px; box-shadow: var(--shadow); margin-bottom: 50px; }
-
-        /* Styl dla opcji typu pytania */
-        .question-type-toggle { margin-bottom: 20px; padding: 10px; background: rgba(0,0,0,0.03); border-radius: 8px; border: 1px solid var(--border-color); display: flex; align-items: center; gap: 10px; }
     </style>
 </head>
 <body>
@@ -73,6 +65,7 @@
 
         <main class="course-content">
             <div class="lesson-card">
+                
                 <div style="border-bottom: 2px solid var(--border-color); margin-bottom: 30px; padding-bottom: 20px;">
                     <label style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: bold;">Nazwa Quizu</label>
                     <input type="text" id="quiz-title-input" class="edit-input title-input" placeholder="Np. Sprawdzian z Historii" oninput="updateQuizState()">
@@ -171,6 +164,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+        // Config
         const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg'; 
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
@@ -178,11 +172,13 @@
         const urlParams = new URLSearchParams(window.location.search);
         const editId = urlParams.get('id');
 
+        // State
         let quizData = { title: "", description: "", author_id: null };
         let questions = []; 
         let activeQId = null;
         let deletedQIds = [];
 
+        // Init & Auth
         document.addEventListener('DOMContentLoaded', async () => {
             const { data: { session } } = await _supabase.auth.getSession();
             if (!session) { window.location.href = 'login.html'; return; }
@@ -194,6 +190,7 @@
             if (editId) await loadQuizData(editId);
         });
 
+        // Data Loading
         async function loadQuizData(id) {
             const { data: course } = await _supabase.from('courses').select('*').eq('id', id).single();
             if (!course) return;
@@ -205,7 +202,6 @@
             document.getElementById('quiz-attempt-limit').value = course.attempt_limit || 1;
             document.getElementById('quiz-randomize').checked = course.randomize_answers ?? true;
 
-            // ZMIANA: Pobieramy kolumnę is_multiple_choice z bazy
             const { data: lessons } = await _supabase.from('lessons')
                 .select(`id, title, order_index, is_multiple_choice, lesson_components ( content_text_blocks ( content ) ), lesson_answers ( answer_text, is_correct )`)
                 .eq('course_id', id).order('order_index');
@@ -214,7 +210,7 @@
                 questions = lessons.map(l => ({
                     id: l.id,
                     title: l.title || "",
-                    isMultiple: l.is_multiple_choice || false, // Odczytujemy flagę
+                    isMultiple: l.is_multiple_choice || false,
                     answers: l.lesson_answers.map(a => ({ text: a.answer_text, isCorrect: a.is_correct }))
                 }));
                 renderSidebar();
@@ -222,6 +218,7 @@
             }
         }
 
+        // Sidebar Rendering
         function renderSidebar() {
             const list = document.getElementById('editor-question-list');
             list.innerHTML = '';
@@ -234,9 +231,9 @@
             });
         }
 
+        // Question Management
         function addNewQuestion() {
             const id = 'new-' + Date.now();
-            // ZMIANA: Domyślnie pytanie nie jest wielokrotne
             questions.push({ id, title: "", isMultiple: false, answers: [{text:"", isCorrect:false}, {text:"", isCorrect:false}] });
             renderSidebar(); selectQuestion(id);
         }
@@ -249,13 +246,22 @@
             
             const q = questions.find(x => x.id === id);
             document.getElementById('question-text-input').value = q.title;
-            // Ustawiamy stan checkboxa "Wielokrotny wybór"
             document.getElementById('q-multi-check').checked = q.isMultiple; 
             
             renderAnswers(q);
             renderSidebar();
         }
 
+        function removeQuestion(e, id) {
+            e.stopPropagation();
+            if(!confirm("Usunąć pytanie?")) return;
+            if(!id.startsWith('new-')) deletedQIds.push(id);
+            questions = questions.filter(q => q.id !== id);
+            if(activeQId == id) { activeQId = null; document.getElementById('active-question-editor').style.display='none'; document.getElementById('no-selection-msg').style.display='block'; }
+            renderSidebar();
+        }
+
+        // Answer Logic
         function updateQuestionType(isMulti) {
             const q = questions.find(x => x.id === activeQId);
             q.isMultiple = isMulti;
@@ -276,15 +282,12 @@
         function renderAnswers(q) {
             const c = document.getElementById('answers-container');
             c.innerHTML = '';
-            // Jeśli isMultiple = true -> używamy typu 'checkbox', jeśli false -> 'radio'
             const inputType = q.isMultiple ? 'checkbox' : 'radio';
             
             q.answers.forEach((ans, idx) => {
                 const row = document.createElement('div');
                 row.className = 'quiz-editor-row';
                 
-                // ZMIANA: Obsługa logiczna radio vs checkbox
-                // Dla radio: setCorrect (tylko jeden). Dla checkbox: toggleCorrect (przełącz)
                 const onClickAction = q.isMultiple ? `toggleCorrect(${idx})` : `setCorrect(${idx})`;
                 
                 row.innerHTML = `
@@ -311,19 +314,15 @@
             renderAnswers(q);
         }
 
-        // Ustawia tylko jedną poprawną (dla Radio)
         function setCorrect(idx) {
             const q = questions.find(x => x.id === activeQId);
             q.answers.forEach((a, i) => a.isCorrect = (i === idx));
-            // Dla pewności przerysowujemy, żeby zaktualizować widok (np. odznaczyć inne)
             renderAnswers(q); 
         }
 
-        // Przełącza poprawność (dla Checkbox)
         function toggleCorrect(idx) {
             const q = questions.find(x => x.id === activeQId);
             q.answers[idx].isCorrect = !q.answers[idx].isCorrect;
-            // Tutaj nie trzeba renderAnswers, bo checkbox sam zmienia stan wizualny, ale dla spójności danych można
         }
 
         function updateAnsText(idx, val) {
@@ -331,6 +330,7 @@
             q.answers[idx].text = val;
         }
 
+        // State Updates
         function updateQuestionState() {
             if(!activeQId) return;
             const q = questions.find(x => x.id === activeQId);
@@ -339,15 +339,6 @@
         }
 
         function updateQuizState() { quizData.title = document.getElementById('quiz-title-input').value; quizData.description = document.getElementById('quiz-desc-input').value; }
-
-        function removeQuestion(e, id) {
-            e.stopPropagation();
-            if(!confirm("Usunąć pytanie?")) return;
-            if(!id.startsWith('new-')) deletedQIds.push(id);
-            questions = questions.filter(q => q.id !== id);
-            if(activeQId == id) { activeQId = null; document.getElementById('active-question-editor').style.display='none'; document.getElementById('no-selection-msg').style.display='block'; }
-            renderSidebar();
-        }
 
         function toggleMode(mode) {
             const edit = document.getElementById('mode-edit');
@@ -361,7 +352,6 @@
                 const q = questions.find(x => x.id === activeQId);
                 let html = `<h3>${q.title || '???'} ${q.isMultiple ? '<span style="font-size:12px;color:#888;">(Wielokrotny)</span>' : ''}</h3>`;
                 q.answers.forEach(a => {
-                    // W podglądzie też pokazujemy, które są poprawne
                     html += `<div style="padding:10px; border:1px solid #eee; margin:5px; border-radius:5px; background:${a.isCorrect ? '#E8F5E9' : '#fff'}; display:flex; align-items:center;">
                         <input type="${q.isMultiple ? 'checkbox' : 'radio'}" disabled ${a.isCorrect ? 'checked' : ''}>
                         <span style="margin-left:10px;">${a.text}</span>
@@ -371,6 +361,7 @@
             }
         }
 
+        // Save Logic
         function handleSaveClick() {
             if (!quizData.title) return alert("Podaj nazwę quizu!");
             if (questions.length === 0) return alert("Dodaj pytania!");
@@ -439,23 +430,19 @@
                     const q = questions[i];
                     let lessonId = q.id;
                     
-                    // Payload z nową kolumną is_multiple_choice
                     const lessonPayload = { 
                         title: q.title, 
                         order_index: i+1,
-                        is_multiple_choice: q.isMultiple // ZAPISUJEMY TO!
+                        is_multiple_choice: q.isMultiple 
                     };
 
                     if (String(q.id).startsWith('new-')) {
-                        // Insert
                         lessonPayload.course_id = courseId;
                         const { data: l } = await _supabase.from('lessons').insert(lessonPayload).select().single();
                         lessonId = l.id;
-                        // Dodajemy pusty blok tekstu jako kompatybilność ze starym systemem (opcjonalne)
                         const { data: c } = await _supabase.from('content_text_blocks').insert({ content: "Pytanie" }).select().single();
                         await _supabase.from('lesson_components').insert({ lesson_id: lessonId, order_index: 1, component_type: 'text', content_text_block_id: c.id });
                     } else {
-                        // Update
                         await _supabase.from('lessons').update(lessonPayload).eq('id', lessonId);
                         await _supabase.from('lesson_answers').delete().eq('lesson_id', lessonId);
                     }
@@ -468,6 +455,7 @@
             finally { btn.disabled = false; btn.innerHTML = isNew ? "Zapisz" : "💾 Zapisz Quiz"; }
         }
 
+        // Navigation
         function goBack(e) {
             if(e) e.preventDefault();
             if (window.history.length > 1) window.history.back(); else window.location.href = 'admin_content.html';
