@@ -3,127 +3,157 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>mUczelnia - Dziennik Ocen</title>
+    <title>mUczelnia - Dziennik Nauczyciela</title>
     <link rel="stylesheet" href="style.css">
-    
     <style>
-        .gradebook-filters { 
-            background: var(--panel-bg); 
-            padding: 20px; 
-            border-radius: 12px; 
-            border: 1px solid var(--border-color); 
-            margin-bottom: 20px;
-            display: flex; 
-            gap: 15px; 
-        }
-        .filter-group { flex: 1; display: flex; flex-direction: column; gap: 5px; }
-        .grade-table-container { 
-            background: var(--panel-bg); 
-            border-radius: 12px; 
-            border: 1px solid var(--border-color); 
-            overflow-x: auto; 
-        }
-        .grade-table { width: 100%; border-collapse: collapse; }
-        .grade-table th, .grade-table td { 
-            padding: 12px 15px; 
-            text-align: left; 
-            border-bottom: 1px solid var(--border-color); 
-        }
-        .grade-item {
-            display: inline-block;
-            margin-right: 8px;
-            padding: 4px 8px;
+        /* --- STYL ZAKŁADEK --- */
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); }
+        .tab { padding: 10px 20px; cursor: pointer; border-bottom: 2px solid transparent; font-weight: bold; color: var(--text-muted); transition: 0.2s; }
+        .tab:hover { color: var(--text-main); background: var(--hover-bg); }
+        .tab.active { border-color: var(--accent-color); color: var(--accent-color); }
+        
+        .panel { display: none; animation: fadeIn 0.3s ease; }
+        .panel.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- NOWY STYL FORMULARZA (GRID - Naprawa nakładania się) --- */
+        .grade-card {
+            background: var(--panel-bg);
             border: 1px solid var(--border-color);
-            border-radius: 4px;
-            cursor: pointer;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: var(--shadow);
+            max-width: 800px; /* Ograniczenie szerokości dla czytelności */
         }
-        .add-grade-btn {
-            padding: 4px 10px;
-            background: var(--accent-color);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* Dwie kolumny */
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1; /* Rozciągnij na całą szerokość */
+        }
+
+        .form-group label {
+            font-size: 12px;
+            font-weight: bold;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .edit-input {
+            width: 100%; /* Wypełnij kontener */
+            box-sizing: border-box; /* Nie wychodź poza ramki */
         }
     </style>
 </head>
 <body>
-
     <div class="layout-wrapper">
         <aside class="sidebar-left">
             <div class="top-section">
                 <div class="brand-area"><a href="dashboard.html" class="logo-text"><span>m</span>Uczelnia</a></div>
                 <ul class="nav-menu">
                     <li class="nav-item"><a href="dashboard.html" class="nav-link"><span>Pulpit</span></a></li>
-                    <li class="nav-item"><a href="#" class="nav-link active"><span>Oceny</span></a></li>
+                    <li class="nav-item"><a href="#" class="nav-link active"><span>Dziennik</span></a></li>
                 </ul>
             </div>
         </aside>
 
         <main class="main-content">
             <div class="welcome-header">
-                <h1>Dziennik Ocen</h1>
-                <p>Zarządzanie wynikami uczniów.</p>
-            </div>
-
-            <div class="gradebook-filters">
-                <div class="filter-group">
-                    <label>Klasa</label>
-                    <select id="select-class" class="edit-input" onchange="handleClassChange(this.value)">
-                        <option value="">Wybierz klasę...</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label>Przedmiot</label>
-                    <select id="select-package" class="edit-input" disabled onchange="loadGrades()">
-                        <option value="">Najpierw wybierz klasę...</option>
-                    </select>
+                <div>
+                    <a href="dashboard.html" style="text-decoration:none; color:var(--text-muted); font-size:14px;">← Wróć</a>
+                    <h1>Dziennik Ocen</h1>
                 </div>
             </div>
 
-            <div class="grade-table-container">
-                <table class="grade-table">
-                    <thead>
-                        <tr>
-                            <th>Uczeń</th>
-                            <th>Oceny</th>
-                            <th>Średnia</th>
-                        </tr>
-                    </thead>
-                    <tbody id="grades-body">
-                        <tr><td colspan="3" style="text-align:center; padding:20px;">Wybierz dane...</td></tr>
-                    </tbody>
-                </table>
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('manual')">Wstaw Ocenę (Ręcznie)</div>
+                <div class="tab" onclick="switchTab('quiz')">Oceń Quizy (Z Platformy)</div>
             </div>
+
+            <div id="panel-manual" class="panel active">
+                <div class="grade-card">
+                    <h3 style="margin-top:0; border-bottom:1px solid var(--border-color); padding-bottom:10px; margin-bottom:20px;">Nowa Ocena</h3>
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>1. Klasa</label>
+                            <select id="m-class" class="edit-input" onchange="loadStudents(this.value)"><option>Wybierz...</option></select>
+                        </div>
+                        <div class="form-group">
+                            <label>2. Uczeń</label>
+                            <select id="m-student" class="edit-input" disabled><option>Najpierw klasa...</option></select>
+                        </div>
+                        
+                        <div class="form-group full-width">
+                            <label>3. Przedmiot (Pakiet)</label>
+                            <select id="m-package" class="edit-input"><option>Wybierz...</option></select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>4. Ocena</label>
+                            <select id="m-grade" class="edit-input">
+                                <option value="6">6 (Celujący)</option>
+                                <option value="5">5 (Bardzo dobry)</option>
+                                <option value="4">4 (Dobry)</option>
+                                <option value="3">3 (Dostateczny)</option>
+                                <option value="2">2 (Dopuszczający)</option>
+                                <option value="1">1 (Niedostateczny)</option>
+                                <option value="np">np (nieprzygotowany)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>5. Waga Oceny</label>
+                            <select id="m-weight" class="edit-input">
+                                <option value="1" selected>x1 (Standard)</option>
+                                <option value="2">x2 (Kartkówka/Odp.)</option>
+                                <option value="3">x3 (Sprawdzian)</option>
+                                <option value="4">x4 (Egzamin)</option>
+                                <option value="5">x5 (Projekt roczny)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label>6. Kategoria</label>
+                            <select id="m-cat" class="edit-input"> <option value="Aktywność">Aktywność</option>
+                                <option value="Kartkówka">Kartkówka</option>
+                                <option value="Sprawdzian">Sprawdzian</option>
+                                <option value="Zadanie domowe">Zadanie domowe</option>
+                                <option value="Odpowiedź ustna">Odpowiedź ustna</option>
+                                <option value="Inne">Inne</option>
+                            </select>
+                        </div>
+                        <div class="form-group full-width">
+                            <label>7. Opis (Opcjonalnie)</label>
+                            <input type="text" id="m-desc" class="edit-input" placeholder="np. Rozdział 4 - Ułamki">
+                        </div>
+                    </div>
+
+                    <div style="text-align:right;">
+                        <button class="login-button" style="width:auto; padding:10px 30px;" onclick="submitManualGrade()">Zapisz Ocenę</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="panel-quiz" class="panel">
+                <div class="filter-bar" style="background:var(--panel-bg); padding:15px; border-radius:8px; display:flex; gap:10px; border:1px solid var(--border-color);">
+                    <select id="q-class" class="edit-input" onchange="loadClassQuizzes(this.value)"><option>Wybierz Klasę...</option></select>
+                    <select id="q-quiz" class="edit-input" disabled onchange="loadQuizResults()"><option>Wybierz Quiz...</option></select>
+                </div>
+                <div id="quiz-results-container" style="margin-top:20px;"></div>
+            </div>
+
         </main>
-    </div>
-
-    <div class="modal-overlay" id="gradeModal">
-        <div class="modal-window">
-            <h3 id="modal-title">Dodaj Ocenę</h3>
-            <form id="gradeForm">
-                <input type="hidden" id="edit-grade-id">
-                <input type="hidden" id="target-student-id">
-                
-                <label>Ocena</label>
-                <input type="number" id="grade-value" class="edit-input" required min="1" max="6">
-                
-                <label>Waga</label>
-                <input type="number" id="grade-weight" class="edit-input" value="1" required>
-                
-                <label>Kategoria</label>
-                <input type="text" id="grade-category" class="edit-input" placeholder="np. Sprawdzian">
-                
-                <label>Opis</label>
-                <input type="text" id="grade-desc" class="edit-input">
-
-                <div style="margin-top:20px; display:flex; gap:10px;">
-                    <button type="button" id="delete-btn" style="display:none;" onclick="deleteGrade()">Usuń</button>
-                    <button type="submit" class="login-button">Zapisz</button>
-                    <button type="button" onclick="closeModal('gradeModal')">Anuluj</button>
-                </div>
-            </form>
-        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -137,109 +167,159 @@
         document.addEventListener('DOMContentLoaded', async () => {
             const { data: { session } } = await _supabase.auth.getSession();
             if (!session) { window.location.href = 'login.html'; return; }
-            const { data: user } = await _supabase.from('users').select('school_id').eq('id', session.user.id).single();
+            
+            const { data: user } = await _supabase.from('users').select('school_id, role').eq('id', session.user.id).single();
+            if (!['admin', 'teacher', 'manager', 'lecturer'].includes(user.role)) return;
             teacherSchoolId = user.school_id;
-            loadClasses();
+
+            loadInitData();
         });
 
-        async function loadClasses() {
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('panel-' + tab).classList.add('active');
+        }
+
+        async function loadInitData() {
+            // Load Classes
             const { data: classes } = await _supabase.from('classes').select('id, name').eq('school_id', teacherSchoolId).order('name');
-            const sel = document.getElementById('select-class');
-            if(classes) classes.forEach(c => sel.add(new Option(c.name, c.id)));
+            const cSelect = document.getElementById('m-class');
+            const qSelect = document.getElementById('q-class');
+            if(classes) classes.forEach(c => {
+                cSelect.add(new Option(c.name, c.id));
+                qSelect.add(new Option(c.name, c.id));
+            });
+
+            // Load Packages (Subjects)
+            const { data: pkgs } = await _supabase.from('packages').select('id, title').order('title');
+            const pSelect = document.getElementById('m-package');
+            if(pkgs) pkgs.forEach(p => pSelect.add(new Option(p.title, p.id)));
         }
 
-        async function handleClassChange(classId) {
-            const pSel = document.getElementById('select-package');
-            const { data: links } = await _supabase.from('package_classes').select('package_id, packages(title)').eq('class_id', classId);
-            pSel.innerHTML = '<option value="">Wybierz przedmiot...</option>';
-            if(links) {
-                links.forEach(l => pSel.add(new Option(l.packages.title, l.package_id)));
-                pSel.disabled = false;
-            }
-        }
-
-        async function loadGrades() {
-            const classId = document.getElementById('select-class').value;
-            const pkgId = document.getElementById('select-package').value;
-            const tbody = document.getElementById('grades-body');
+        async function loadStudents(classId) {
+            const sSelect = document.getElementById('m-student');
+            sSelect.innerHTML = '<option>Ładowanie...</option>'; sSelect.disabled = true;
             
             const { data: students } = await _supabase.from('users').select('id, username').eq('class_id', classId).eq('role', 'student').order('username');
-            const { data: grades } = await _supabase.from('grades').select('*').eq('package_id', pkgId);
+            
+            sSelect.innerHTML = '<option value="">Wybierz ucznia...</option>';
+            if(students) students.forEach(s => sSelect.add(new Option(s.username, s.id)));
+            sSelect.disabled = false;
+        }
 
-            tbody.innerHTML = '';
+        async function submitManualGrade() {
+            const studentId = document.getElementById('m-student').value;
+            const packageId = document.getElementById('m-package').value;
+            const grade = document.getElementById('m-grade').value;
+            const weight = document.getElementById('m-weight').value; // NOWE: Waga
+            const cat = document.getElementById('m-cat').value;
+            const desc = document.getElementById('m-desc').value;
+
+            if(!studentId || !packageId) return alert("Wybierz ucznia i przedmiot!");
+
+            const { data: { session } } = await _supabase.auth.getSession();
+
+            const { error } = await _supabase.from('grades').insert({
+                user_id: studentId,
+                teacher_id: session.user.id,
+                package_id: packageId,
+                grade: grade,
+                category: cat,
+                description: desc,
+                weight: weight // Zapisujemy wagę
+            });
+
+            if(error) alert("Błąd: " + error.message);
+            else { 
+                alert("Ocena dodana!"); 
+                // Resetuj tylko pola opisu, zostaw klasę/przedmiot dla wygody
+                document.getElementById('m-desc').value = ''; 
+            }
+        }
+
+        // --- QUIZ LOGIC (Bez zmian w logice, tylko styl tabeli) ---
+        async function loadClassQuizzes(classId) {
+            const qSelect = document.getElementById('q-quiz');
+            qSelect.innerHTML = '<option>Ładowanie...</option>'; qSelect.disabled = true;
+            
+            const { data: links } = await _supabase.from('package_classes').select('package_id').eq('class_id', classId);
+            const pkgIds = links.map(l => l.package_id);
+            const { data: quizzes } = await _supabase.from('courses').select('id, title').in('package_id', pkgIds).eq('type', 'quiz');
+
+            qSelect.innerHTML = '<option value="">Wybierz Quiz...</option>';
+            if(quizzes) quizzes.forEach(q => qSelect.add(new Option(q.title, q.id)));
+            qSelect.disabled = false;
+        }
+
+        async function loadQuizResults() {
+            const quizId = document.getElementById('q-quiz').value;
+            const classId = document.getElementById('q-class').value;
+            const container = document.getElementById('quiz-results-container');
+            container.innerHTML = 'Ładowanie wyników...';
+
+            const { data: students } = await _supabase.from('users').select('id, username').eq('class_id', classId).eq('role', 'student');
+            const { data: attempts } = await _supabase.from('quiz_attempts').select('user_id, score').eq('course_id', quizId);
+
+            container.innerHTML = '';
+            const table = document.createElement('table');
+            table.style.width = "100%"; 
+            table.style.background = "var(--panel-bg)"; 
+            table.style.borderCollapse="collapse";
+            table.style.border = "1px solid var(--border-color)";
+            
+            table.innerHTML = `<thead style="background:var(--hover-bg);"><tr style="text-align:left; border-bottom:1px solid var(--border-color);"><th style="padding:10px;">Uczeń</th><th style="padding:10px;">Wynik %</th><th style="padding:10px;">Proponowana</th><th style="padding:10px;">Akcja</th></tr></thead><tbody></tbody>`;
+            
+            const tbody = table.querySelector('tbody');
+
             students.forEach(s => {
-                const sGrades = grades.filter(g => g.user_id === s.id);
-                let wSum = 0, wTotal = 0;
+                const userAttempts = attempts.filter(a => a.user_id === s.id);
+                if(userAttempts.length === 0) return; 
+                
+                const maxScore = Math.max(...userAttempts.map(a => a.score));
+                
+                let prop = "1";
+                if(maxScore >= 90) prop = "5";
+                else if(maxScore >= 75) prop = "4";
+                else if(maxScore >= 50) prop = "3";
+                else if(maxScore >= 30) prop = "2";
 
                 const tr = document.createElement('tr');
-                const gTd = document.createElement('td');
-                
-                sGrades.forEach(g => {
-                    wSum += (g.grade * g.weight);
-                    wTotal += g.weight;
-                    const span = document.createElement('span');
-                    span.className = 'grade-item';
-                    span.textContent = g.grade;
-                    span.onclick = () => openGradeModal(s.id, g);
-                    gTd.appendChild(span);
-                });
-
-                const addBtn = document.createElement('button');
-                addBtn.className = 'add-grade-btn';
-                addBtn.textContent = '+';
-                addBtn.onclick = () => openGradeModal(s.id);
-                gTd.appendChild(addBtn);
-
-                tr.innerHTML = `<td>${s.username}</td>`;
-                tr.appendChild(gTd);
-                tr.innerHTML += `<td>${wTotal > 0 ? (wSum / wTotal).toFixed(2) : '-'}</td>`;
+                tr.style.borderBottom = "1px solid var(--border-color)";
+                tr.innerHTML = `
+                    <td style="padding:10px;">${s.username}</td>
+                    <td style="padding:10px;"><b>${maxScore}%</b></td>
+                    <td style="padding:10px;">
+                        <input type="text" value="${prop}" style="width:40px; text-align:center; padding:5px; border-radius:4px; border:1px solid var(--border-color);" id="grade-val-${s.id}">
+                    </td>
+                    <td style="padding:10px;">
+                        <button class="login-button" style="width:auto; padding:5px 15px; font-size:12px;" onclick="convertQuizToGrade('${s.id}', '${quizId}')">Wystaw</button>
+                    </td>
+                `;
                 tbody.appendChild(tr);
             });
+            container.appendChild(table);
         }
 
-        function openGradeModal(studentId, g = null) {
-            document.getElementById('target-student-id').value = studentId;
-            document.getElementById('gradeForm').reset();
-            const dBtn = document.getElementById('delete-btn');
-            
-            if(g) {
-                document.getElementById('edit-grade-id').value = g.id;
-                document.getElementById('grade-value').value = g.grade;
-                document.getElementById('grade-weight').value = g.weight;
-                document.getElementById('grade-category').value = g.category;
-                document.getElementById('grade-desc').value = g.description;
-                dBtn.style.display = 'inline-block';
-            } else {
-                document.getElementById('edit-grade-id').value = '';
-                dBtn.style.display = 'none';
-            }
-            document.getElementById('gradeModal').classList.add('active');
-        }
+        async function convertQuizToGrade(studentId, quizId) {
+            const val = document.getElementById(`grade-val-${studentId}`).value;
+            const { data: course } = await _supabase.from('courses').select('package_id, title').eq('id', quizId).single();
+            const { data: { session } } = await _supabase.auth.getSession();
 
-        document.getElementById('gradeForm').onsubmit = async (e) => {
-            e.preventDefault();
-            const id = document.getElementById('edit-grade-id').value;
-            const data = {
-                user_id: document.getElementById('target-student-id').value,
-                package_id: document.getElementById('select-package').value,
-                grade: document.getElementById('grade-value').value,
-                weight: parseInt(document.getElementById('grade-weight').value),
-                category: document.getElementById('grade-category').value,
-                description: document.getElementById('grade-desc').value
-            };
-            if(id) await _supabase.from('grades').update(data).eq('id', id);
-            else await _supabase.from('grades').insert(data);
-            closeModal('gradeModal'); loadGrades();
-        };
+            const { error } = await _supabase.from('grades').insert({
+                user_id: studentId,
+                teacher_id: session.user.id,
+                package_id: course.package_id,
+                grade: val,
+                category: 'Quiz Online',
+                description: `Wynik z: ${course.title}`,
+                weight: 1 // Quizy domyślnie x1
+            });
 
-        async function deleteGrade() {
-            const id = document.getElementById('edit-grade-id').value;
-            if(confirm("Usunąć?")) {
-                await _supabase.from('grades').delete().eq('id', id);
-                closeModal('gradeModal'); loadGrades();
-            }
+            if(error) alert(error.message);
+            else alert("Ocena wystawiona!");
         }
-        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
     </script>
 </body>
 </html>
