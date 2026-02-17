@@ -3,47 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>mUczelnia - Dziennik Nauczyciela</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <title>mUczelnia - Dziennik Ocen</title>
     <link rel="stylesheet" href="style.css">
     
     <style>
-        /* Toolbar */
         .gradebook-filters { 
-            background: var(--panel-bg); padding: 20px; border-radius: 12px; 
-            border: 1px solid var(--border-color); margin-bottom: 20px;
-            display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap; box-shadow: var(--shadow);
+            background: var(--panel-bg); 
+            padding: 20px; 
+            border-radius: 12px; 
+            border: 1px solid var(--border-color); 
+            margin-bottom: 20px;
+            display: flex; 
+            gap: 15px; 
         }
-        .filter-group { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 200px; }
-        .filter-group label { font-size: 11px; font-weight: bold; color: var(--text-muted); text-transform: uppercase; }
-
-        /* Grade Table */
-        .grade-table-container { background: var(--panel-bg); border-radius: 12px; border: 1px solid var(--border-color); overflow-x: auto; box-shadow: var(--shadow); }
-        .grade-table { width: 100%; border-collapse: collapse; min-width: 800px; }
-        .grade-table th, .grade-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); }
-        .grade-table th { background: rgba(0,0,0,0.02); color: var(--text-muted); font-weight: 600; }
-        
-        /* Grade Pills */
-        .grade-pill {
-            display: inline-flex; align-items: center; justify-content: center;
-            width: 32px; height: 32px; border-radius: 6px; font-weight: bold;
-            margin-right: 5px; cursor: pointer; transition: 0.2s; border: 1px solid rgba(0,0,0,0.1);
+        .filter-group { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+        .grade-table-container { 
+            background: var(--panel-bg); 
+            border-radius: 12px; 
+            border: 1px solid var(--border-color); 
+            overflow-x: auto; 
         }
-        .grade-pill:hover { transform: scale(1.1); filter: brightness(0.9); }
-        
-        .g-high { background: #E8F5E9; color: #2E7D32; } /* 5, 6 */
-        .g-mid { background: #FFF3E0; color: #E65100; }  /* 3, 4 */
-        .g-low { background: #FFEBEE; color: #C62828; }  /* 1, 2 */
-
+        .grade-table { width: 100%; border-collapse: collapse; }
+        .grade-table th, .grade-table td { 
+            padding: 12px 15px; 
+            text-align: left; 
+            border-bottom: 1px solid var(--border-color); 
+        }
+        .grade-item {
+            display: inline-block;
+            margin-right: 8px;
+            padding: 4px 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            cursor: pointer;
+        }
         .add-grade-btn {
-            background: var(--accent-color); color: white; border: none;
-            width: 32px; height: 32px; border-radius: 6px; cursor: pointer;
-            display: inline-flex; align-items: center; justify-content: center;
+            padding: 4px 10px;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
         }
-        .add-grade-btn:hover { opacity: 0.9; }
-
-        /* Modal Specifics */
-        .grade-modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
     </style>
 </head>
 <body>
@@ -54,18 +55,15 @@
                 <div class="brand-area"><a href="dashboard.html" class="logo-text"><span>m</span>Uczelnia</a></div>
                 <ul class="nav-menu">
                     <li class="nav-item"><a href="dashboard.html" class="nav-link"><span>Pulpit</span></a></li>
-                    <li class="nav-item"><a href="#" class="nav-link active"><span>Dziennik Ocen</span></a></li>
+                    <li class="nav-item"><a href="#" class="nav-link active"><span>Oceny</span></a></li>
                 </ul>
             </div>
         </aside>
 
         <main class="main-content">
             <div class="welcome-header">
-                <div>
-                    <a href="dashboard.html" style="text-decoration:none; color:var(--text-muted); font-size:14px;">← Wróć</a>
-                    <h1>Dziennik Ocen</h1>
-                    <p>Zarządzaj wynikami uczniów w swojej szkole.</p>
-                </div>
+                <h1>Dziennik Ocen</h1>
+                <p>Zarządzanie wynikami uczniów.</p>
             </div>
 
             <div class="gradebook-filters">
@@ -76,7 +74,7 @@
                     </select>
                 </div>
                 <div class="filter-group">
-                    <label>Przedmiot (Pakiet)</label>
+                    <label>Przedmiot</label>
                     <select id="select-package" class="edit-input" disabled onchange="loadGrades()">
                         <option value="">Najpierw wybierz klasę...</option>
                     </select>
@@ -87,13 +85,13 @@
                 <table class="grade-table">
                     <thead>
                         <tr>
-                            <th style="width: 250px;">Uczeń</th>
-                            <th>Oceny Cząstkowe</th>
-                            <th style="width: 100px;">Średnia</th>
+                            <th>Uczeń</th>
+                            <th>Oceny</th>
+                            <th>Średnia</th>
                         </tr>
                     </thead>
                     <tbody id="grades-body">
-                        <tr><td colspan="3" style="text-align:center; padding:40px; color:#888;">Wybierz klasę i przedmiot, aby wyświetlić oceny.</td></tr>
+                        <tr><td colspan="3" style="text-align:center; padding:20px;">Wybierz dane...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -102,44 +100,27 @@
 
     <div class="modal-overlay" id="gradeModal">
         <div class="modal-window">
-            <div class="modal-header">
-                <h3 id="modal-title">Dodaj Ocenę</h3>
-                <span class="close-modal" onclick="closeModal('gradeModal')">&times;</span>
-            </div>
-            <form id="gradeForm" class="modal-form">
+            <h3 id="modal-title">Dodaj Ocenę</h3>
+            <form id="gradeForm">
                 <input type="hidden" id="edit-grade-id">
                 <input type="hidden" id="target-student-id">
-
-                <div class="grade-modal-grid">
-                    <div>
-                        <label>Ocena</label>
-                        <select id="grade-value" class="edit-input" required>
-                            <option value="6">6</option><option value="5">5</option>
-                            <option value="4">4</option><option value="3">3</option>
-                            <option value="2">2</option><option value="1">1</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label>Waga</label>
-                        <input type="number" id="grade-weight" class="edit-input" value="1" min="1" max="10">
-                    </div>
-                </div>
-
+                
+                <label>Ocena</label>
+                <input type="number" id="grade-value" class="edit-input" required min="1" max="6">
+                
+                <label>Waga</label>
+                <input type="number" id="grade-weight" class="edit-input" value="1" required>
+                
                 <label>Kategoria</label>
-                <select id="grade-category" class="edit-input">
-                    <option value="Sprawdzian">Sprawdzian</option>
-                    <option value="Kartkówka">Kartkówka</option>
-                    <option value="Odpowiedź">Odpowiedź ustna</option>
-                    <option value="Zadanie">Zadanie domowe</option>
-                    <option value="Aktywność">Aktywność</option>
-                </select>
-
-                <label>Opis (opcjonalnie)</label>
-                <input type="text" id="grade-desc" class="edit-input" placeholder="Np. Budowa komórki">
+                <input type="text" id="grade-category" class="edit-input" placeholder="np. Sprawdzian">
+                
+                <label>Opis</label>
+                <input type="text" id="grade-desc" class="edit-input">
 
                 <div style="margin-top:20px; display:flex; gap:10px;">
-                    <button type="button" id="delete-grade-btn" class="login-button" style="background:#F44336; display:none;" onclick="deleteGrade()">Usuń</button>
-                    <button type="submit" class="login-button" style="flex:1;">Zapisz Ocenę</button>
+                    <button type="button" id="delete-btn" style="display:none;" onclick="deleteGrade()">Usuń</button>
+                    <button type="submit" class="login-button">Zapisz</button>
+                    <button type="button" onclick="closeModal('gradeModal')">Anuluj</button>
                 </div>
             </form>
         </div>
@@ -147,28 +128,20 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // Config
         const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg'; 
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        // State
         let teacherSchoolId = null;
 
-        // Init
         document.addEventListener('DOMContentLoaded', async () => {
             const { data: { session } } = await _supabase.auth.getSession();
             if (!session) { window.location.href = 'login.html'; return; }
-            
-            const { data: user } = await _supabase.from('users').select('school_id, role').eq('id', session.user.id).single();
-            if (!['admin', 'teacher', 'manager', 'lecturer'].includes(user.role)) {
-                alert("Brak uprawnień"); window.location.href='dashboard.html'; return;
-            }
+            const { data: user } = await _supabase.from('users').select('school_id').eq('id', session.user.id).single();
             teacherSchoolId = user.school_id;
             loadClasses();
         });
 
-        // Loaders
         async function loadClasses() {
             const { data: classes } = await _supabase.from('classes').select('id, name').eq('school_id', teacherSchoolId).order('name');
             const sel = document.getElementById('select-class');
@@ -176,98 +149,77 @@
         }
 
         async function handleClassChange(classId) {
-            const pSelect = document.getElementById('select-package');
-            pSelect.innerHTML = '<option value="">Ładowanie przedmiotów...</option>';
-            pSelect.disabled = true;
-
+            const pSel = document.getElementById('select-package');
             const { data: links } = await _supabase.from('package_classes').select('package_id, packages(title)').eq('class_id', classId);
-            pSelect.innerHTML = '<option value="">Wybierz przedmiot...</option>';
+            pSel.innerHTML = '<option value="">Wybierz przedmiot...</option>';
             if(links) {
-                links.forEach(l => pSelect.add(new Option(l.packages.title, l.package_id)));
-                pSelect.disabled = false;
+                links.forEach(l => pSel.add(new Option(l.packages.title, l.package_id)));
+                pSel.disabled = false;
             }
         }
 
-        // Core Logic
         async function loadGrades() {
             const classId = document.getElementById('select-class').value;
             const pkgId = document.getElementById('select-package').value;
             const tbody = document.getElementById('grades-body');
-            if(!classId || !pkgId) return;
-
-            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Pobieranie danych...</td></tr>';
-
+            
             const { data: students } = await _supabase.from('users').select('id, username').eq('class_id', classId).eq('role', 'student').order('username');
-            const { data: grades } = await _supabase.from('grades').select('*').eq('package_id', pkgId).in('user_id', students.map(s => s.id));
+            const { data: grades } = await _supabase.from('grades').select('*').eq('package_id', pkgId);
 
             tbody.innerHTML = '';
             students.forEach(s => {
                 const sGrades = grades.filter(g => g.user_id === s.id);
-                let weightedSum = 0; let weightTotal = 0;
+                let wSum = 0, wTotal = 0;
 
                 const tr = document.createElement('tr');
-                const nameTd = document.createElement('td');
-                nameTd.style.fontWeight = '600';
-                nameTd.textContent = s.username;
-
-                const gradesTd = document.createElement('td');
+                const gTd = document.createElement('td');
+                
                 sGrades.forEach(g => {
-                    const val = parseFloat(g.grade);
-                    weightedSum += (val * g.weight);
-                    weightTotal += g.weight;
-
-                    const pill = document.createElement('span');
-                    pill.className = `grade-pill ${val >= 5 ? 'g-high' : (val >= 3 ? 'g-mid' : 'g-low')}`;
-                    pill.textContent = g.grade;
-                    pill.title = `${g.category}: ${g.description || ''} (Waga: ${g.weight})`;
-                    pill.onclick = () => openGradeModal(s.id, g);
-                    gradesTd.appendChild(pill);
+                    wSum += (g.grade * g.weight);
+                    wTotal += g.weight;
+                    const span = document.createElement('span');
+                    span.className = 'grade-item';
+                    span.textContent = g.grade;
+                    span.onclick = () => openGradeModal(s.id, g);
+                    gTd.appendChild(span);
                 });
 
                 const addBtn = document.createElement('button');
                 addBtn.className = 'add-grade-btn';
-                addBtn.innerHTML = '<span class="material-symbols-rounded">add</span>';
+                addBtn.textContent = '+';
                 addBtn.onclick = () => openGradeModal(s.id);
-                gradesTd.appendChild(addBtn);
+                gTd.appendChild(addBtn);
 
-                const avgTd = document.createElement('td');
-                avgTd.style.fontWeight = 'bold';
-                avgTd.textContent = weightTotal > 0 ? (weightedSum / weightTotal).toFixed(2) : '-';
-
-                tr.append(nameTd, gradesTd, avgTd);
+                tr.innerHTML = `<td>${s.username}</td>`;
+                tr.appendChild(gTd);
+                tr.innerHTML += `<td>${wTotal > 0 ? (wSum / wTotal).toFixed(2) : '-'}</td>`;
                 tbody.appendChild(tr);
             });
         }
 
-        // Modal Actions
-        function openGradeModal(studentId, gradeObj = null) {
+        function openGradeModal(studentId, g = null) {
             document.getElementById('target-student-id').value = studentId;
             document.getElementById('gradeForm').reset();
-            const delBtn = document.getElementById('delete-grade-btn');
-
-            if (gradeObj) {
-                document.getElementById('modal-title').textContent = "Edytuj Ocenę";
-                document.getElementById('edit-grade-id').value = gradeObj.id;
-                document.getElementById('grade-value').value = gradeObj.grade;
-                document.getElementById('grade-weight').value = gradeObj.weight;
-                document.getElementById('grade-category').value = gradeObj.category;
-                document.getElementById('grade-desc').value = gradeObj.description || "";
-                delBtn.style.display = 'block';
+            const dBtn = document.getElementById('delete-btn');
+            
+            if(g) {
+                document.getElementById('edit-grade-id').value = g.id;
+                document.getElementById('grade-value').value = g.grade;
+                document.getElementById('grade-weight').value = g.weight;
+                document.getElementById('grade-category').value = g.category;
+                document.getElementById('grade-desc').value = g.description;
+                dBtn.style.display = 'inline-block';
             } else {
-                document.getElementById('modal-title').textContent = "Dodaj Ocenę";
-                document.getElementById('edit-grade-id').value = "";
-                delBtn.style.display = 'none';
+                document.getElementById('edit-grade-id').value = '';
+                dBtn.style.display = 'none';
             }
             document.getElementById('gradeModal').classList.add('active');
         }
 
-        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
-
-        // CRUD
-        document.getElementById('gradeForm').addEventListener('submit', async (e) => {
+        document.getElementById('gradeForm').onsubmit = async (e) => {
             e.preventDefault();
-            const gradeId = document.getElementById('edit-grade-id').value;
-            const payload = {
+            const id = document.getElementById('edit-grade-id').value;
+            const data = {
                 user_id: document.getElementById('target-student-id').value,
                 package_id: document.getElementById('select-package').value,
                 grade: document.getElementById('grade-value').value,
@@ -275,22 +227,19 @@
                 category: document.getElementById('grade-category').value,
                 description: document.getElementById('grade-desc').value
             };
-
-            const { error } = gradeId 
-                ? await _supabase.from('grades').update(payload).eq('id', gradeId)
-                : await _supabase.from('grades').insert(payload);
-
-            if(error) alert(error.message);
-            else { closeModal('gradeModal'); loadGrades(); }
-        });
+            if(id) await _supabase.from('grades').update(data).eq('id', id);
+            else await _supabase.from('grades').insert(data);
+            closeModal('gradeModal'); loadGrades();
+        };
 
         async function deleteGrade() {
             const id = document.getElementById('edit-grade-id').value;
-            if(!id || !confirm("Trwale usunąć tę ocenę?")) return;
-            const { error } = await _supabase.from('grades').delete().eq('id', id);
-            if(error) alert(error.message);
-            else { closeModal('gradeModal'); loadGrades(); }
+            if(confirm("Usunąć?")) {
+                await _supabase.from('grades').delete().eq('id', id);
+                closeModal('gradeModal'); loadGrades();
+            }
         }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
     </script>
 </body>
 </html>
