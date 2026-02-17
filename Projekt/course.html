@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>mUczelnia - Kurs</title>
     <link rel="stylesheet" href="style.css">
-   <style>
-        /* Style dla Quizu */
+    
+    <style>
         .quiz-option {
             background-color: var(--panel-bg);
             border: 2px solid var(--border-color);
@@ -23,7 +23,6 @@
         }
         .quiz-option:hover { transform: translateX(5px); }
 
-        /* Timer */
         .timer-bar {
             width: 100%; height: 6px; background: #eee; border-radius: 3px; margin-bottom: 20px; overflow: hidden;
             display: none; 
@@ -32,11 +31,9 @@
             height: 100%; background: var(--accent-color); width: 100%; transition: width 1s linear;
         }
         .timer-text {
-            /* FIX: Użycie zmiennej zamiast sztywnego koloru #888 */
             text-align: right; font-size: 14px; color: var(--text-muted); margin-bottom: 5px; font-weight: bold;
         }
 
-        /* Raport końcowy - poprawiony wygląd */
         .summary-wrapper {
             text-align: center;
             max-width: 600px;
@@ -56,11 +53,10 @@
             font-size: 28px; font-weight: bold; margin: 0 auto 20px; border: 4px solid #ccc; 
         }
 
-        /* FIX: Główny tekst lekcji korzysta teraz ze zmiennej */
         .lesson-text { 
             font-size: 18px; 
             line-height: 1.6; 
-            color: var(--text-main); /* Było #444 */
+            color: var(--text-main); 
             margin: 20px 0; 
         }
         
@@ -100,6 +96,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+        // Config
         const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg';
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
@@ -107,6 +104,7 @@
         const urlParams = new URLSearchParams(window.location.search);
         const courseId = urlParams.get('id');
 
+        // State
         let allLessons = [];
         let currentLessonId = null;
         let userId = null;
@@ -119,31 +117,31 @@
         let timerInterval = null;
         let returnLink = "courses_list.html";
 
+        // Navigation
         function toggleSidebar() {
             document.getElementById('course-sidebar').classList.toggle('active');
             document.getElementById('mobile-overlay').classList.toggle('active');
         }
 
+        // Init & Auth
         document.addEventListener('DOMContentLoaded', async () => {
             const { data: { session } } = await _supabase.auth.getSession();
             if (!session) { window.location.href = 'login.html'; return; }
             userId = session.user.id;
             if (!courseId) { window.location.href = 'dashboard.html'; return; }
 
-            // 1. Pobierz dane kursu (musimy znać package_id, żeby sprawdzić uprawnienia)
             const { data: course } = await _supabase.from('courses')
                 .select('title, type, package_id, time_limit, attempt_limit, randomize_answers')
                 .eq('id', courseId).single();
             
             if (course) {
-                // --- WERYFIKACJA DOSTĘPU (SECURITY CHECK) ---
+                // Access Control
                 const { data: userProfile } = await _supabase
                     .from('users')
                     .select('role, class_id')
                     .eq('id', userId)
                     .single();
 
-                // Sprawdzamy uprawnienia tylko dla uczniów i rodziców
                 if (['student', 'parent'].includes(userProfile.role)) {
                     if (!userProfile.class_id) {
                         alert("Brak przypisanej klasy. Nie masz dostępu do treści.");
@@ -151,7 +149,6 @@
                         return;
                     }
 
-                    // Jeśli kurs należy do pakietu, sprawdzamy czy klasa ma ten pakiet
                     if (course.package_id) {
                         const { data: access } = await _supabase
                             .from('package_classes')
@@ -166,15 +163,13 @@
                             return;
                         }
                     } else {
-                        // Opcjonalnie: Jeśli kurs jest "luźny" (bez pakietu), też można go zablokować
-                        // Zakładamy, że uczniowie widzą tylko to, co jest w pakietach.
                         alert("⛔ Brak dostępu do nieprzypisanego materiału.");
                         window.location.href = 'courses_list.html';
                         return;
                     }
                 }
-                // --- KONIEC WERYFIKACJI ---
 
+                // Setup Course Data
                 document.getElementById('course-title').innerText = course.title;
                 isQuizMode = (course.type === 'quiz');
                 
@@ -185,7 +180,7 @@
                 if (course.package_id) returnLink = `subject.html?id=${course.package_id}`;
                 else returnLink = "courses_list.html";
                 
-                // Obsługa przycisku "Wróć"
+                // Back Button Logic
                 const params = new URLSearchParams(window.location.search);
                 const origin = params.get('origin');
                 const backBtn = document.getElementById('back-btn');
@@ -226,6 +221,7 @@
             await loadLessons();
         });
 
+        // Quiz Restrictions
         async function checkAttempts() {
             if(quizSettings.attempt_limit > 0) {
                 const { count } = await _supabase.from('quiz_attempts')
@@ -248,6 +244,7 @@
             return true;
         }
 
+        // Load Content
         async function loadLessons() {
             const { data: lessons } = await _supabase.from('lessons')
                 .select('id, title, order_index')
@@ -295,6 +292,7 @@
             return array;
         }
 
+        // Lesson & Quiz Rendering
         async function loadLessonContent(lessonId, liElement) {
             clearInterval(timerInterval);
             currentLessonId = lessonId;
@@ -355,6 +353,7 @@
             }
         }
 
+        // Timer Logic
         function startTimer(minutes) {
             const totalSeconds = minutes * 60;
             let remaining = totalSeconds;
@@ -373,6 +372,7 @@
             }, 1000);
         }
 
+        // Quiz Interaction
         function selectAnswer(answerObj, btnElement, correctText, questionTitle) {
             document.querySelectorAll('.quiz-option').forEach(b => b.classList.remove('selected'));
             btnElement.classList.add('selected');
@@ -439,6 +439,7 @@
             container.innerHTML = html;
         }
 
+        // Helpers
         function isLastLesson(id) {
             return allLessons.length > 0 && allLessons[allLessons.length - 1].id === id;
         }
