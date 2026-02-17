@@ -5,12 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>mUczelnia - Przedmiot</title>
     <link rel="stylesheet" href="style.css">
+    
     <style>
+        /* Sections */
         .section-header { margin: 30px 0 15px 0; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; color: var(--accent-color); font-size: 18px; font-weight: bold; display: flex; align-items: center; gap: 10px;}
         .section-header.quiz-header { color: #9C27B0; margin-top: 50px; }
         
+        /* Grid Layout */
         .module-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
         
+        /* Module Cards */
         .module-card { 
             background: var(--panel-bg); padding: 20px; border-radius: 12px; 
             box-shadow: var(--shadow); border: 1px solid var(--border-color); 
@@ -18,13 +22,13 @@
         }
         .module-card:hover { transform: translateY(-3px); border-color: var(--accent-color); }
         
-        /* Styl dla ukończonego quizu */
         .module-card.completed-card { opacity: 0.7; cursor: default; background: var(--bg-color); border-color: transparent; }
         .module-card.completed-card:hover { transform: none; border-color: transparent; }
 
         .module-card h4 { margin: 0 0 5px 0; font-size: 16px; color: var(--text-main); }
         .module-card p { font-size: 13px; color: var(--text-muted); margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         
+        /* Badges */
         .type-badge { position: absolute; top: 10px; right: 10px; font-size: 10px; padding: 3px 8px; border-radius: 10px; font-weight: bold; text-transform: uppercase; }
         .badge-course { background: #e3f2fd; color: #1565C0; }
         .badge-quiz { background: #f3e5f5; color: #7B1FA2; }
@@ -82,6 +86,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+        // Config
         const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg'; 
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
@@ -89,13 +94,13 @@
         const urlParams = new URLSearchParams(window.location.search);
         const pkgId = urlParams.get('id');
 
+        // Init & Auth
         document.addEventListener('DOMContentLoaded', async () => {
             const { data: { session } } = await _supabase.auth.getSession();
             if (!session) { window.location.href = 'login.html'; return; }
             if (!pkgId) { window.location.href = 'courses_list.html'; return; }
 
-            // --- 1. WERYFIKACJA DOSTĘPU (BEZPIECZEŃSTWO) ---
-
+            // Access Verification
             const { data: userProfile } = await _supabase
                 .from('users')
                 .select('role, class_id')
@@ -103,7 +108,6 @@
                 .single();
 
             if (['student', 'parent'].includes(userProfile.role)) {
-
                 if (!userProfile.class_id) {
                     alert("Nie jesteś przypisany do żadnej klasy.");
                     window.location.href = 'courses_list.html';
@@ -124,15 +128,11 @@
                 }
             }
 
-
-            // --- KONIEC WERYFIKACJI ---
-
-
-            // 2. Pobierz tytuł pakietu
+            // Load Subject Info
             const { data: pkg } = await _supabase.from('packages').select('title').eq('id', pkgId).single();
             if (pkg) document.getElementById('subject-title').textContent = pkg.title;
 
-            // 3. Pobierz kursy/quizy wewnątrz pakietu
+            // Load Items (Courses/Quizzes)
             const { data: items } = await _supabase
                 .from('courses')
                 .select('id, title, description, type, attempt_limit')
@@ -144,7 +144,7 @@
                 return;
             }
 
-            // 4. Pobierz historię podejść (żeby oznaczyć ukończone)
+            // Fetch Attempt History
             const itemIds = items.map(i => i.id);
             const { data: attempts } = await _supabase
                 .from('quiz_attempts')
@@ -152,7 +152,7 @@
                 .eq('user_id', session.user.id)
                 .in('course_id', itemIds);
 
-            // Przetwórz historię: Mapa { courseId: { count: number, maxScore: number } }
+            // Process History Map
             const historyMap = {};
             if (attempts) {
                 attempts.forEach(a => {
@@ -162,6 +162,7 @@
                 });
             }
 
+            // Render Grids
             const modulesGrid = document.getElementById('modules-grid');
             const quizzesGrid = document.getElementById('quizzes-grid');
             let hasModules = false;
@@ -174,14 +175,11 @@
 
                 if (item.type === 'quiz') {
                     hasQuizzes = true;
-                    
-                    // Sprawdź limity
                     const stats = historyMap[item.id] || { count: 0, maxScore: 0 };
                     const limit = item.attempt_limit || 0;
                     const isFinished = (limit > 0 && stats.count >= limit);
 
                     if (isFinished) {
-                        // ZABLOKOWANY (UKOŃCZONY)
                         card.classList.add('completed-card');
                         card.innerHTML = `
                             <span class="type-badge badge-done">Wynik: ${stats.maxScore}%</span>
@@ -189,7 +187,6 @@
                             <p>Ukończono (${stats.count}/${limit} podejść)</p>
                         `;
                     } else {
-                        // DOSTĘPNY
                         card.onclick = () => window.location.href = `course.html?id=${item.id}`;
                         card.innerHTML = `
                             <span class="type-badge badge-quiz">Quiz</span>
@@ -198,7 +195,6 @@
                         `;
                     }
                     quizzesGrid.appendChild(card);
-
                 } else {
                     hasModules = true;
                     card.onclick = () => window.location.href = `course.html?id=${item.id}`;
