@@ -6,6 +6,7 @@
     <title>mUczelnia - Przypisz Materiał</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    
     <style>
         .form-container {
             background: var(--panel-bg);
@@ -28,10 +29,9 @@
         
         .form-group label { display: block; margin-bottom: 8px; font-weight: bold; color: var(--text-muted); font-size: 13px; text-transform: uppercase; }
         
-        /* Fix dla inputów */
         .form-group .edit-input {
             width: 100%;
-            box-sizing: border-box; /* Ważne, żeby nie rozpychało */
+            box-sizing: border-box; 
             margin: 0;
         }
 
@@ -40,14 +40,13 @@
             display: flex; justify-content: space-between; align-items: center; 
         }
         
-        /* Styl dla wyszukiwarki z ikoną */
         .search-wrapper {
             position: relative;
             width: 250px;
         }
         .search-wrapper input {
             width: 100%;
-            padding-left: 35px; /* Miejsce na ikonę */
+            padding-left: 35px; 
             box-sizing: border-box;
             font-size: 13px;
             height: 36px;
@@ -95,22 +94,20 @@
             border-color: #ccc;
         }
 
-        /* Stan zaznaczony */
         .package-card.selected {
             border-color: #4CAF50;
             background-color: rgba(76, 175, 80, 0.05);
         }
         
-        /* Ikona "check" zamiast znaku "✓" */
         .package-card.selected::after {
-            content: "check_circle"; /* Nazwa ikony Google */
+            content: "check_circle"; 
             font-family: 'Material Symbols Outlined';
             position: absolute;
             top: 10px;
             right: 10px;
             color: #4CAF50;
             font-size: 24px;
-            background: var(--panel-bg); /* Tło pod ikoną dla czytelności */
+            background: var(--panel-bg); 
             border-radius: 50%;
             width: 24px; height: 24px;
             display: flex; align-items: center; justify-content: center;
@@ -127,7 +124,6 @@
             font-style: italic;
         }
 
-        /* Dolny pasek podsumowania */
         .selection-summary {
             margin-top: 20px;
             padding: 15px;
@@ -135,7 +131,7 @@
             border: 1px solid #2196F3;
             color: #1565C0;
             border-radius: 8px;
-            display: none; /* Domyślnie ukryte */
+            display: none; 
             justify-content: space-between;
             align-items: center;
         }
@@ -211,14 +207,17 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+        // Config
         const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg'; 
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
+        // State
         let currentUser = null;
         let allPackages = []; 
         let selectedPackageIds = new Set(); 
 
+        // Init & Auth
         document.addEventListener('DOMContentLoaded', async () => {
             const { data: { session } } = await _supabase.auth.getSession();
             if (!session) { window.location.href = 'login.html'; return; }
@@ -233,6 +232,7 @@
             setupFilterListener();
         });
 
+        // Load Schools
         async function initForm() {
             const sSelect = document.getElementById('school-select');
             
@@ -265,19 +265,20 @@
             });
         }
 
+        // Load Content
         async function loadClassesAndPackages(schoolId, schoolLevel) {
             const cSelect = document.getElementById('class-select');
             const grid = document.getElementById('package-grid');
             const filterInput = document.getElementById('package-filter');
 
-            // Reset
+            // Reset UI
             cSelect.innerHTML = '<option>Ładowanie...</option>'; cSelect.disabled = true;
             grid.innerHTML = '<div class="empty-state">Ładowanie pakietów...</div>';
             filterInput.disabled = true; filterInput.value = "";
             clearAllSelections();
             allPackages = [];
 
-            // 1. Pobierz klasy
+            // Fetch Classes
             const { data: classes } = await _supabase.from('classes').select('id, name').eq('school_id', schoolId).order('name');
             
             cSelect.innerHTML = '<option value="" disabled selected>-- Wybierz Klasę --</option>';
@@ -288,7 +289,7 @@
                 cSelect.innerHTML = '<option disabled>Brak klas w tej szkole</option>';
             }
 
-            // 2. Pobierz pakiety
+            // Fetch Packages
             const { data: packages } = await _supabase.from('packages')
                 .select('id, title, description')
                 .eq('level', schoolLevel)
@@ -304,6 +305,7 @@
             }
         }
 
+        // Render UI
         function renderPackages(list) {
             const grid = document.getElementById('package-grid');
             grid.innerHTML = '';
@@ -329,6 +331,7 @@
             });
         }
 
+        // Selection Logic
         function toggleSelection(id, cardElem) {
             if (selectedPackageIds.has(id)) {
                 selectedPackageIds.delete(id);
@@ -366,7 +369,7 @@
             });
         }
 
-        // --- ZAPIS (Bulk Insert) ---
+        // Submit Handler
         document.getElementById('assignForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const classId = document.getElementById('class-select').value;
@@ -375,19 +378,20 @@
             if (!classId) return alert("Wybierz klasę!");
             if (packageIds.length === 0) return alert("Zaznacz przynajmniej jeden pakiet!");
 
+            // Check Duplicates
             const { data: existing } = await _supabase.from('package_classes')
                 .select('package_id')
                 .eq('class_id', classId)
                 .in('package_id', packageIds);
 
             const existingIds = existing ? existing.map(x => x.package_id) : [];
-
             const newIds = packageIds.filter(id => !existingIds.includes(id));
 
             if (newIds.length === 0) {
                 return alert("Wszystkie wybrane pakiety są już przypisane do tej klasy.");
             }
 
+            // Insert
             const toInsert = newIds.map(pid => ({
                 class_id: classId,
                 package_id: pid
