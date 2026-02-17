@@ -9,7 +9,7 @@
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     
     <style>
-        /* --- STYLE PLANU ZAJĘĆ --- */
+        /* Schedule Grid */
         .schedule-container { background: var(--panel-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); box-shadow: var(--shadow); overflow-x: auto; }
         .schedule-table { width: 100%; border-collapse: collapse; min-width: 600px; }
         .schedule-table th, .schedule-table td { padding: 5px; text-align: center; border: 1px solid var(--border-color); }
@@ -18,6 +18,7 @@
         
         .hour-col { font-weight: bold; color: var(--text-muted); width: 80px !important; vertical-align: middle !important; }
         
+        /* Lesson Cells */
         .lesson-cell-content {
             display: flex; flex-direction: column; justify-content: space-between;
             height: 100%; width: 100%; position: relative; box-sizing: border-box; padding: 2px;
@@ -28,6 +29,7 @@
         .zone-teacher { font-size: 10px; color: var(--accent-color); font-weight: 600; cursor: pointer; }
         .zone-room { font-size: 10px; background: rgba(0,0,0,0.05); padding: 2px 5px; border-radius: 4px; color: var(--text-muted); font-weight: bold; }
 
+        /* Editing States */
         .can-edit .zone-subject:hover { background: rgba(33, 150, 243, 0.1); cursor: pointer; outline: 1px dashed #2196F3; }
         .can-edit .zone-teacher:hover { text-decoration: underline; }
         .can-edit .zone-room:hover { background: #ddd; cursor: pointer; }
@@ -43,7 +45,7 @@
         .can-edit .empty-cell-trigger { cursor: pointer; }
         .can-edit .empty-cell-trigger:hover { color: #ccc; background: rgba(0,0,0,0.02); }
 
-        /* Style Mapowania (Modal) */
+        /* Mapping Modal */
         .mapping-list { max-height: 300px; overflow-y: auto; margin: 15px 0; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; background: rgba(0,0,0,0.02); }
         .mapping-row { display: flex; align-items: center; justify-content: space-between; padding: 8px; border-bottom: 1px solid var(--border-color); background: var(--panel-bg); margin-bottom: 5px; border-radius: 4px; }
         .mapping-row:last-child { margin-bottom: 0; border-bottom: none; }
@@ -51,10 +53,12 @@
         .arrow-icon { color: var(--text-muted); font-size: 18px; margin: 0 10px; }
         .mapping-select { padding: 5px; border-radius: 4px; border: 1px solid var(--border-color); width: 180px; font-size: 12px; }
 
-        /* Reszta stylów */
+        /* Controls */
         .class-selector-container { margin-bottom: 15px; display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }
         .class-select { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--panel-bg); color: var(--text-main); font-size: 14px; }
         .widget-icon { display: flex; align-items: center; justify-content: center; background: none !important; }
+        
+        /* Sidebar Components */
         #student-sidebar-content { display: flex; flex-direction: column; gap: 30px; width: 100%; margin-top: 30px;}
         .sidebar-section { width: 100%; display: block; }
         .sidebar-section + .sidebar-section { border-top: 1px solid var(--border-color); padding-top: 20px; }
@@ -240,44 +244,32 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+        // Config
         const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg';
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
+        // State
         let currentUser = null;
         let currentViewClassId = null;
         let isStaff = false; 
         let canEdit = false; 
 
-        // Zmienne do procesu importu
+        // Import State
         let pendingWorkbook = null;
         let pendingClassList = [];
-        let pendingTeacherList = []; // Lista nauczycieli z bazy
-        
-        let sheetMatches = []; // [{sheetName, classId}] - Finalne pary
+        let pendingTeacherList = []; 
+        let sheetMatches = []; 
         let unmatchedSheets = [];
-
-        let teacherMatches = {}; // { "Jan Kowalski": "uuid" } - Finalne pary
+        let teacherMatches = {}; 
         let unmatchedTeacherNames = new Set(); 
 
-        function generateGrid() {
-            const tbody = document.getElementById('schedule-body');
-            tbody.innerHTML = '';
-            for (let hour = 8; hour < 20; hour++) {
-                const tr = document.createElement('tr');
-                const timeCell = document.createElement('td');
-                timeCell.className = 'hour-col';
-                timeCell.innerHTML = `${hour.toString().padStart(2, '0')}:00<br>-<br>${hour.toString().padStart(2, '0')}:45`;
-                tr.appendChild(timeCell);
-                for (let day = 1; day <= 5; day++) {
-                    const td = document.createElement('td');
-                    td.dataset.day = day; td.dataset.hour = hour; td.id = `cell-${day}-${hour}`;
-                    td.innerHTML = `<div class="empty-cell-trigger" onclick="handleEmptyClick(${day}, ${hour})">+</div>`;
-                    tr.appendChild(td);
-                }
-                tbody.appendChild(tr);
-            }
-        }
+        // Utils
+        const DAY_MAP={1:"Poniedziałek",2:"Wtorek",3:"Środa",4:"Czwartek",5:"Piątek"};
+        const REV_MAP={"poniedziałek":1,"wtorek":2,"środa":3,"czwartek":4,"piątek":5,"pon":1,"wt":2,"śr":3,"czw":4,"pt":5};
+
+        // Init
+        document.addEventListener('DOMContentLoaded', init);
 
         async function init() {
             generateGrid();
@@ -301,7 +293,26 @@
             else { setupStudentView(); document.getElementById('student-sidebar-content').style.display = 'flex'; loadSidebarCalendar(currentUser.id); loadSidebarGrades(currentUser.id); loadSidebarRemarks(currentUser.id); }
         }
 
-        // --- RENDEROWANIE & EDYCJA ---
+        // Rendering Grid
+        function generateGrid() {
+            const tbody = document.getElementById('schedule-body');
+            tbody.innerHTML = '';
+            for (let hour = 8; hour < 20; hour++) {
+                const tr = document.createElement('tr');
+                const timeCell = document.createElement('td');
+                timeCell.className = 'hour-col';
+                timeCell.innerHTML = `${hour.toString().padStart(2, '0')}:00<br>-<br>${hour.toString().padStart(2, '0')}:45`;
+                tr.appendChild(timeCell);
+                for (let day = 1; day <= 5; day++) {
+                    const td = document.createElement('td');
+                    td.dataset.day = day; td.dataset.hour = hour; td.id = `cell-${day}-${hour}`;
+                    td.innerHTML = `<div class="empty-cell-trigger" onclick="handleEmptyClick(${day}, ${hour})">+</div>`;
+                    tr.appendChild(td);
+                }
+                tbody.appendChild(tr);
+            }
+        }
+
         async function fetchAndRenderSchedule(classId) {
             generateGrid(); 
             const { data: scheduleData } = await _supabase.from('weekly_schedule').select('*, teacher:teacher_id(username)').eq('class_id', classId);
@@ -328,6 +339,7 @@
             });
         }
 
+        // Editing (Staff)
         function handleEmptyClick(day, hour) {
             if (!canEdit || !currentViewClassId) return;
             document.getElementById('add-day').value = day;
@@ -392,8 +404,7 @@
             if(error) alert(error.message); else { closeModal('addLessonModal'); fetchAndRenderSchedule(currentViewClassId); }
         });
 
-        // --- SIDEBAR & VIEW SETUP ---
-
+        // Views & Sidebar
         function setupProfileCard(profile) {
             document.getElementById('profile-name-display').textContent = profile.username;
             const roleMap = { 'student': 'UCZEŃ', 'teacher': 'NAUCZYCIEL', 'manager': 'SEKRETARIAT', 'admin': 'ADMIN', 'lecturer': 'WYKŁADOWCA', 'parent': 'RODZIC' };
@@ -440,14 +451,11 @@
         async function loadTeachersForSelect(sid){
             const s=document.getElementById('add-teacher'); s.innerHTML='<option value="">-- Wybierz --</option>';
             const{data}=await _supabase.from('users').select('id,username').eq('school_id',sid).in('role',['teacher','manager','admin','lecturer']).order('username');
-            pendingTeacherList = data || []; // Zapisz na przyszłość dla importu
+            pendingTeacherList = data || []; 
             data?.forEach(t=>s.add(new Option(t.username,t.id)));
         }
 
-        // --- IMPORT I EKSPORT Z MAPOWANIEM NAUCZYCIELI ---
-        const DAY_MAP={1:"Poniedziałek",2:"Wtorek",3:"Środa",4:"Czwartek",5:"Piątek"};
-        const REV_MAP={"poniedziałek":1,"wtorek":2,"środa":3,"czwartek":4,"piątek":5,"pon":1,"wt":2,"śr":3,"czw":4,"pt":5};
-
+        // Import/Export
         async function exportAllClassesToExcel() {
             if(typeof XLSX==='undefined')return alert("Brak biblioteki");
             try {
@@ -483,13 +491,11 @@
                     const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
                     pendingWorkbook=wb;
                     
-                    // 1. Pobierz klasy
                     let q=_supabase.from('classes').select('id,name');
                     if(currentUser.role!=='admin') q=q.eq('school_id',currentUser.school_id);
                     const{data:cls}=await q;
                     pendingClassList=cls;
                     
-                    // 2. Pobierz nauczycieli (jeśli nie pobrano wcześniej)
                     if(pendingTeacherList.length === 0) {
                         const sid = currentUser.role==='admin' ? null : currentUser.school_id;
                         let qt = _supabase.from('users').select('id,username').in('role',['teacher','manager','admin','lecturer']);
@@ -498,17 +504,14 @@
                         pendingTeacherList = tch || [];
                     }
 
-                    // 3. Reset
                     sheetMatches=[]; unmatchedSheets=[];
                     const classMap={}; cls.forEach(c=>classMap[c.name.trim().toLowerCase()]=c.id);
 
-                    // 4. Analiza Arkuszy
                     wb.SheetNames.forEach(sn=>{
                         const cid=classMap[sn.trim().toLowerCase()];
                         if(cid) sheetMatches.push({sheet:sn,id:cid}); else unmatchedSheets.push(sn);
                     });
 
-                    // Start łańcucha
                     if(unmatchedSheets.length) showMappingModal();
                     else analyzeTeachers();
 
@@ -517,7 +520,7 @@
             reader.readAsArrayBuffer(input.files[0]);
         }
 
-        // KROK 1: MAPOWANIE ARKUSZY
+        // Import: Step 1 Mapping Sheets
         function showMappingModal(){
             const c=document.getElementById('mapping-container'); c.innerHTML='';
             unmatchedSheets.forEach(sn=>{
@@ -534,13 +537,13 @@
             analyzeTeachers();
         }
 
-        // KROK 2: ANALIZA NAUCZYCIELI
+        // Import: Step 2 Teachers
         function analyzeTeachers() {
             if(sheetMatches.length === 0) { alert("Brak klas do importu."); return; }
             
             teacherMatches = {}; 
             unmatchedTeacherNames = new Set();
-            const dbTeacherMap = {}; // name_lower -> id
+            const dbTeacherMap = {}; 
             pendingTeacherList.forEach(t => dbTeacherMap[t.username.trim().toLowerCase()] = t.id);
 
             sheetMatches.forEach(m => {
@@ -551,12 +554,8 @@
                     if (rawName && typeof rawName === 'string' && rawName.trim() !== "") {
                         const cleanName = rawName.trim();
                         const lowerName = cleanName.toLowerCase();
-                        
-                        if (dbTeacherMap[lowerName]) {
-                            teacherMatches[cleanName] = dbTeacherMap[lowerName];
-                        } else {
-                            unmatchedTeacherNames.add(cleanName);
-                        }
+                        if (dbTeacherMap[lowerName]) { teacherMatches[cleanName] = dbTeacherMap[lowerName]; } 
+                        else { unmatchedTeacherNames.add(cleanName); }
                     }
                 });
             });
@@ -565,7 +564,6 @@
             else executeImport();
         }
 
-        // KROK 3: MAPOWANIE NAUCZYCIELI
         function showTeacherMappingModal() {
             const c = document.getElementById('teacher-mapping-container');
             c.innerHTML = '';
@@ -589,15 +587,14 @@
         function finalizeTeacherMapping() {
             document.querySelectorAll('.teacher-map').forEach(s => {
                 const name = s.dataset.name;
-                const tid = s.value; // może być pusty (null)
+                const tid = s.value; 
                 if (tid) teacherMatches[name] = tid;
-                // Jeśli pusty, to teacherMatches[name] pozostaje undefined -> czyli null przy imporcie
             });
             closeModal('teacherMappingModal');
             executeImport();
         }
 
-        // KROK 4: WYKONANIE
+        // Import: Step 3 Execute
         async function executeImport() {
             let count=0;
             for(const m of sheetMatches){
@@ -608,7 +605,6 @@
                     const day=REV_MAP[(r['Dzień']||"").toLowerCase().trim()];
                     const hRaw=parseInt(r['Godzina']);
                     if(day && hRaw && r['Przedmiot']){
-                        // Rozwiąż nauczyciela
                         const tRaw = r['Nauczyciel'] ? r['Nauczyciel'].trim() : null;
                         const tId = tRaw ? (teacherMatches[tRaw] || teacherMatches[tRaw.toLowerCase()] || null) : null;
 
@@ -652,7 +648,6 @@
 
         function openModal(id) { document.getElementById(id).classList.add('active'); }
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
-        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
