@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>mUczelnia - Ustawienia</title>
     <link rel="stylesheet" href="style.css">
+    
     <style>
         .settings-container {
             background: var(--panel-bg);
@@ -55,7 +56,6 @@
                 <h3 style="margin-top:0; border-bottom:1px solid var(--border-color); padding-bottom:15px; margin-bottom:20px;">Zmiana Hasła</h3>
 
                 <div class="info-box">
-                    <span>ℹ️</span>
                     <span>Dla bezpieczeństwa wymagamy podania aktualnego hasła przed ustawieniem nowego.</span>
                 </div>
 
@@ -69,16 +69,8 @@
                     <div style="margin-top: 15px;"></div>
                 
                     <label>Stare Hasło</label>
-                    <input type="password" 
-                           id="verify-identity-input" 
-                           name="verify-identity-input" 
-                           class="edit-input" 
-                           placeholder="Wpisz obecne hasło" 
-                           required 
-                           autocomplete="new-password"
-                           readonly 
-                           onfocus="this.removeAttribute('readonly');"
-                    >
+                    <input type="password" id="verify-identity-input" name="verify-identity-input" class="edit-input" placeholder="Wpisz obecne hasło" required autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly');">
+                    
                     <div style="margin-top: 15px;"></div>
                 
                     <label>Nowe Hasło</label>
@@ -92,22 +84,24 @@
                     </div>
                 </form>
             </div>
-
         </main>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+        // Config
         const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg'; 
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
+        // Init
         document.addEventListener('DOMContentLoaded', async () => {
             const { data: { session } } = await _supabase.auth.getSession();
             if (!session) { window.location.href = 'login.html'; return; }
             document.getElementById('current-email').value = session.user.email;
         });
 
+        // Form Submit
         document.getElementById('changePasswordForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -116,25 +110,19 @@
             const confirmPass = document.getElementById('confirm-pass').value;
             const btn = document.getElementById('saveBtn');
 
-            // 1. Walidacja nowego hasła
+            // Validation
             if (newPass !== confirmPass) {
                 alert("Nowe hasła nie są identyczne!");
-                return;
-            }
-
-            if (newPass.length < 6) {
-                alert("Hasło musi mieć co najmniej 6 znaków.");
                 return;
             }
 
             btn.disabled = true;
             btn.textContent = "Weryfikacja...";
 
-            // 2. Pobieramy email (potrzebny do sprawdzenia starego hasła)
             const { data: { session } } = await _supabase.auth.getSession();
             const userEmail = session.user.email;
 
-            // 3. Sprawdzamy STARE hasło (próbując się zalogować w tle)
+            // Verify Old Password
             const { error: signInError } = await _supabase.auth.signInWithPassword({
                 email: userEmail,
                 password: oldPass
@@ -147,22 +135,21 @@
                 return;
             }
 
-            // 4. Jeśli stare hasło OK -> Zmieniamy na nowe
+            // Update Password
             btn.textContent = "Zapisywanie...";
-            const { data, error } = await _supabase.auth.updateUser({
+            const { error } = await _supabase.auth.updateUser({
                 password: newPass
             });
 
             if (error) {
                 alert("Błąd zmiany hasła: " + error.message);
-                btn.disabled = false;
-                btn.textContent = "Zmień hasło";
             } else {
-                alert("✅ Hasło zostało pomyślnie zmienione!");
+                alert("Hasło zostało pomyślnie zmienione!");
                 document.getElementById('changePasswordForm').reset();
-                btn.disabled = false;
-                btn.textContent = "Zmień hasło";
             }
+            
+            btn.disabled = false;
+            btn.textContent = "Zmień hasło";
         });
     </script>
 </body>
