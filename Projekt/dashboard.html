@@ -13,18 +13,18 @@
             width: 100%;
             max-width: 100%;
         }
-        /* Styl dla nowych ikon Google */
+        
         .widget-icon {
             display: flex;
             align-items: center;
             justify-content: center;
-            background: none !important; /* Wyłączamy stare tła */
+            background: none !important; 
         }
         .material-symbols-outlined {
-            font-size: 40px; /* Rozmiar ikon */
+            font-size: 40px; 
         }
 
-        /* --- EFEKT NAJECHANIA NA KAFELEK --- */
+        /* Hover Effects */
         .widget-tile {
             transition: transform 0.2s, box-shadow 0.2s; 
         }
@@ -32,7 +32,7 @@
             border-style: solid !important; 
         }
 
-        /* --- STYL DLA KAFELKÓW I SIDEBARA --- */
+        /* Sidebar & Widgets */
         .packages-container { display: flex; flex-wrap: wrap; gap: 5px; padding-left: 2px; }
         .pkg-chip { display: inline-flex; align-items: center; background-color: rgba(33, 150, 243, 0.1); color: #1565C0; border: 1px solid rgba(33, 150, 243, 0.3); border-radius: 12px; padding: 2px 8px; font-size: 11px; font-weight: 500; }
         
@@ -74,7 +74,7 @@
             .sidebar-grade-circle { background: #333; border-color: #555; color: #fff; }
         }
 
-        /* --- STYL DLA ASYSTENTA AI (CZAT) --- */
+        /* Chat Assistant */
         .chat-toggle-btn {
             position: fixed;
             bottom: 20px;
@@ -94,7 +94,6 @@
             transition: transform 0.3s ease;
         }
         .chat-toggle-btn:hover { transform: scale(1.1); }
-        /* Usunięto klasę .hidden, aby przycisk nie znikał */
 
         .chat-container {
             position: fixed;
@@ -546,10 +545,8 @@
             isChatOpen = !isChatOpen;
             if (isChatOpen) {
                 chatWindow.classList.add('active');
-                // Usunięto: toggleBtn.classList.add('hidden');
             } else {
                 chatWindow.classList.remove('active');
-                // Usunięto: toggleBtn.classList.remove('hidden');
             }
         }
 
@@ -597,6 +594,3 @@
     </script>
 </body>
 </html>
-
-
-
