@@ -6,7 +6,9 @@
     <title>mUczelnia - Zarządzaj Rodzicami</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
     <link rel="stylesheet" href="style.css">
+    
     <style>
+        /* Filters */
         .filter-bar { 
             background: var(--panel-bg); 
             padding: 15px; 
@@ -19,78 +21,42 @@
             flex-wrap: wrap;
             box-shadow: var(--shadow); 
         }
-
-        /* Poprawka dla inputów */
         .filter-bar .edit-input {
             margin: 0;
             box-sizing: border-box;
             height: 38px;
         }
 
+        /* Table */
         .data-table { width: 100%; border-collapse: collapse; background: var(--panel-bg); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow); }
         .data-table th, .data-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
         .data-table th { background: rgba(0,0,0,0.02); font-weight: 600; color: var(--text-muted); }
         
-        /* --- Style tagów dzieci --- */
+        /* Child Tags */
         .child-tag { 
-            display: inline-flex; 
-            align-items: center; 
-            padding: 4px 10px; 
-            border-radius: 15px; 
-            font-size: 12px; 
-            margin-right: 5px; 
-            margin-bottom: 4px; 
-            border: 1px solid transparent; 
-            gap: 5px;
+            display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 15px; 
+            font-size: 12px; margin-right: 5px; margin-bottom: 4px; border: 1px solid transparent; gap: 5px;
         }
-        
-        /* Dziecko z naszej szkoły (niebieskie) */
         .child-local { background: rgba(33, 150, 243, 0.1); color: #2196F3; border-color: rgba(33, 150, 243, 0.2); }
-        
-        /* Dziecko z innej szkoły (szare, wyszarzone) */
         .child-foreign { background: rgba(0, 0, 0, 0.05); color: #777; border-color: #ddd; cursor: not-allowed; }
 
-        /* Ikona usuwania dziecka (X) */
         .remove-child { 
-            cursor: pointer; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
-            border-radius: 50%;
-            transition: 0.2s;
+            cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: 0.2s;
         }
         .remove-child:hover { background: rgba(255,0,0,0.1); color: red; }
         .remove-child .material-symbols-rounded { font-size: 14px; font-weight: bold; }
         
-        /* Przycisk Dodaj Dziecko */
+        /* Buttons */
         .btn-add-child { 
-            background: #4CAF50; 
-            color: white; 
-            padding: 4px 10px; 
-            border-radius: 15px; 
-            cursor: pointer; 
-            font-size: 12px; 
-            border: none; 
-            display: inline-flex; 
-            align-items: center; 
-            gap: 4px; 
-            transition: 0.2s;
+            background: #4CAF50; color: white; padding: 4px 10px; border-radius: 15px; cursor: pointer; 
+            font-size: 12px; border: none; display: inline-flex; align-items: center; gap: 4px; transition: 0.2s;
         }
         .btn-add-child:hover { background: #43A047; }
         .btn-add-child .material-symbols-rounded { font-size: 14px; }
 
-        /* Przyciski Akcji (Okrągłe) */
         .table-btn { 
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            cursor: pointer;
-            margin-right: 5px; 
-            transition: all 0.2s;
-            border: 1px solid transparent;
+            display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px;
+            border-radius: 50%; cursor: pointer; margin-right: 5px; transition: all 0.2s; border: 1px solid transparent;
         }
         .table-btn .material-symbols-rounded { font-size: 20px; pointer-events: none; }
         .table-btn:hover { transform: scale(1.1); }
@@ -174,14 +140,17 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+        // Config
         const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg'; 
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
+        // State
         let allParents = [];
         let activeParentId = null;
         let currentUser = null;
 
+        // Init & Auth
         document.addEventListener('DOMContentLoaded', async () => {
             const { data: { session } } = await _supabase.auth.getSession();
             if (!session) { window.location.href = 'login.html'; return; }
@@ -190,15 +159,14 @@
             if (!['admin', 'manager'].includes(user.role)) { alert("Brak uprawnień."); window.location.href='dashboard.html'; return; }
             
             currentUser = user;
-
             await initData();
             
             document.getElementById('search-parent').addEventListener('input', renderTable);
             document.getElementById('filter-school').addEventListener('change', renderTable);
         });
 
+        // Data Loading
         async function initData() {
-            // 1. Ładowanie Szkół do Filtra
             const schoolSelect = document.getElementById('filter-school');
             let schoolQuery = _supabase.from('schools').select('id, name').order('name');
             
@@ -207,26 +175,19 @@
             }
 
             const { data: schools } = await schoolQuery;
-            
             if (schools) {
                 if (currentUser.role === 'manager') schoolSelect.innerHTML = '';
-                
-                schools.forEach(s => {
-                    schoolSelect.add(new Option(s.name, s.id));
-                });
+                schools.forEach(s => schoolSelect.add(new Option(s.name, s.id)));
 
                 if (currentUser.role === 'manager') {
                     schoolSelect.value = currentUser.school_id;
                     schoolSelect.disabled = true;
                 }
             }
-
-            // 2. Ładowanie Rodziców
             await loadParents();
         }
 
         async function loadParents() {
-            // Pobieramy rodziców + ich szkołę + ID dzieci z tabeli relacji
             let query = _supabase.from('users')
                 .select('id, username, email, school_id, schools(name), parent_children!parent_children_parent_id_fkey(child_id)')
                 .eq('role', 'parent')
@@ -241,7 +202,7 @@
 
             const parents = data || [];
             
-            // Dociągamy imiona dzieci i ich school_id
+            // Fetch children details
             for (let p of parents) {
                 p.childrenDetails = [];
                 if (p.parent_children && p.parent_children.length > 0) {
@@ -255,6 +216,7 @@
             renderTable();
         }
 
+        // Rendering
         function renderTable() {
             const tbody = document.getElementById('parents-body');
             tbody.innerHTML = '';
@@ -276,54 +238,36 @@
                 if(p.childrenDetails) {
                     p.childrenDetails.forEach(kid => {
                         const canManageChild = (currentUser.role === 'admin') || (kid.school_id === currentUser.school_id);
-                        
                         if (canManageChild) {
-                            // Nasze dziecko - pełna edycja (ikona 'close' do usuwania)
-                            childrenHtml += `<span class="child-tag child-local">
-                                ${kid.username} 
-                                <span class="remove-child" onclick="removeChildFromParent('${p.id}', '${kid.id}')">
-                                    <span class="material-symbols-rounded">close</span>
-                                </span>
-                            </span>`;
+                            childrenHtml += `<span class="child-tag child-local">${kid.username} 
+                                <span class="remove-child" onclick="removeChildFromParent('${p.id}', '${kid.id}')"><span class="material-symbols-rounded">close</span></span></span>`;
                         } else {
-                            // Dziecko z innej szkoły (ikona kłódki 'lock')
-                            childrenHtml += `<span class="child-tag child-foreign" title="Uczeń innej szkoły - brak edycji">
-                                ${kid.username} <span class="material-symbols-rounded" style="font-size:12px;">lock</span>
-                            </span>`;
+                            childrenHtml += `<span class="child-tag child-foreign" title="Uczeń innej szkoły">${kid.username} <span class="material-symbols-rounded" style="font-size:12px;">lock</span></span>`;
                         }
                     });
                 }
-
-                const schoolName = p.schools ? p.schools.name : 'Brak';
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td style="font-weight:bold;">${p.username}</td>
                     <td>${p.email}</td>
-                    <td><small style="color:#888;">${schoolName}</small></td>
+                    <td><small style="color:#888;">${p.schools ? p.schools.name : 'Brak'}</small></td>
                     <td>
                         <div style="display:flex; flex-wrap:wrap; gap:5px; align-items:center;">
                             ${childrenHtml}
-                            <button class="btn-add-child" onclick="openAssignModal('${p.id}', '${p.username}')">
-                                <span class="material-symbols-rounded">add</span> Dodaj
-                            </button>
+                            <button class="btn-add-child" onclick="openAssignModal('${p.id}', '${p.username}')"><span class="material-symbols-rounded">add</span> Dodaj</button>
                         </div>
                     </td>
                     <td>
-                        <div class="table-btn btn-pass" onclick="resetPass('${p.id}', '${p.username}')" title="Zmień hasło">
-                            <span class="material-symbols-rounded">key</span>
-                        </div>
-                        <div class="table-btn btn-del" onclick="deleteUser('${p.id}')" title="Usuń konto">
-                            <span class="material-symbols-rounded">delete</span>
-                        </div>
+                        <div class="table-btn btn-pass" onclick="resetPass('${p.id}', '${p.username}')" title="Zmień hasło"><span class="material-symbols-rounded">key</span></div>
+                        <div class="table-btn btn-del" onclick="deleteUser('${p.id}')" title="Usuń konto"><span class="material-symbols-rounded">delete</span></div>
                     </td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
-        // --- Zarządzanie dziećmi ---
-
+        // Child Management
         function openAssignModal(parentId, parentName) {
             activeParentId = parentId;
             document.getElementById('modal-parent-name').innerText = `Rodzic: ${parentName}`;
@@ -341,19 +285,10 @@
             const list = document.getElementById('student-results');
             list.style.display = 'block'; list.innerHTML = '<li>Szukanie...</li>';
 
-            // Manager szuka TYLKO w swojej szkole
-            let query = _supabase.from('users')
-                .select('id, username, email, school_id')
-                .eq('role', 'student')
-                .ilike('username', `%${term}%`)
-                .limit(5);
-
-            if (currentUser.role === 'manager') {
-                query = query.eq('school_id', currentUser.school_id);
-            }
+            let query = _supabase.from('users').select('id, username, email, school_id').eq('role', 'student').ilike('username', `%${term}%`).limit(5);
+            if (currentUser.role === 'manager') query = query.eq('school_id', currentUser.school_id);
 
             const { data } = await query;
-            
             list.innerHTML = '';
             if(!data || data.length === 0) { list.innerHTML = '<li>Brak wyników (lub uczeń w innej szkole)</li>'; return; }
 
@@ -370,33 +305,22 @@
 
         async function assignChildToParent(student) {
             if(!confirm(`Przypisać ${student.username} do rodzica?`)) return;
-            
             const { error } = await _supabase.from('parent_children').insert({ parent_id: activeParentId, child_id: student.id });
             if(error) alert("Błąd: " + error.message);
-            else {
-                alert("Przypisano!");
-                closeModal();
-                loadParents();
-            }
+            else { alert("Przypisano!"); closeModal(); loadParents(); }
         }
 
         async function removeChildFromParent(parentId, childId) {
             if(!confirm("Odpisać dziecko od tego rodzica?")) return;
             const { error } = await _supabase.from('parent_children').delete().eq('parent_id', parentId).eq('child_id', childId);
-            if(error) alert("Błąd: " + error.message);
-            else {
-                loadParents();
-            }
+            if(error) alert("Błąd: " + error.message); else loadParents();
         }
 
+        // Account Actions
         async function deleteUser(id) {
             if(confirm("Usunąć konto rodzica?")) {
                 const { error } = await _supabase.from('users').delete().eq('id', id);
-                if(error) alert("Błąd: " + error.message);
-                else {
-                    allParents = allParents.filter(p => p.id !== id);
-                    renderTable();
-                }
+                if(error) alert("Błąd: " + error.message); else { allParents = allParents.filter(p => p.id !== id); renderTable(); }
             }
         }
         
@@ -404,8 +328,7 @@
             const p = prompt(`Nowe hasło dla ${name}:`, "rodzic123");
             if(p) {
                 const { error } = await _supabase.rpc('admin_reset_password', { target_user_id: id, new_password: p });
-                if(error) alert("Błąd: " + error.message);
-                else alert("Hasło zmienione.");
+                if(error) alert("Błąd: " + error.message); else alert("Hasło zmienione.");
             }
         }
     </script>
