@@ -1,18 +1,20 @@
+// Config
 const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg'; 
 const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
+// State
 let currentRole = null;
-let availablePackages = []; // Pakiety pasujące do poziomu wybranej szkoły
-let allClassesCache = []; // Cache klas do filtrowania
+let availablePackages = []; 
+let allClassesCache = []; 
 
+// Init & Auth
 document.addEventListener('DOMContentLoaded', async () => {
     const { data: { session } } = await _supabase.auth.getSession();
     if (!session) { window.location.href = 'login.html'; return; }
 
     const { data: user } = await _supabase.from('users').select('role, school_id').eq('id', session.user.id).single();
     
-    // Uprawnienia: Admin, Manager, Wykładowca, Nauczyciel
     if (!['admin', 'manager', 'lecturer', 'teacher'].includes(user.role)) {
         alert("Brak uprawnień."); window.location.href = 'dashboard.html'; return;
     }
@@ -20,16 +22,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     await loadSchools(user);
     
-    // Listener zmiany szkoły
     document.getElementById('school-select').addEventListener('change', async function() {
         await loadPackagesForSchoolLevel(this.value); 
         loadClasses(this.value); 
     });
 
-    // Listener wyszukiwarki
     document.getElementById('class-search').addEventListener('input', filterClasses);
 });
 
+// Data Loading
 async function loadSchools(user) {
     const sSelect = document.getElementById('school-select');
     sSelect.innerHTML = '<option value="" disabled selected>-- Wybierz Szkołę --</option>';
@@ -46,11 +47,10 @@ async function loadSchools(user) {
             const opt = document.createElement('option');
             opt.value = s.id;
             opt.textContent = s.name;
-            opt.dataset.level = s.level; // Zapisujemy poziom w atrybucie
+            opt.dataset.level = s.level; 
             sSelect.appendChild(opt);
         });
 
-        // Jeśli user ma tylko jedną szkołę, wybierz ją automatycznie
         if (schools.length === 1) {
             const singleSchool = schools[0];
             sSelect.value = singleSchool.id;
@@ -62,7 +62,6 @@ async function loadSchools(user) {
     }
 }
 
-// Pobiera pakiety pasujące do POZIOMU wybranej szkoły
 async function loadPackagesForSchoolLevel(schoolId) {
     const select = document.getElementById('school-select');
     const selectedOption = select.options[select.selectedIndex];
@@ -100,6 +99,7 @@ async function loadClasses(schoolId) {
     renderClassesGrid(allClassesCache);
 }
 
+// Rendering & Filtering
 function filterClasses() {
     const term = document.getElementById('class-search').value.toLowerCase();
     const filtered = allClassesCache.filter(c => c.name.toLowerCase().includes(term));
@@ -119,7 +119,7 @@ function renderClassesGrid(classesToRender) {
         const card = document.createElement('div');
         card.className = 'class-card';
 
-        // --- 1. HEADER (Nazwa + Save + Delete) ---
+        // Header
         const header = document.createElement('div');
         header.className = 'card-header';
         
@@ -130,14 +130,12 @@ function renderClassesGrid(classesToRender) {
             if (e.key === 'Enter') { await updateClassName(c.id, nameInput.value); nameInput.blur(); }
         });
 
-        // UPDATE: Changed div to button and added Icon Span
         const saveBtn = document.createElement('button');
         saveBtn.className = 'btn-icon-small btn-save-name';
         saveBtn.innerHTML = '<span class="material-symbols-rounded">check</span>';
         saveBtn.title = "Zapisz nazwę";
         saveBtn.onclick = () => updateClassName(c.id, nameInput.value);
 
-        // UPDATE: Changed div to button and added Icon Span
         const delBtn = document.createElement('button');
         delBtn.className = 'btn-icon-small btn-delete-class';
         delBtn.innerHTML = '<span class="material-symbols-rounded">delete</span>';
@@ -146,7 +144,7 @@ function renderClassesGrid(classesToRender) {
 
         header.append(nameInput, saveBtn, delBtn);
 
-        // --- 2. PAKIETY (Chips) ---
+        // Packages
         const pkgArea = document.createElement('div');
         pkgArea.className = 'packages-area';
         
@@ -155,7 +153,6 @@ function renderClassesGrid(classesToRender) {
                 if (pc.packages) {
                     const chip = document.createElement('div');
                     chip.className = 'pkg-chip';
-                    // UPDATE: Added 'inventory_2' icon for package and 'close' for remove
                     chip.innerHTML = `
                         <span class="material-symbols-rounded" style="font-size:16px;">inventory_2</span>
                         ${pc.packages.title} 
@@ -170,7 +167,7 @@ function renderClassesGrid(classesToRender) {
             pkgArea.innerHTML = '<span style="font-size:11px; color:#aaa; margin:auto 0;">Brak pakietów</span>';
         }
 
-        // --- 3. FOOTER (Dodaj Pakiet) ---
+        // Footer
         const footer = document.createElement('div');
         footer.className = 'card-footer';
 
@@ -188,7 +185,6 @@ function renderClassesGrid(classesToRender) {
 
         const addBtn = document.createElement('button');
         addBtn.className = 'btn-add-pkg';
-        // UPDATE: Added 'add' icon
         addBtn.innerHTML = '<span class="material-symbols-rounded">add</span>';
         addBtn.onclick = async () => {
             if (!pkgSelect.value) return;
@@ -202,8 +198,7 @@ function renderClassesGrid(classesToRender) {
     });
 }
 
-// --- AKCJE CRUD ---
-
+// CRUD Actions
 async function createNewClass() {
     const schoolId = document.getElementById('school-select').value;
     const name = document.getElementById('new-class-name').value;
