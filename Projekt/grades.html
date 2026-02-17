@@ -4,10 +4,12 @@
     <meta charset="UTF-8">
     <title>mUczelnia - Moje Oceny</title>
     <link rel="stylesheet" href="style.css">
+    
     <style>
         .subject-group { margin-bottom: 15px; background: var(--panel-bg); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; border: 1px solid var(--border-color); }
         .subject-header { padding: 15px 20px; background: var(--hover-bg); cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 16px; }
         .subject-header:hover { background: rgba(0,0,0,0.05); }
+        
         .grades-list { display: none; padding: 15px; }
         .grades-list.active { display: block; animation: fadeIn 0.3s; }
         
@@ -22,13 +24,13 @@
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* --- STYL DLA RODZICA (DODANY) --- */
+        /* Parent Controls */
         .parent-controls {
             margin-bottom: 20px;
             padding: 15px;
             background: rgba(0,0,0,0.02);
             border-radius: 12px;
-            display: none; /* Domyślnie ukryte */
+            display: none; 
             border: 1px solid var(--border-color);
         }
         .child-select {
@@ -70,26 +72,25 @@
                 </select>
             </div>
 
-            <div id="grades-container">
-                </div>
+            <div id="grades-container"></div>
         </main>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+        // Config
         const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg';
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
+        // State
         let currentUser = null;
 
-        // --- GŁÓWNA FUNKCJA ---
+        // Init & Auth
         async function init() {
-            // 1. Sprawdź sesję
             const { data: { session } } = await _supabase.auth.getSession();
             if (!session) { window.location.href = 'login.html'; return; }
 
-            // 2. Pobierz rolę użytkownika
             const { data: userDetails } = await _supabase
                 .from('users')
                 .select('id, role, username')
@@ -98,21 +99,17 @@
 
             currentUser = userDetails;
 
-            // 3. Rozdzielenie widoku (Rodzic / Uczeń)
             if (currentUser.role === 'parent') {
                 setupParentView();
             } else {
-                // Uczeń widzi swoje oceny
                 fetchAndRenderGrades(currentUser.id);
             }
         }
 
-        // --- WIDOK RODZICA ---
+        // Parent Logic
         async function setupParentView() {
-            // Pokaż panel wyboru
             document.getElementById('parent-controls').style.display = 'block';
 
-            // Pobierz dzieci
             const { data: relations } = await _supabase.from('parent_children').select('child_id').eq('parent_id', currentUser.id);
             
             if (!relations || relations.length === 0) {
@@ -133,7 +130,6 @@
                 select.appendChild(option);
             });
 
-            // Wybierz pierwsze dziecko domyślnie
             if (children.length > 0) {
                 select.value = children[0].id;
                 fetchAndRenderGrades(children[0].id);
@@ -145,13 +141,11 @@
             fetchAndRenderGrades(childId);
         }
 
-        // --- POBIERANIE I WYŚWIETLANIE OCEN (WSPÓLNE) ---
+        // Data Fetching & Rendering
         async function fetchAndRenderGrades(targetUserId) {
             const container = document.getElementById('grades-container');
             container.innerHTML = '<p style="text-align:center; margin-top:20px;">Pobieranie ocen...</p>';
 
-            // ZAPYTANIE Z JOINEM DO PACKAGES
-            // packages(title) weźmie tytuł przedmiotu skojarzony z package_id
             const { data: grades, error } = await _supabase
                 .from('grades')
                 .select('*, packages(title)')
@@ -169,12 +163,9 @@
                 return;
             }
 
-            // Grupowanie ocen po przedmiotach
             const subjects = {};
 
             grades.forEach(g => {
-                // Jeśli packages istnieje (join zadziałał), bierzemy title. Jeśli nie - "Inne".
-                // Dzięki polityce SQL w kroku 1, to powinno teraz działać poprawnie.
                 let title = 'Inne';
                 if (g.packages && g.packages.title) {
                     title = g.packages.title;
@@ -186,13 +177,11 @@
                 subjects[title].push(g);
             });
 
-            // Renderowanie HTML (Twój oryginalny kod)
             container.innerHTML = '';
             
             Object.keys(subjects).sort().forEach(title => {
                 const list = subjects[title];
                 
-                // Liczenie średniej
                 let sum = 0; 
                 let count = 0;
                 list.forEach(g => {
