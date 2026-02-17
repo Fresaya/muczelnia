@@ -1,39 +1,38 @@
+// Config
 const supabaseUrl = 'https://xzbonbdtfgrhihwmiamq.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6Ym9uYmR0ZmdyaGlod21pYW1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDYxMzAsImV4cCI6MjA3OTcyMjEzMH0.iqd1FO3kdgECw857Okf0CF_i570wcTk2VtJhJXSwlEg'; 
 const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
+// State
 let schoolsCache = [];
 let currentRole = null;
-let allStudents = []; // Do wyszukiwania lokalnego
-let allClasses = []; // Wszystkie klasy w wybranej szkole
+let allStudents = []; 
+let allClasses = []; 
 
+// Init & Auth
 document.addEventListener('DOMContentLoaded', async () => {
     const { data: { session } } = await _supabase.auth.getSession();
     if (!session) { window.location.href = 'login.html'; return; }
 
-    // Sprawdzenie uprawnień
     const { data: user } = await _supabase.from('users').select('role, school_id').eq('id', session.user.id).single();
     if (!['admin', 'manager', 'lecturer'].includes(user.role)) {
         alert("Brak dostępu."); window.location.href = 'dashboard.html'; return;
     }
     currentRole = user.role;
 
-    // Ładowanie szkół
     await loadSchools(user);
 
-    // Listenery
     document.getElementById('filter-level').addEventListener('change', filterSchoolsByLevel);
     document.getElementById('filter-school').addEventListener('change', function() { loadStudents(this.value); });
     
-    // Listenery Filtrowania Lokalnego (Klasa + Search)
     document.getElementById('filter-class').addEventListener('change', applyFilters);
     document.getElementById('search-student').addEventListener('input', applyFilters);
 });
 
+// Data Loading
 async function loadSchools(user) {
     let query = _supabase.from('schools').select('id, name, level').order('name');
     
-    // Jeśli nie admin, widzi tylko swoją szkołę
     if (currentRole !== 'admin') {
         query = query.eq('id', user.school_id);
         const { data } = await query;
@@ -93,10 +92,10 @@ async function loadStudents(schoolId) {
     allClasses = classes || [];
 
     populateClassFilter(allClasses);
-
     applyFilters();
 }
 
+// Rendering & Filtering
 function populateClassFilter(classesList) {
     const classFilter = document.getElementById('filter-class');
     classFilter.innerHTML = '<option value="all">Wszystkie Klasy</option>';
@@ -112,23 +111,16 @@ function populateClassFilter(classesList) {
     }
 }
 
-// --- GŁÓWNA FUNKCJA FILTRUJĄCA ---
 function applyFilters() {
     const classVal = document.getElementById('filter-class').value;
     const searchVal = document.getElementById('search-student').value.toLowerCase();
 
     const filtered = allStudents.filter(s => {
-        // 1. Filtr klasy
         let matchClass = true;
-        if (classVal === 'all') {
-            matchClass = true;
-        } else if (classVal === 'none') {
-            matchClass = (s.class_id === null);
-        } else {
-            matchClass = (s.class_id == classVal);
-        }
+        if (classVal === 'all') matchClass = true;
+        else if (classVal === 'none') matchClass = (s.class_id === null);
+        else matchClass = (s.class_id == classVal);
 
-        // 2. Filtr wyszukiwarki
         const name = s.username ? s.username.toLowerCase() : "";
         const email = s.email ? s.email.toLowerCase() : "";
         const matchSearch = name.includes(searchVal) || email.includes(searchVal);
@@ -151,15 +143,12 @@ function renderTable(studentsList, classesList) {
     studentsList.forEach(s => {
         const tr = document.createElement('tr');
         
-        // Dropdown klas w wierszu
         let classOptions = '<option value="">-- Brak --</option>';
         classesList.forEach(c => {
             const selected = s.class_id === c.id ? 'selected' : '';
             classOptions += `<option value="${c.id}" ${selected}>${c.name}</option>`;
         });
 
-        // Przyciski akcji - ZMIANA NA IKONY GOOGLE
-        // Ikona save: 'save'
         let actionsHtml = `
             <div class="table-btn btn-save" title="Zapisz przypisanie klasy" onclick="saveClass('${s.id}', this)">
                 <span class="material-symbols-rounded">save</span>
@@ -167,7 +156,6 @@ function renderTable(studentsList, classesList) {
         `;
 
         if (currentRole !== 'lecturer') {
-            // Ikona hasła: 'key' lub 'lock_reset', Ikona usuwania: 'delete'
             actionsHtml += `
                 <div class="table-btn btn-pass" title="Ustaw nowe hasło" onclick="resetPass('${s.id}', '${s.username}')">
                     <span class="material-symbols-rounded">key</span>
@@ -192,8 +180,7 @@ function renderTable(studentsList, classesList) {
     });
 }
 
-// --- FUNKCJE AKCJI ---
-
+// User Actions
 async function saveClass(userId, btnElement) {
     const row = btnElement.closest('tr');
     const select = row.querySelector('select');
@@ -203,35 +190,25 @@ async function saveClass(userId, btnElement) {
     
     if (error) alert("Błąd zapisu: " + error.message);
     else {
-        // Aktualizujemy dane lokalnie
         const student = allStudents.find(s => s.id === userId);
         if(student) student.class_id = newClassId;
         alert("Zapisano zmianę klasy.");
     }
 }
 
-// RESET HASŁA (Bez e-maila)
 async function resetPass(userId, username) {
     const newPassword = prompt(`Podaj nowe hasło dla ucznia ${username}:`, "start123");
     
     if (!newPassword) return;
-
-    if (newPassword.length < 6) {
-        alert("Hasło musi mieć minimum 6 znaków.");
-        return;
-    }
+    if (newPassword.length < 6) { alert("Hasło musi mieć minimum 6 znaków."); return; }
 
     const { error } = await _supabase.rpc('admin_reset_password', {
         target_user_id: userId,
         new_password: newPassword
     });
 
-    if (error) {
-        console.error(error);
-        alert("Błąd: " + error.message);
-    } else {
-        alert(` Hasło zmienione! Przekaż uczniowi: ${newPassword}`);
-    }
+    if (error) { console.error(error); alert("Błąd: " + error.message); } 
+    else { alert(` Hasło zmienione! Przekaż uczniowi: ${newPassword}`); }
 }
 
 async function deleteUser(userId, btnElement) {
