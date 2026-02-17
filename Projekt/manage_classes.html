@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="style.css">
     
     <style>
-        /* --- TOOLBAR STYLES --- */
+        /* Toolbar */
         .tools-bar {
             background: var(--panel-bg);
             padding: 20px;
@@ -18,7 +18,7 @@
             display: flex;
             flex-wrap: wrap;
             gap: 20px;
-            align-items: flex-end; /* Aligns inputs and buttons to bottom */
+            align-items: flex-end; 
             box-shadow: var(--shadow);
         }
 
@@ -34,20 +34,17 @@
             text-transform: uppercase;
         }
 
-        /* --- FIX: COMPACT INPUTS & BUTTONS --- */
-        /* This ensures the 'Add Class' text input and button are exactly the same size */
         .tool-group input.edit-input,
         .tool-group select.edit-input,
         .tool-group #new-class-name,
         .tool-group .login-button {
-            height: 40px;          /* Fixed height for alignment */
-            padding: 0 12px;       /* Consistent padding */
+            height: 40px;          
+            padding: 0 12px;       
             font-size: 14px;
             margin: 0;
-            box-sizing: border-box; /* Includes padding in height calculation */
+            box-sizing: border-box; 
         }
 
-        /* Specific tweak for the "Add" button to sit next to input */
         .tool-group .login-button {
             width: auto;
             display: inline-flex;
@@ -56,14 +53,13 @@
             white-space: nowrap;
         }
 
-        /* --- CLASS GRID --- */
+        /* Class Grid */
         .classes-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 20px;
         }
 
-        /* --- CLASS CARD --- */
         .class-card {
             background: var(--panel-bg);
             border: 1px solid var(--border-color);
@@ -80,7 +76,7 @@
             border-color: var(--accent-color);
         }
 
-        /* --- FIX: HEADER OVERFLOW --- */
+        /* Card Header */
         .card-header {
             display: flex;
             align-items: center;
@@ -93,7 +89,7 @@
         
         .class-name-input {
             flex: 1; 
-            min-width: 0; /* CRITICAL FIX: Allows input to shrink so buttons don't overflow */
+            min-width: 0; 
             font-size: 16px;
             font-weight: bold;
             border: 1px solid transparent;
@@ -109,7 +105,7 @@
             outline: none;
         }
 
-        /* --- ICON BUTTONS --- */
+        /* Icons & Buttons */
         .btn-icon-small {
             width: 34px; 
             height: 34px;
@@ -120,25 +116,22 @@
             cursor: pointer;
             border: 1px solid transparent;
             transition: 0.2s;
-            flex-shrink: 0; /* CRITICAL FIX: Prevents buttons from squashing */
+            flex-shrink: 0; 
             background: transparent;
         }
 
-        /* Material Symbol Settings */
         .material-symbols-rounded {
             font-size: 20px;
             font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
         }
 
-        /* Save Button Colors */
         .btn-save-name { color: #4CAF50; }
         .btn-save-name:hover { background: rgba(76, 175, 80, 0.1); }
 
-        /* Delete Button Colors */
         .btn-delete-class { color: #F44336; }
         .btn-delete-class:hover { background: rgba(244, 67, 54, 0.1); }
 
-        /* --- PACKAGES AREA --- */
+        /* Packages Area */
         .packages-area {
             flex: 1;
             display: flex;
@@ -171,7 +164,7 @@
         .pkg-remove:hover { opacity: 1; background: rgba(255, 0, 0, 0.1); color: red; }
         .pkg-remove .material-symbols-rounded { font-size: 14px; font-weight: bold; }
 
-        /* --- CARD FOOTER --- */
+        /* Card Footer */
         .card-footer {
             background: var(--hover-bg);
             margin: -15px -15px -15px -15px;
@@ -256,8 +249,7 @@
                 </div>
             </div>
 
-            <div id="classes-grid" class="classes-grid">
-                </div>
+            <div id="classes-grid" class="classes-grid"></div>
 
         </main>
     </div>
